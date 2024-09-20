@@ -5,7 +5,7 @@ import (
 	"zhanghefan123/security_topology/modules/logger"
 )
 
-var moduleProgressBar = logger.GetLogger(logger.ModuleProgressBar)
+var moduleUtils = logger.GetLogger(logger.ModuleUtils)
 
 func NewProgressBar(max int, description string) *progressbar.ProgressBar {
 	bar := progressbar.NewOptions(max,
@@ -14,6 +14,7 @@ func NewProgressBar(max int, description string) *progressbar.ProgressBar {
 		progressbar.OptionEnableColorCodes(true),
 		progressbar.OptionSetPredictTime(true),
 		progressbar.OptionShowCount(),
+		progressbar.OptionSetWidth(100), // 设置进度条的宽度，确保对齐
 		progressbar.OptionSetTheme(progressbar.Theme{
 			Saucer:        "[green]█[reset]",
 			SaucerHead:    "[green][reset]",
@@ -29,6 +30,6 @@ func NewProgressBar(max int, description string) *progressbar.ProgressBar {
 func Add(progressBar *progressbar.ProgressBar, number int) {
 	err := progressBar.Add(number)
 	if err != nil {
-		moduleProgressBar.Errorf("progress bar error")
+		moduleUtils.Errorf("progress bar error")
 	}
 }

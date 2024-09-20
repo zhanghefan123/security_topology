@@ -23,6 +23,17 @@ type NormalNode struct {
 	ContainerId          string                            // 容器的 ID
 }
 
+func NewNormalNode(status types.NetworkNodeStatus, id, ifIdx int, containerName string) *NormalNode {
+	return &NormalNode{
+		Status:               status,
+		Id:                   id,
+		Ifidx:                ifIdx,
+		IfNameToInterfaceMap: make(map[string]*intf.NetworkInterface),
+		ConnectedSubnetList:  make([]string, 0),
+		ContainerName:        containerName,
+	}
+}
+
 func (normalNode *NormalNode) SetVethNamespace() {
 
 	// 1. 将主机命名空间之中的 veth 设置到正确的 namespace

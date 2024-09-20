@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/go-connections/nat"
-	"zhanghefan123/security_topology/modules/config/system"
+	"path/filepath"
 	"zhanghefan123/security_topology/modules/docker/client"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/satellite"
 	"zhanghefan123/security_topology/modules/entities/types"
 	"zhanghefan123/security_topology/modules/logger"
+	"zhanghefan123/security_topology/modules/sysconfig"
 )
 
 var moduleContainerManagerLogger = logger.GetLogger(logger.ModuleContainerManager)
@@ -36,32 +37,40 @@ func CreateNormalSatellite(satellite *satellite.NormalSatellite) {
 		return
 	}
 
-	// 2. 创建容器
-	// 容器数据卷映射
-	volumes := []string{
-		fmt.Sprintf("%s:%s", system.TopConfiguration.PathConfig.FrrPath.FrrHostPath,
-			system.TopConfiguration.PathConfig.FrrPath.FrrContainerPath),
+	// 2. 将路径转换为绝对路径
+	if !(filepath.IsAbs(sysconfig.TopConfiguration.PathConfig.FrrPath.FrrHostPath)) {
+		sysconfig.TopConfiguration.PathConfig.FrrPath.FrrHostPath, _ = filepath.Abs(sysconfig.TopConfiguration.PathConfig.FrrPath.FrrHostPath)
 	}
 
-	// 环境变量
+	// 3. 创建容器
+	//容器数据卷映射
+	volumes := []string{
+		fmt.Sprintf("%s:%s", sysconfig.TopConfiguration.PathConfig.FrrPath.FrrHostPath,
+			sysconfig.TopConfiguration.PathConfig.FrrPath.FrrContainerPath),
+	}
+
+	// 4. 环境变量
 	envs := []string{
 		fmt.Sprintf("%s=%d", "NODE_ID", satellite.Id),
+		fmt.Sprintf("%s=%s", "CONTAINER_NAME", satellite.ContainerName),
 	}
 
-	// containerConfig
+	// 5. containerConfig
 	containerConfig := &container.Config{
 		Image: satellite.ImageName,
 		Tty:   true,
 		Env:   envs,
 	}
 
-	// hostConfig
+	// 6. hostConfig
 	hostConfig := &container.HostConfig{
 		// 容器数据卷映射
-		Binds: volumes,
+		Binds:      volumes,
+		CapAdd:     []string{"NET_ADMIN"},
+		Privileged: true,
 	}
 
-	// 进行容器的创建
+	// 7. 进行容器的创建
 	response, err := client.DockerClient.ContainerCreate(
 		context.Background(),
 		containerConfig,
@@ -71,13 +80,13 @@ func CreateNormalSatellite(satellite *satellite.NormalSatellite) {
 		satellite.ContainerName,
 	)
 	if err != nil {
-		moduleContainerManagerLogger.Errorf("create satellite container failed")
+		moduleContainerManagerLogger.Errorf("create satellite container failed %v", err)
 		return
 	}
 
 	satellite.ContainerId = response.ID
 
-	// 3. 状态转换
+	// 8. 状态转换
 	satellite.Status = types.NetworkNodeStatus_Created
 }
 
@@ -91,8 +100,8 @@ func CreateConsensusSatellite(satellite *satellite.ConsensusSatellite) {
 	// 2. 创建容器
 	// 容器数据卷映射
 	volumes := []string{
-		fmt.Sprintf("%s:%s", system.TopConfiguration.PathConfig.FrrPath.FrrHostPath,
-			system.TopConfiguration.PathConfig.FrrPath.FrrContainerPath),
+		fmt.Sprintf("%s:%s", sysconfig.TopConfiguration.PathConfig.FrrPath.FrrHostPath,
+			sysconfig.TopConfiguration.PathConfig.FrrPath.FrrContainerPath),
 	}
 
 	// 环境变量
@@ -135,7 +144,9 @@ func CreateConsensusSatellite(satellite *satellite.ConsensusSatellite) {
 			},
 		},
 		// 容器数据卷映射
-		Binds: volumes,
+		Binds:      volumes,
+		CapAdd:     []string{"NET_ADMIN"},
+		Privileged: true,
 	}
 
 	// 进行容器的创建

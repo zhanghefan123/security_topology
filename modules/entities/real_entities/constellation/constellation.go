@@ -2,16 +2,16 @@ package constellation
 
 import (
 	"github.com/c-robinson/iplib/v2"
-	"zhanghefan123/security_topology/modules/config/system"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/types"
 	"zhanghefan123/security_topology/modules/logger"
+	"zhanghefan123/security_topology/modules/sysconfig"
 )
 
 var (
-	ConstellationInstance     *Constellation
-	moduleConstellationLogger = logger.GetLogger(logger.ModuleConstellation)
+	ConstellationInstance *Constellation
+	ConstellationLogger   = logger.GetLogger(logger.ModuleConstellation)
 )
 
 // ConstellationParameters 星座参数
@@ -43,24 +43,24 @@ type Constellation struct {
 
 // NewConstellation 创建一个新的空的星座
 func NewConstellation() *Constellation {
-	orbitNumber := system.TopConfiguration.ConstellationConfig.OrbitNumber
-	satellitePerOrbit := system.TopConfiguration.ConstellationConfig.SatellitePerOrbit
+	orbitNumber := sysconfig.TopConfiguration.ConstellationConfig.OrbitNumber
+	satellitePerOrbit := sysconfig.TopConfiguration.ConstellationConfig.SatellitePerOrbit
 	constellation := &Constellation{
 		ConstellationParameters: &ConstellationParameters{
 			OrbitNumber:       orbitNumber,
 			SatellitePerOrbit: satellitePerOrbit,
 		},
 		SatelliteParameters: &SatelliteParameters{
-			SatelliteType:      types.NetworkNodeType(system.TopConfiguration.ConstellationConfig.SatelliteConfig.Type),
-			SatelliteImageName: system.TopConfiguration.ConstellationConfig.SatelliteConfig.ImageName,
-			SatelliteRPCPort:   system.TopConfiguration.ConstellationConfig.SatelliteConfig.RPCPort,
-			SatelliteP2PPort:   system.TopConfiguration.ConstellationConfig.SatelliteConfig.P2PPort,
+			SatelliteType:      types.NetworkNodeType(sysconfig.TopConfiguration.ConstellationConfig.SatelliteConfig.Type),
+			SatelliteImageName: sysconfig.TopConfiguration.ConstellationConfig.SatelliteConfig.ImageName,
+			SatelliteRPCPort:   sysconfig.TopConfiguration.ConstellationConfig.SatelliteConfig.RPCPort,
+			SatelliteP2PPort:   sysconfig.TopConfiguration.ConstellationConfig.SatelliteConfig.P2PPort,
 		},
 		Satellites:               make([]*node.AbstractNode, 0),
 		InterOrbitSatelliteLinks: make([]*link.AbstractLink, 0),
 		IntraOrbitSatelliteLinks: make([]*link.AbstractLink, 0),
 		initModules:              make(map[string]struct{}),
 	}
-	moduleConstellationLogger.Infof("create new constellation")
+	ConstellationLogger.Infof("create new constellation")
 	return constellation
 }

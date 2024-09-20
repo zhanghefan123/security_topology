@@ -18,7 +18,6 @@ func GenerateSubnets(baseNetworkAddress string) []iplib.Net4 {
 	}
 	baseIp := baseNet.IP
 	maskLen, _ := baseNet.Mask.Size()
-	moduleUtilsLogger.Infof("baseIp: %s maskLen: %d", baseIp, maskLen)
 	netIpv4 := iplib.NewNet4(baseIp, maskLen)
 	subNets, err := netIpv4.Subnet(30)
 	if err != nil {

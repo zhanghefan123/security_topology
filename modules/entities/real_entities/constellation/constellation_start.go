@@ -1,6 +1,7 @@
 package constellation
 
 import (
+	"fmt"
 	"sync"
 	"zhanghefan123/security_topology/modules/docker/container_api"
 	"zhanghefan123/security_topology/modules/entities/utils"
@@ -24,7 +25,7 @@ func (c *Constellation) Start() {
 	}
 	err := c.startSteps(startSteps)
 	if err != nil {
-		moduleConstellationLogger.Errorf("constellation start error")
+		ConstellationLogger.Errorf("constellation start error")
 	}
 }
 
@@ -34,10 +35,10 @@ func (c *Constellation) startSteps(startSteps []map[string]StartFunction) (err e
 	for idx, startStep := range startSteps {
 		for name, startFunc := range startStep {
 			if err := startFunc(); err != nil {
-				moduleConstellationLogger.Errorf("start step [%s] failed, %s", name, err)
+				ConstellationLogger.Errorf("start step [%s] failed, %s", name, err)
 				return err
 			}
-			moduleConstellationLogger.Infof("BASE START STEP (%d/%d) => start step [%s] success)", idx+1, moduleNum, name)
+			ConstellationLogger.Infof("BASE START STEP (%d/%d) => start step [%s] success)", idx+1, moduleNum, name)
 		}
 	}
 	return
@@ -46,7 +47,7 @@ func (c *Constellation) startSteps(startSteps []map[string]StartFunction) (err e
 // GenerateSatelliteVethPairs 生成 veth pairs
 func (c *Constellation) GenerateSatelliteVethPairs() error {
 	linkNums := len(c.AllSatelliteLinks)
-	description := "generate veth pairs"
+	description := fmt.Sprintf("%20s", "generate veth pairs")
 	progressBar := progress_bar.NewProgressBar(linkNums, description)
 	waitGroup := sync.WaitGroup{}
 	waitGroup.Add(linkNums)
@@ -54,17 +55,20 @@ func (c *Constellation) GenerateSatelliteVethPairs() error {
 		go func() {
 			link.GenerateVethPair()
 			waitGroup.Done()
-			progress_bar.Add(progressBar, 1)
+			progressBar.Add(1)
 		}()
 	}
 	waitGroup.Wait()
+	if progressBar.IsFinished() {
+		fmt.Println()
+	}
 	return nil
 }
 
 // StartSatelliteContainers 生成卫星容器
 func (c *Constellation) StartSatelliteContainers() error {
 	satelliteNumber := len(c.Satellites)
-	description := "create satellites"
+	description := fmt.Sprintf("%20s", "start satellites")
 	progressBar := progress_bar.NewProgressBar(satelliteNumber, description)
 	waitGroup := sync.WaitGroup{}
 	waitGroup.Add(satelliteNumber)
@@ -73,8 +77,12 @@ func (c *Constellation) StartSatelliteContainers() error {
 			container_api.CreateContainer(satellite)
 			container_api.StartContainer(satellite)
 			waitGroup.Done()
-			progress_bar.Add(progressBar, 1)
+			progressBar.Add(1)
 		}()
+	}
+	waitGroup.Wait()
+	if progressBar.IsFinished() {
+		fmt.Println()
 	}
 	return nil
 }
@@ -82,17 +90,24 @@ func (c *Constellation) StartSatelliteContainers() error {
 // SetVethNamespaces 进行 veth 的设置
 func (c *Constellation) SetVethNamespaces() error {
 	satelliteNumber := len(c.Satellites)
-	description := "set veth namespaces"
+	description := fmt.Sprintf("%20s", "set veth namespaces")
 	progressBar := progress_bar.NewProgressBar(satelliteNumber, description)
 	waitGroup := sync.WaitGroup{}
 	waitGroup.Add(satelliteNumber)
 	for _, satellite := range c.Satellites {
 		go func() {
 			normalNode := utils.GetNormalNodeFromAbstractNode(satellite)
+			if normalNode == nil {
+				fmt.Println("normal node == nil")
+			}
 			normalNode.SetVethNamespace()
 			waitGroup.Done()
-			progress_bar.Add(progressBar, 1)
+			progressBar.Add(1)
 		}()
+	}
+	waitGroup.Wait()
+	if progressBar.IsFinished() {
+		fmt.Println()
 	}
 	return nil
 }

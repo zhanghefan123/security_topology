@@ -6,5 +6,5 @@ import (
 )
 
 func TestStatus(t *testing.T) {
-	images.Status()
+	images.RetrieveStatus()
 }

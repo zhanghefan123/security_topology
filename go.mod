@@ -7,6 +7,7 @@ require (
 	github.com/c-robinson/iplib/v2 v2.0.5
 	github.com/docker/docker v24.0.7+incompatible
 	github.com/docker/go-connections v0.5.0
+	github.com/gosuri/uiprogress v0.0.1
 	github.com/kr/pretty v0.3.1
 	github.com/schollz/progressbar/v3 v3.15.0
 	github.com/sirupsen/logrus v1.9.3
@@ -26,10 +27,12 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
+	github.com/gosuri/uilive v0.0.4 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/moby/term v0.5.0 // indirect

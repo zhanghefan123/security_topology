@@ -4,18 +4,20 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"zhanghefan123/security_topology/modules/config/system"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/intf"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
 	"zhanghefan123/security_topology/modules/entities/real_entities/satellite"
 	"zhanghefan123/security_topology/modules/entities/types"
+	"zhanghefan123/security_topology/modules/entities/utils"
+	"zhanghefan123/security_topology/modules/sysconfig"
 	"zhanghefan123/security_topology/modules/utils/subnet"
 )
 
 const (
-	GenerateSatellites = "GenerateSatellites"
-	GenerateSubnets    = "GenerateSubnets"
-	GenerateLinks      = "GenerateLinks"
+	GenerateSatellites            = "GenerateSatellites"
+	GenerateSubnets               = "GenerateSubnets"
+	GenerateLinks                 = "GenerateLinks"
+	GenerateFrrConfigurationFiles = "GenerateFrrConfigurationFiles"
 )
 
 type InitFunction func() error
@@ -30,32 +32,35 @@ func (c *Constellation) Init() {
 		{GenerateSatellites: c.GenerateSatellites},
 		{GenerateSubnets: c.GenerateSubnets},
 		{GenerateLinks: c.GenerateLinks},
+		{GenerateFrrConfigurationFiles: c.GenerateFrrConfigurationFiles},
 	}
 	err := c.initializeSteps(initSteps)
 	if err != nil {
-		moduleConstellationLogger.Error("constellation init failed: %v", err)
+		ConstellationLogger.Error("constellation init failed: %v", err)
 	}
 }
 
 // InitializeSteps 按步骤进行初始化
 func (c *Constellation) initializeSteps(initSteps []map[string]InitFunction) (err error) {
+	fmt.Println()
 	moduleNum := len(initSteps)
 	for idx, initStep := range initSteps {
 		for name, initFunc := range initStep {
 			if err := initFunc(); err != nil {
-				moduleConstellationLogger.Errorf("init step [%s] failed, %s", name, err)
+				ConstellationLogger.Errorf("init step [%s] failed, %s", name, err)
 				return err
 			}
-			moduleConstellationLogger.Infof("BASE INIT STEP (%d/%d) => init step [%s] success)", idx+1, moduleNum, name)
+			ConstellationLogger.Infof("BASE INIT STEP (%d/%d) => init step [%s] success)", idx+1, moduleNum, name)
 		}
 	}
+	fmt.Println()
 	return
 }
 
 // GenerateSatellites 生成卫星
 func (c *Constellation) GenerateSatellites() error {
 	if _, ok := c.initModules[GenerateSatellites]; ok {
-		moduleConstellationLogger.Infof("already generate satellites")
+		ConstellationLogger.Infof("already generate satellites")
 		return nil
 	}
 
@@ -73,14 +78,14 @@ func (c *Constellation) GenerateSatellites() error {
 					c.SatelliteRPCPort, c.SatelliteP2PPort)
 				c.Satellites = append(c.Satellites, sat)
 			} else {
-				moduleConstellationLogger.Errorf("unsupported network node type")
+				ConstellationLogger.Errorf("unsupported network node type")
 				return ErrNotSupportedNetworkNodeType
 			}
 		}
 	}
 
 	c.initModules[GenerateSatellites] = struct{}{}
-	moduleConstellationLogger.Infof("generate satellites")
+	ConstellationLogger.Infof("generate satellites")
 
 	return nil
 }
@@ -88,21 +93,21 @@ func (c *Constellation) GenerateSatellites() error {
 // GenerateSubnets 进行子网的生成
 func (c *Constellation) GenerateSubnets() error {
 	if _, ok := c.initModules[GenerateSubnets]; ok {
-		moduleConstellationLogger.Infof("already generate subnets")
+		ConstellationLogger.Infof("already generate subnets")
 	}
 
-	subNets := subnet.GenerateSubnets(system.TopConfiguration.NetworkConfig.BaseNetworkAddress)
+	subNets := subnet.GenerateSubnets(sysconfig.TopConfiguration.NetworkConfig.BaseNetworkAddress)
 	c.SubNets = subNets
 
 	c.initModules[GenerateSubnets] = struct{}{}
-	moduleConstellationLogger.Infof("generate subnets")
+	ConstellationLogger.Infof("generate subnets")
 	return nil
 }
 
 // GenerateLinks 进行链路的生成
 func (c *Constellation) GenerateLinks() error {
 	if _, ok := c.initModules[GenerateLinks]; ok {
-		moduleConstellationLogger.Infof("already generate links")
+		ConstellationLogger.Infof("already generate links")
 	}
 
 	if c.SatelliteType == types.NetworkNodeType_NormalSatellite {
@@ -114,7 +119,23 @@ func (c *Constellation) GenerateLinks() error {
 	}
 
 	c.initModules[GenerateLinks] = struct{}{}
-	moduleConstellationLogger.Infof("generate links")
+	ConstellationLogger.Infof("generate links")
+	return nil
+}
+
+// GenerateFrrConfigurationFiles 生成 frr 配置文件
+func (c *Constellation) GenerateFrrConfigurationFiles() error {
+	if _, ok := c.initModules[GenerateFrrConfigurationFiles]; ok {
+		ConstellationLogger.Infof("already generate frr configuration files")
+	}
+
+	for _, sat := range c.Satellites {
+		normalNode := utils.GetNormalNodeFromAbstractNode(sat)
+		normalNode.GenerateFrrConfig()
+	}
+
+	c.initModules[GenerateFrrConfigurationFiles] = struct{}{}
+	ConstellationLogger.Infof("generate frr configuration files")
 	return nil
 }
 
@@ -138,6 +159,7 @@ func (c *Constellation) generateLinksForConsensusSatellites() {
 			nodeType := types.NetworkNodeType_ConsensusSatellite                                                // 节点类型
 			subNet := c.SubNets[currentLinkNums]                                                                // 获取当前子网
 			sourceSat.ConnectedSubnetList = append(sourceSat.ConnectedSubnetList, subNet.String())              // 卫星添加子网
+			targetSat.ConnectedSubnetList = append(targetSat.ConnectedSubnetList, subNet.String())              // 卫星添加子网
 			sourceAddr, targetAddr := subnet.GenerateTwoAddrsFrom30MaskSubnet(subNet)                           // 提取第一个和第二个地址
 			sourceIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), sourceSat.Id, sourceSat.Ifidx) // 源接口名
 			targetIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), targetSat.Id, targetSat.Ifidx) // 目的接口名
@@ -208,6 +230,7 @@ func (c *Constellation) generateLinksForNormalSatellite() {
 			nodeType := types.NetworkNodeType_ConsensusSatellite                                                // 节点类型
 			subNet := c.SubNets[currentLinkNums]                                                                // 获取当前子网
 			sourceSat.ConnectedSubnetList = append(sourceSat.ConnectedSubnetList, subNet.String())              // 卫星添加子网
+			targetSat.ConnectedSubnetList = append(targetSat.ConnectedSubnetList, subNet.String())              // 卫星添加子网
 			sourceAddr, targetAddr := subnet.GenerateTwoAddrsFrom30MaskSubnet(subNet)                           // 提取第一个和第二个地址
 			sourceIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), sourceSat.Id, sourceSat.Ifidx) // 源接口名
 			targetIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), targetSat.Id, targetSat.Ifidx) // 目的接口名

@@ -6,9 +6,8 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 	"os/signal"
-	"zhanghefan123/security_topology/modules/config/system"
-	"zhanghefan123/security_topology/modules/lifecycle"
 	"zhanghefan123/security_topology/modules/logger"
+	"zhanghefan123/security_topology/modules/sysconfig"
 )
 
 var mainCmdConstellationMainLogger = logger.GetLogger(logger.ModuleMainCmdConstellation)
@@ -35,7 +34,7 @@ func core() {
 
 	// 启动流程
 	// =======================================================
-	lifecycle.Initialize()
+	Initialize()
 	PrintExitLogo()
 	// =======================================================
 
@@ -43,22 +42,23 @@ func core() {
 
 	// 删除流程
 	// =======================================================
-	lifecycle.Delete()
+	Delete()
 	PrintRemovedLogo()
 	// =======================================================
 
-	fmt.Println(system.ConfigurationFilePath)
+	fmt.Println(sysconfig.ConfigurationFilePath)
 
 }
 
 func ParseFlag() {
-	flag.StringVar(&system.ConfigurationFilePath, "config", system.ConfigurationFilePath, "config file path")
+	flag.StringVar(&sysconfig.ConfigurationFilePath, "config", sysconfig.ConfigurationFilePath, "config file path")
 }
 
 func PrintExitLogo() {
 	mainCmdConstellationMainLogger.Infof("<------------------------------------->")
 	mainCmdConstellationMainLogger.Infof("        enter ctl+c exit        ")
 	mainCmdConstellationMainLogger.Infof("<------------------------------------->")
+	fmt.Println()
 }
 
 func PrintRemovedLogo() {

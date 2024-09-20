@@ -1,13 +1,14 @@
-package system
+package sysconfig
 
 import (
+	"fmt"
 	"github.com/spf13/viper"
 	"reflect"
-	"zhanghefan123/security_topology/modules/config/system/consensus"
-	"zhanghefan123/security_topology/modules/config/system/constellation"
-	"zhanghefan123/security_topology/modules/config/system/network"
-	"zhanghefan123/security_topology/modules/config/system/path"
 	"zhanghefan123/security_topology/modules/logger"
+	"zhanghefan123/security_topology/modules/sysconfig/consensus"
+	"zhanghefan123/security_topology/modules/sysconfig/constellation"
+	"zhanghefan123/security_topology/modules/sysconfig/network"
+	"zhanghefan123/security_topology/modules/sysconfig/path"
 )
 
 var (
@@ -45,6 +46,7 @@ func InitLocalConfig() {
 
 // PrintLocalConfig 打印日志
 func PrintLocalConfig() {
+	fmt.Println()
 	// 根据传入的值获取反射对象 -> 注意获取反射对象的一定需要是对象而非反射对象
 	reflectObj := reflect.ValueOf(*TopConfiguration)
 	// 遍历
@@ -56,4 +58,5 @@ func PrintLocalConfig() {
 		// 打印字段名和字段值
 		moduleConfigLogger.Infof("%s: %+v", field.Name, value)
 	}
+	fmt.Println()
 }

@@ -24,7 +24,13 @@ func StartContainer(node *node.AbstractNode) {
 
 // StartNormalSatellite 进行普通卫星的启动
 func StartNormalSatellite(sat *satellite.NormalSatellite) {
-	// 1. 进行容器的启动
+	// 1. 检查状态
+	if sat.Status != types.NetworkNodeStatus_Created {
+		moduleContainerManagerLogger.Errorf("normal satellite not in created status")
+		return
+	}
+
+	// 2. 进行容器的启动
 	containerId := sat.ContainerId
 	err := client.DockerClient.ContainerStart(
 		context.Background(),
@@ -36,7 +42,7 @@ func StartNormalSatellite(sat *satellite.NormalSatellite) {
 		return
 	}
 
-	// 2. 进行信息 (i.e., pid) 的获取
+	// 3. 进行信息 (i.e., pid) 的获取
 	info, err := client.DockerClient.ContainerInspect(
 		context.Background(),
 		sat.ContainerId,
@@ -46,11 +52,20 @@ func StartNormalSatellite(sat *satellite.NormalSatellite) {
 		return
 	}
 	sat.Pid = info.State.Pid
+
+	// 4. 进行状态转换
+	sat.Status = types.NetworkNodeStatus_Started
 }
 
 // StartConsensusSatellite 进行共识卫星的启动
 func StartConsensusSatellite(sat *satellite.ConsensusSatellite) {
-	// 1. 进行容器的启动
+	// 1. 检查状态
+	if sat.Status != types.NetworkNodeStatus_Created {
+		moduleContainerManagerLogger.Errorf("consensus satellite not in created status")
+		return
+	}
+
+	// 2. 进行容器的启动
 	containerId := sat.ContainerId
 	err := client.DockerClient.ContainerStart(
 		context.Background(),
@@ -62,7 +77,7 @@ func StartConsensusSatellite(sat *satellite.ConsensusSatellite) {
 		return
 	}
 
-	// 2. 进行信息 (i.e., pid) 的获取
+	// 3. 进行信息 (i.e., pid) 的获取
 	info, err := client.DockerClient.ContainerInspect(
 		context.Background(),
 		sat.ContainerId,
@@ -72,4 +87,7 @@ func StartConsensusSatellite(sat *satellite.ConsensusSatellite) {
 		return
 	}
 	sat.Pid = info.State.Pid
+
+	// 4. 状态转换
+	sat.Status = types.NetworkNodeStatus_Started
 }

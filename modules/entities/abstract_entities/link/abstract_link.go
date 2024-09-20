@@ -45,7 +45,7 @@ func (absLink *AbstractLink) GenerateVethPair() {
 	}
 	err := netlink.LinkAdd(vethPair)
 	if err != nil {
-		moduleAbstractEntities.Errorf("error generating veth pair")
+		moduleAbstractEntities.Errorf("error generating veth pair, %v", err)
 		return
 	}
 }
