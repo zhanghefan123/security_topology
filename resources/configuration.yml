@@ -1,0 +1,21 @@
+network_config:
+  base_network_address: 192.168.0.0/16
+
+consensus_config:
+  consensus_protocol: pbft
+
+constellation_config:
+  orbit_number: 1
+  satellite_per_orbit: 2
+  satellite_config:
+    type: 1 #  normal_node -> 0 normal_satellite -> 1 consensus_satellite -> 2
+    image_name: normal_satellite
+    p2p_port: 11300
+    rpc_port: 12300
+
+path_config:
+  resources_path: "../resources"
+  config_generate_path: "../../security_analysis/simulation"
+  frr_path:
+    frr_host_path: ../simulation
+    frr_container_path: /configuration/frr

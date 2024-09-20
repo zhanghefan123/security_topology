@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option go_package = "../types";
+
+enum NetworkNodeStatus {
+  Logic = 0;  // 逻辑上的内存对象
+  Created = 1; // 创建状态
+  STOPPED = 2; // 停止状态 -> 中间状态
+  Started = 3; // 启动状态
+}
+
+enum NetworkNodeType {
+  NormalNode = 0;
+  NormalSatellite = 1;
+  ConsensusSatellite = 2;
+}
+
+enum NetworkLinkType {
+  IntraOrbitSatelliteLink = 0;
+  InterOrbitSatelliteLink = 1;
+}
