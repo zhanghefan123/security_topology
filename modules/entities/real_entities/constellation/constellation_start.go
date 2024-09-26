@@ -22,8 +22,8 @@ import (
 )
 
 const (
-	StartSatelliteContainers = "StartSatelliteContainers"
 	GenerateSatelliteLinks   = "GenerateSatelliteLinks"
+	StartSatelliteContainers = "StartSatelliteContainers"
 	SetVethNameSpaces        = "SetVethNameSpaces"
 	StartEtcdService         = "StartEtcdService"
 	StoreToEtcd              = "StoreToEtcd"
@@ -70,6 +70,10 @@ func (c *Constellation) startSteps(startSteps []map[string]StartFunction) (err e
 
 // GenerateSatelliteVethPairs 进行卫星之间的 veth pairs 的生成
 func (c *Constellation) GenerateSatelliteVethPairs() error {
+	if _, ok := c.systemStartSteps[GenerateSatelliteLinks]; ok {
+		constellationLogger.Infof("GenerateSatelliteVethPairs is already running")
+		return nil
+	}
 	description := fmt.Sprintf("%20s", "generate veth pairs")
 	var taskFunc multithread.TaskFunc[*link.AbstractLink] = func(link *link.AbstractLink) error {
 		err := link.GenerateVethPair()
@@ -78,11 +82,19 @@ func (c *Constellation) GenerateSatelliteVethPairs() error {
 		}
 		return nil
 	}
+
+	c.systemStartSteps[GenerateSatelliteLinks] = struct{}{}
+	constellationLogger.Infof("generate satellite veth pairs")
+
 	return multithread.RunInMultiThread[*link.AbstractLink](description, taskFunc, c.AllSatelliteLinks)
 }
 
 // StartSatelliteContainers 启动卫星容器
 func (c *Constellation) StartSatelliteContainers() error {
+	if _, ok := c.systemStartSteps[StartSatelliteContainers]; ok {
+		constellationLogger.Infof("StartSatelliteContainers is already running")
+		return nil
+	}
 	description := fmt.Sprintf("%20s", "start satellites")
 	var taskFunc multithread.TaskFunc[*node.AbstractNode] = func(node *node.AbstractNode) error {
 		err := container_api.CreateContainer(c.client, node)
@@ -95,11 +107,19 @@ func (c *Constellation) StartSatelliteContainers() error {
 		}
 		return nil
 	}
+
+	c.systemStartSteps[StartSatelliteContainers] = struct{}{}
+	constellationLogger.Infof("execute start satellite containers")
+
 	return multithread.RunInMultiThread(description, taskFunc, c.Satellites)
 }
 
 // SetVethNamespaces 设置 veth 命名空间
 func (c *Constellation) SetVethNamespaces() error {
+	if _, ok := c.systemStartSteps[SetVethNameSpaces]; ok {
+		constellationLogger.Infof("SetVethNameSpaces is already running")
+		return nil
+	}
 	description := fmt.Sprintf("%20s", "set veth namespaces")
 	var taskFunc multithread.TaskFunc[*node.AbstractNode] = func(node *node.AbstractNode) error {
 		normalNode, err := node.GetNormalNodeFromAbstractNode()
@@ -113,11 +133,20 @@ func (c *Constellation) SetVethNamespaces() error {
 		}
 		return nil
 	}
+
+	c.systemStartSteps[SetVethNameSpaces] = struct{}{}
+	constellationLogger.Infof("execute set veth namespaces")
+
 	return multithread.RunInMultiThread(description, taskFunc, c.Satellites)
 }
 
 // StartEtcdService 开启 etcd 服务
 func (c *Constellation) StartEtcdService() error {
+	if _, ok := c.systemStartSteps[StartEtcdService]; ok {
+		constellationLogger.Infof("StartEtcdService is already running")
+		return nil
+	}
+
 	// 1. 解析配置
 	etcdConfig := configs.TopConfiguration.ServicesConfig.EtcdConfig
 	clientPort := etcdConfig.ClientPort
@@ -143,11 +172,19 @@ func (c *Constellation) StartEtcdService() error {
 		return fmt.Errorf("start etcd container failed, %s", err.Error())
 	}
 
+	c.systemStartSteps[StartEtcdService] = struct{}{}
+	constellationLogger.Infof("execute start etcd service")
+
 	return nil
 }
 
 // StoreToEtcd 将卫星/链路信息放到 Etcd 之中
 func (c *Constellation) StoreToEtcd() (err error) {
+	if _, ok := c.systemStartSteps[StoreToEtcd]; ok {
+		constellationLogger.Infof("StoreToEtcd is already running")
+		return nil
+	}
+
 	waitGroup := sync.WaitGroup{}
 	waitGroup.Add(2)
 	go func() {
@@ -178,17 +215,33 @@ func (c *Constellation) StoreToEtcd() (err error) {
 		}
 	}()
 	waitGroup.Wait()
+
+	c.systemStartSteps[StoreToEtcd] = struct{}{}
+	constellationLogger.Infof("execute store to etcd")
+
 	return nil
 }
 
 // CreateServiceContext 创建程序上下文
 func (c *Constellation) CreateServiceContext() (err error) {
+	if _, ok := c.systemStartSteps[CreateServiceContext]; ok {
+		constellationLogger.Infof("CreateServiceContext is already running")
+		return nil
+	}
 	c.serviceContext, c.serviceContextCancelFunc = context.WithCancel(context.Background())
+
+	c.systemStartSteps[CreateServiceContext] = struct{}{}
+	constellationLogger.Infof("execute create context")
 	return nil
 }
 
 // StartPositionService 启动位置服务
 func (c *Constellation) StartPositionService() error {
+	if _, ok := c.systemStartSteps[StartPositionService]; ok {
+		constellationLogger.Infof("StartPositionService is already running")
+		return nil
+	}
+
 	// 1. 解析配置
 	etcdConfig := configs.TopConfiguration.ServicesConfig.EtcdConfig                            // etcd 配置
 	etcdListenAddr := configs.TopConfiguration.NetworkConfig.LocalNetworkAddress                // etcd 监听地址
@@ -220,12 +273,20 @@ func (c *Constellation) StartPositionService() error {
 	if err != nil {
 		return fmt.Errorf("start position service failed, %s", err)
 	}
+
+	// 6. 进行启动
+	c.systemStartSteps[StartPositionService] = struct{}{}
+	constellationLogger.Infof("execute start position service")
+
 	return nil
 }
 
 // StartUpdateDelayService 开启更新服务
 func (c *Constellation) StartUpdateDelayService() error {
-
+	if _, ok := c.systemStartSteps[StartUpdateDelayService]; ok {
+		constellationLogger.Infof("StartUpdateDelayService is already running")
+		return nil
+	}
 	// 开启一个线程，准备不断的进行更新事件的获取
 	go func() {
 		watchChan := c.etcdClient.Watch(
@@ -265,5 +326,7 @@ func (c *Constellation) StartUpdateDelayService() error {
 		constellationLogger.Infof("local update delay service exit")
 	}()
 
+	c.systemStartSteps[StartUpdateDelayService] = struct{}{}
+	constellationLogger.Infof("execute update delay service")
 	return nil
 }

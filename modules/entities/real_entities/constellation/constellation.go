@@ -17,7 +17,7 @@ var (
 	constellationLogger = logger.GetLogger(logger.ModuleConstellation)
 )
 
-// Parameters 星座参数
+// Parameters -星座参数
 type Parameters struct {
 	OrbitNumber       int // 轨道数量
 	SatellitePerOrbit int // 每轨道卫星数量
@@ -43,12 +43,15 @@ type Constellation struct {
 	AllSatelliteLinks        []*link.AbstractLink // 所有的卫星链路
 	InterOrbitSatelliteLinks []*link.AbstractLink // 所有轨间链路
 	IntraOrbitSatelliteLinks []*link.AbstractLink // 所有轨内链路
-	initModules              map[string]struct{}  // 初始化模块
-	startModules             map[string]struct{}  // 启动模块
-	serviceContext           context.Context      // 服务上下文
-	serviceContextCancelFunc context.CancelFunc   // 服务上下文的取消函数
-	etcdService              *node.AbstractNode   // etcd 服务
-	positionService          *node.AbstractNode   // position 服务
+
+	systemInitSteps  map[string]struct{} // 系统初始化步骤
+	systemStartSteps map[string]struct{} // 系统启动步骤
+	systemStopSteps  map[string]struct{} // 系统停止步骤
+
+	serviceContext           context.Context    // 服务上下文
+	serviceContextCancelFunc context.CancelFunc // 服务上下文的取消函数
+	etcdService              *node.AbstractNode // etcd 服务
+	positionService          *node.AbstractNode // position 服务
 }
 
 // NewConstellation 创建一个新的空的星座
@@ -72,7 +75,9 @@ func NewConstellation(client *docker.Client, etcdClient *clientv3.Client, startT
 		Satellites:               make([]*node.AbstractNode, 0),
 		InterOrbitSatelliteLinks: make([]*link.AbstractLink, 0),
 		IntraOrbitSatelliteLinks: make([]*link.AbstractLink, 0),
-		initModules:              make(map[string]struct{}),
+		systemInitSteps:          make(map[string]struct{}),
+		systemStartSteps:         make(map[string]struct{}),
+		systemStopSteps:          make(map[string]struct{}),
 	}
 	constellationLogger.Infof("create new constellation")
 	return constellation

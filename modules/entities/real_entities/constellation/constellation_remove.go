@@ -64,6 +64,11 @@ func (c *Constellation) removeSteps(removeSteps []map[string]RemoveFunction) (er
 
 // StopSatelliteContainers 进行容器的停止
 func (c *Constellation) StopSatelliteContainers() error {
+	if _, ok := c.systemStopSteps[StopSatelliteContainers]; ok {
+		constellationLogger.Infof("already execute stop satellite containers")
+		return nil
+	}
+
 	description := fmt.Sprintf("%20s", "stop satellites")
 	var taskFunc multithread.TaskFunc[*node.AbstractNode] = func(node *node.AbstractNode) error {
 		err := container_api.StopContainer(c.client, node)
@@ -72,11 +77,20 @@ func (c *Constellation) StopSatelliteContainers() error {
 		}
 		return nil
 	}
+
+	c.systemStopSteps[StopSatelliteContainers] = struct{}{}
+	constellationLogger.Infof("execute stop satellite containers")
+
 	return multithread.RunInMultiThread(description, taskFunc, c.Satellites)
 }
 
 // RemoveSatelliteContainers 进行容器的删除
 func (c *Constellation) RemoveSatelliteContainers() error {
+	if _, ok := c.systemStopSteps[RemoveSatelliteContainers]; ok {
+		constellationLogger.Infof("already execute remove satellite containers")
+		return nil
+	}
+
 	description := fmt.Sprintf("%20s", "remove satellites")
 	var taskFunc multithread.TaskFunc[*node.AbstractNode] = func(node *node.AbstractNode) error {
 		err := container_api.RemoveContainer(c.client, node)
@@ -85,11 +99,20 @@ func (c *Constellation) RemoveSatelliteContainers() error {
 		}
 		return nil
 	}
+
+	c.systemStopSteps[RemoveSatelliteContainers] = struct{}{}
+	constellationLogger.Infof("execute remove satellite containers")
+
 	return multithread.RunInMultiThread(description, taskFunc, c.Satellites)
 }
 
 // RemoveLinks 进行链路的删除
 func (c *Constellation) RemoveLinks() error {
+	if _, ok := c.systemStopSteps[RemoveLinks]; ok {
+		constellationLogger.Infof("already execute remove links")
+		return nil
+	}
+
 	description := fmt.Sprintf("%20s", "remove links")
 	var taskFunc multithread.TaskFunc[*link.AbstractLink] = func(link *link.AbstractLink) error {
 		sourceIfName := link.SourceInterface.IfName
@@ -103,11 +126,21 @@ func (c *Constellation) RemoveLinks() error {
 		}
 		return nil
 	}
+
+	c.systemStopSteps[RemoveLinks] = struct{}{}
+	constellationLogger.Infof("execute remove links %s", description)
+
 	return multithread.RunInMultiThread(description, taskFunc, c.AllSatelliteLinks)
 }
 
 // RemoveConfigurationFiles 进行配置文件的删除
 func (c *Constellation) RemoveConfigurationFiles() error {
+
+	if _, ok := c.systemStopSteps[RemoveConfigurationFiles]; ok {
+		constellationLogger.Infof("already execute remove configuration files")
+		return nil
+	}
+
 	ConfigGeneratePath := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	if !(filepath.IsAbs(ConfigGeneratePath)) {
 		configs.TopConfiguration.PathConfig.ConfigGeneratePath, _ = filepath.Abs(ConfigGeneratePath)
@@ -120,11 +153,20 @@ func (c *Constellation) RemoveConfigurationFiles() error {
 	if err != nil {
 		return ErrRemoveConfigurationFile
 	}
+
+	c.systemStopSteps[RemoveConfigurationFiles] = struct{}{}
+	constellationLogger.Infof("execute remove configuration files")
+
 	return nil
 }
 
 // RemoveEtcdService 进行 etcd 服务的关闭
 func (c *Constellation) RemoveEtcdService() error {
+	if _, ok := c.systemStopSteps[RemoveEtcdService]; ok {
+		constellationLogger.Infof("already execute remove etcd service")
+		return nil
+	}
+
 	err := container_api.StopContainer(c.client, c.etcdService)
 	if err != nil {
 		return fmt.Errorf("stop etcd service failed, %s", err)
@@ -133,11 +175,20 @@ func (c *Constellation) RemoveEtcdService() error {
 	if err != nil {
 		return fmt.Errorf("remove etcd service failed, %s", err)
 	}
+
+	c.systemStopSteps[RemoveEtcdService] = struct{}{}
+	constellationLogger.Infof("execute remove etcd service")
+
 	return nil
 }
 
 // RemovePositionService 进行位置服务的关闭
 func (c *Constellation) RemovePositionService() error {
+	if _, ok := c.systemStopSteps[RemovePositionService]; ok {
+		constellationLogger.Infof("already execute remove position service")
+		return nil
+	}
+
 	err := container_api.StopContainer(c.client, c.positionService)
 	if err != nil {
 		return fmt.Errorf("stop position service failed %v", err)
@@ -146,12 +197,24 @@ func (c *Constellation) RemovePositionService() error {
 	if err != nil {
 		return fmt.Errorf("remove position service failed %v", err)
 	}
+
+	c.systemStopSteps[RemovePositionService] = struct{}{}
+	constellationLogger.Infof("execute remove position service")
+
 	return nil
 }
 
 // StopLocalServices 进行本地服务的停止
 func (c *Constellation) StopLocalServices() error {
+	if _, ok := c.systemStopSteps[StopLocalServices]; ok {
+		constellationLogger.Infof("already execute stop local services")
+		return nil
+	}
+
 	c.serviceContextCancelFunc()
 	time.Sleep(1 * time.Second)
+
+	c.systemStopSteps[StopLocalServices] = struct{}{}
+	constellationLogger.Infof("execute stop local services")
 	return nil
 }

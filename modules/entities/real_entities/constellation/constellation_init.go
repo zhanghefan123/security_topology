@@ -1,7 +1,6 @@
 package constellation
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -23,10 +22,6 @@ const (
 )
 
 type InitFunction func() error
-
-var (
-	ErrNotSupportedNetworkNodeType = errors.New("ErrNotSupportedNetworkNodeType")
-)
 
 // Init 进行初始化
 func (c *Constellation) Init() {
@@ -61,7 +56,7 @@ func (c *Constellation) initializeSteps(initSteps []map[string]InitFunction) (er
 
 // GenerateSatellites 生成卫星
 func (c *Constellation) GenerateSatellites() error {
-	if _, ok := c.initModules[GenerateSatellites]; ok {
+	if _, ok := c.systemInitSteps[GenerateSatellites]; ok {
 		constellationLogger.Infof("already generate satellites")
 		return nil // 重复生成没有必要，但是实际上只要返回就行，不是错误
 	}
@@ -108,12 +103,12 @@ func (c *Constellation) GenerateSatellites() error {
 				// 添加卫星
 				c.Satellites = append(c.Satellites, abstractNode)
 			} else {
-				return ErrNotSupportedNetworkNodeType
+				return fmt.Errorf("not supported network node type")
 			}
 		}
 	}
 
-	c.initModules[GenerateSatellites] = struct{}{}
+	c.systemInitSteps[GenerateSatellites] = struct{}{}
 	constellationLogger.Infof("generate satellites")
 
 	return nil
@@ -121,7 +116,7 @@ func (c *Constellation) GenerateSatellites() error {
 
 // GenerateSubnets 进行子网的生成
 func (c *Constellation) GenerateSubnets() error {
-	if _, ok := c.initModules[GenerateSubnets]; ok {
+	if _, ok := c.systemInitSteps[GenerateSubnets]; ok {
 		constellationLogger.Infof("already generate subnets")
 	}
 
@@ -131,14 +126,14 @@ func (c *Constellation) GenerateSubnets() error {
 	}
 	c.SubNets = subNets
 
-	c.initModules[GenerateSubnets] = struct{}{}
+	c.systemInitSteps[GenerateSubnets] = struct{}{}
 	constellationLogger.Infof("generate subnets")
 	return nil
 }
 
 // GenerateLinks 进行链路的生成
 func (c *Constellation) GenerateLinks() error {
-	if _, ok := c.initModules[GenerateLinks]; ok {
+	if _, ok := c.systemInitSteps[GenerateLinks]; ok {
 		constellationLogger.Infof("already generate links")
 	}
 
@@ -147,17 +142,17 @@ func (c *Constellation) GenerateLinks() error {
 	} else if c.SatelliteType == types.NetworkNodeType_ConsensusSatellite {
 		c.generateLinksForConsensusSatellites()
 	} else {
-		return ErrNotSupportedNetworkNodeType
+		return fmt.Errorf("not supported network node type")
 	}
 
-	c.initModules[GenerateLinks] = struct{}{}
+	c.systemInitSteps[GenerateLinks] = struct{}{}
 	constellationLogger.Infof("generate links")
 	return nil
 }
 
 // GenerateFrrConfigurationFiles 生成 frr 配置文件
 func (c *Constellation) GenerateFrrConfigurationFiles() error {
-	if _, ok := c.initModules[GenerateFrrConfigurationFiles]; ok {
+	if _, ok := c.systemInitSteps[GenerateFrrConfigurationFiles]; ok {
 		constellationLogger.Infof("already generate frr configuration files")
 	}
 
@@ -171,7 +166,7 @@ func (c *Constellation) GenerateFrrConfigurationFiles() error {
 			return fmt.Errorf("generate frr configuration files failed: %w", err)
 		}
 	}
-	c.initModules[GenerateFrrConfigurationFiles] = struct{}{}
+	c.systemInitSteps[GenerateFrrConfigurationFiles] = struct{}{}
 	constellationLogger.Infof("generate frr configuration files")
 	return nil
 }
