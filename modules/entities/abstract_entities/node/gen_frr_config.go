@@ -1,8 +1,9 @@
-package normal_node
+package node
 
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/utils/dir"
 )
@@ -32,8 +33,13 @@ line vty
 )
 
 // GenerateFrrConfig 进行 frr 配置文件的生成
-func (normalNode *NormalNode) GenerateFrrConfig() error {
+func (abstractNode *AbstractNode) GenerateFrrConfig() error {
 	finalConfigStr := ""
+
+	normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
+	if err != nil {
+		return fmt.Errorf("generate frr config error: %w", err)
+	}
 
 	frrStartInfo := fmt.Sprintf(FrrStartInfo, normalNode.ContainerName)
 
@@ -55,17 +61,20 @@ func (normalNode *NormalNode) GenerateFrrConfig() error {
 	finalConfigStr += FrrEndInfo
 
 	// 获取路径
-	outputDir := configs.TopConfiguration.PathConfig.FrrPath.FrrHostPath
+	// /simulation/containerName/route
+	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
+	outputDir := filepath.Join(simulationDir, normalNode.ContainerName, "route")
 
 	// 进行路径的创建
-	err := dir.Generate(outputDir)
+	err = dir.Generate(outputDir)
 	if err != nil {
 		return fmt.Errorf("GenerateFrrConfig err: %s", err)
 	}
 
 	var f *os.File
 	// 创建一个文件
-	f, err = os.Create(fmt.Sprintf("%s/%s.conf", outputDir, normalNode.ContainerName))
+	// /simulation/containerName/route/frr.conf
+	f, err = os.Create(fmt.Sprintf("%s/frr.conf", outputDir))
 	defer func(f *os.File) {
 		err = f.Close()
 		if err != nil {

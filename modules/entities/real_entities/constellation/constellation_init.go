@@ -157,11 +157,7 @@ func (c *Constellation) GenerateFrrConfigurationFiles() error {
 	}
 
 	for _, sat := range c.Satellites {
-		normalNode, err := sat.GetNormalNodeFromAbstractNode()
-		if err != nil {
-			return fmt.Errorf("get normal node from abstract node failed %w", err)
-		}
-		err = normalNode.GenerateFrrConfig()
+		err := sat.GenerateFrrConfig()
 		if err != nil {
 			return fmt.Errorf("generate frr configuration files failed: %w", err)
 		}

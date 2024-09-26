@@ -24,21 +24,21 @@ func NewAbstractNode(nodeType types.NetworkNodeType, actualNode interface{}) *Ab
 }
 
 // GetNormalNodeFromAbstractNode 从抽象节点之中进行普通节点的获取
-func (node *AbstractNode) GetNormalNodeFromAbstractNode() (*normal_node.NormalNode, error) {
-	if node.Type == types.NetworkNodeType_NormalSatellite {
-		if normalSat, ok := node.ActualNode.(*satellite.NormalSatellite); ok {
+func (abstractNode *AbstractNode) GetNormalNodeFromAbstractNode() (*normal_node.NormalNode, error) {
+	if abstractNode.Type == types.NetworkNodeType_NormalSatellite {
+		if normalSat, ok := abstractNode.ActualNode.(*satellite.NormalSatellite); ok {
 			return normalSat.NormalNode, nil
 		}
-	} else if node.Type == types.NetworkNodeType_ConsensusSatellite {
-		if consensusSat, ok := node.ActualNode.(*satellite.ConsensusSatellite); ok {
+	} else if abstractNode.Type == types.NetworkNodeType_ConsensusSatellite {
+		if consensusSat, ok := abstractNode.ActualNode.(*satellite.ConsensusSatellite); ok {
 			return consensusSat.NormalNode, nil
 		}
-	} else if node.Type == types.NetworkNodeType_EtcdService {
-		if etcdService, ok := node.ActualNode.(*etcd.EtcdNode); ok {
+	} else if abstractNode.Type == types.NetworkNodeType_EtcdService {
+		if etcdService, ok := abstractNode.ActualNode.(*etcd.EtcdNode); ok {
 			return etcdService.NormalNode, nil
 		}
-	} else if node.Type == types.NetworkNodeType_PositionService {
-		if positionService, ok := node.ActualNode.(*position.PositionService); ok {
+	} else if abstractNode.Type == types.NetworkNodeType_PositionService {
+		if positionService, ok := abstractNode.ActualNode.(*position.PositionService); ok {
 			return positionService.NormalNode, nil
 		}
 	}

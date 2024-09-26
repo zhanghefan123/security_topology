@@ -10,7 +10,7 @@ import (
 func CopyFrrConfigurationFile() {
 	containerName := os.Getenv("CONTAINER_NAME")
 
-	sourceFilePath := fmt.Sprintf("/configuration/frr/%s.conf", containerName)
+	sourceFilePath := fmt.Sprintf("/configuration/%s/route/frr.conf", containerName)
 
 	destFilePath := "/etc/frr/frr.conf"
 

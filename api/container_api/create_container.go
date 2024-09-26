@@ -6,6 +6,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	docker "github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+	"path/filepath"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/etcd"
@@ -184,9 +185,10 @@ func CreateNormalSatellite(client *docker.Client, satellite *satellite.NormalSat
 
 	// 3. 创建容器
 	//容器数据卷映射
+	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
+	nodeDir := filepath.Join(simulationDir, satellite.ContainerName)
 	volumes := []string{
-		fmt.Sprintf("%s:%s", configs.TopConfiguration.PathConfig.FrrPath.FrrHostPath,
-			configs.TopConfiguration.PathConfig.FrrPath.FrrContainerPath),
+		fmt.Sprintf("%s:%s", nodeDir, fmt.Sprintf("/configuration/%s", satellite.ContainerName)),
 	}
 
 	// 4. 环境变量
@@ -240,9 +242,10 @@ func CreateConsensusSatellite(client *docker.Client, satellite *satellite.Consen
 
 	// 3. 创建容器
 	// 容器数据卷映射
+	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
+	nodeDir := filepath.Join(simulationDir, satellite.ContainerName)
 	volumes := []string{
-		fmt.Sprintf("%s:%s", configs.TopConfiguration.PathConfig.FrrPath.FrrHostPath,
-			configs.TopConfiguration.PathConfig.FrrPath.FrrContainerPath),
+		fmt.Sprintf("%s:%s", nodeDir, fmt.Sprintf("/configuration/%s", satellite.ContainerName)),
 	}
 
 	// 环境变量
