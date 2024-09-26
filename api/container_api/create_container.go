@@ -23,7 +23,7 @@ func CreateContainer(client *docker.Client, node *node.AbstractNode) error {
 	} else if node.Type == types.NetworkNodeType_ConsensusSatellite {
 		sat, _ := node.ActualNode.(*satellite.ConsensusSatellite)
 		err = CreateConsensusSatellite(client, sat)
-	} else if node.Type == types.NetworkNodeType_EtcdNode {
+	} else if node.Type == types.NetworkNodeType_EtcdService {
 		etcdNode, _ := node.ActualNode.(*etcd.EtcdNode)
 		err = CreateEtcdNode(client, etcdNode)
 	} else if node.Type == types.NetworkNodeType_PositionService {

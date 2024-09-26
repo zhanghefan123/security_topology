@@ -7,6 +7,7 @@ import (
 	"github.com/vishvananda/netlink"
 	"os/exec"
 	"path/filepath"
+	"time"
 	"zhanghefan123/security_topology/api/container_api"
 	"zhanghefan123/security_topology/api/multithread"
 	"zhanghefan123/security_topology/configs"
@@ -20,6 +21,8 @@ const (
 	RemoveLinks               = "RemoveLinks"
 	RemoveConfigurationFiles  = "RemoveConfigurationFiles"
 	RemoveEtcdService         = "RemoveEtcdService"
+	RemovePositionService     = "RemovePositionService"
+	StopLocalServices         = "StopLocalServices"
 )
 
 var (
@@ -36,6 +39,8 @@ func (c *Constellation) Remove() {
 		{RemoveLinks: c.RemoveLinks},
 		{RemoveConfigurationFiles: c.RemoveConfigurationFiles},
 		{RemoveEtcdService: c.RemoveEtcdService},
+		{RemovePositionService: c.RemovePositionService},
+		{StopLocalServices: c.StopLocalServices},
 	}
 	err := c.removeSteps(removeSteps)
 	if err != nil {
@@ -55,19 +60,6 @@ func (c *Constellation) removeSteps(removeSteps []map[string]RemoveFunction) (er
 		}
 	}
 	return
-}
-
-// RemoveEtcdService 进行 etcd 服务的关闭
-func (c *Constellation) RemoveEtcdService() error {
-	err := container_api.StopContainer(c.client, c.etcdService)
-	if err != nil {
-		return fmt.Errorf("stop etcd service failed, %s", err)
-	}
-	err = container_api.RemoveContainer(c.client, c.etcdService)
-	if err != nil {
-		return fmt.Errorf("remove etcd service failed, %s", err)
-	}
-	return nil
 }
 
 // StopSatelliteContainers 进行容器的停止
@@ -128,5 +120,38 @@ func (c *Constellation) RemoveConfigurationFiles() error {
 	if err != nil {
 		return ErrRemoveConfigurationFile
 	}
+	return nil
+}
+
+// RemoveEtcdService 进行 etcd 服务的关闭
+func (c *Constellation) RemoveEtcdService() error {
+	err := container_api.StopContainer(c.client, c.etcdService)
+	if err != nil {
+		return fmt.Errorf("stop etcd service failed, %s", err)
+	}
+	err = container_api.RemoveContainer(c.client, c.etcdService)
+	if err != nil {
+		return fmt.Errorf("remove etcd service failed, %s", err)
+	}
+	return nil
+}
+
+// RemovePositionService 进行位置服务的关闭
+func (c *Constellation) RemovePositionService() error {
+	err := container_api.StopContainer(c.client, c.positionService)
+	if err != nil {
+		return fmt.Errorf("stop position service failed %v", err)
+	}
+	err = container_api.RemoveContainer(c.client, c.positionService)
+	if err != nil {
+		return fmt.Errorf("remove position service failed %v", err)
+	}
+	return nil
+}
+
+// StopLocalServices 进行本地服务的停止
+func (c *Constellation) StopLocalServices() error {
+	c.serviceContextCancelFunc()
+	time.Sleep(5 * time.Second)
 	return nil
 }

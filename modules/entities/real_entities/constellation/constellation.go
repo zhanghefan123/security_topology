@@ -1,6 +1,7 @@
 package constellation
 
 import (
+	"context"
 	"github.com/c-robinson/iplib/v2"
 	"github.com/coreos/etcd/clientv3"
 	docker "github.com/docker/docker/client"
@@ -44,6 +45,8 @@ type Constellation struct {
 	IntraOrbitSatelliteLinks []*link.AbstractLink // 所有轨内链路
 	initModules              map[string]struct{}  // 初始化模块
 	startModules             map[string]struct{}  // 启动模块
+	serviceContext           context.Context      // 服务上下文
+	serviceContextCancelFunc context.CancelFunc   // 服务上下文的取消函数
 	etcdService              *node.AbstractNode   // etcd 服务
 	positionService          *node.AbstractNode   // position 服务
 }

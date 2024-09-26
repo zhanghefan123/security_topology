@@ -80,11 +80,17 @@ func correctnessCheck() error {
 
 // buildImage 构建镜像
 func buildImage() error {
-	// 1.创建命令
-	commandStr := fmt.Sprintf("build -t %s:latest -f ../images/%s/Dockerfile ../images/%s/",
-		variables.UserSelectedImage, variables.UserSelectedImage, variables.UserSelectedImage)
 
-	fmt.Println(commandStr)
+	var commandStr string
+
+	// 1. 区分不同的镜像, 创建 build 命令
+	if variables.UserSelectedImage == variables.ImageNamePosition {
+		commandStr = fmt.Sprintf("build -t %s:latest -f ../../realtime_position/Dockerfile ../../realtime_position/",
+			variables.UserSelectedImage)
+	} else {
+		commandStr = fmt.Sprintf("build -t %s:latest -f ../images/%s/Dockerfile ../images/%s/",
+			variables.UserSelectedImage, variables.UserSelectedImage, variables.UserSelectedImage)
+	}
 
 	cmd := exec.Command("docker", strings.Split(commandStr, " ")...)
 	var out bytes.Buffer

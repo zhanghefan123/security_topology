@@ -56,8 +56,6 @@ func core() {
 	PrintRemovedLogo()
 	// =======================================================
 
-	fmt.Println(configs.ConfigurationFilePath)
-
 }
 
 // Initialize 初始化函数

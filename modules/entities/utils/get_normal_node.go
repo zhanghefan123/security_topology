@@ -5,6 +5,7 @@ import (
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/etcd"
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
+	"zhanghefan123/security_topology/modules/entities/real_entities/position"
 	"zhanghefan123/security_topology/modules/entities/real_entities/satellite"
 	"zhanghefan123/security_topology/modules/entities/types"
 )
@@ -23,9 +24,13 @@ func GetNormalNodeFromAbstractNode(node *node.AbstractNode) (*normal_node.Normal
 		if consensusSat, ok := node.ActualNode.(*satellite.ConsensusSatellite); ok {
 			return consensusSat.NormalNode, nil
 		}
-	} else if node.Type == types.NetworkNodeType_EtcdNode {
-		if etcdNode, ok := node.ActualNode.(*etcd.EtcdNode); ok {
-			return etcdNode.NormalNode, nil
+	} else if node.Type == types.NetworkNodeType_EtcdService {
+		if etcdService, ok := node.ActualNode.(*etcd.EtcdNode); ok {
+			return etcdService.NormalNode, nil
+		}
+	} else if node.Type == types.NetworkNodeType_PositionService {
+		if positionService, ok := node.ActualNode.(*position.PositionService); ok {
+			return positionService.NormalNode, nil
 		}
 	}
 	return nil, ErrCouldNotGetNormalNode

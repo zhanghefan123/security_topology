@@ -11,11 +11,12 @@ import (
 // InitializeExistedImages 进行状态的重置
 func InitializeExistedImages() {
 	variables.ExistedImages = map[string]bool{
-		variables.ImageNameEtcd:           false,
 		variables.ImageUbuntuWithSoftware: false,
 		variables.ImagePythonEnv:          false,
 		variables.ImageGoEnv:              false,
 		variables.ImageNormalSatellite:    false,
+		variables.ImageNameEtcd:           false,
+		variables.ImageNamePosition:       false,
 	}
 }
 

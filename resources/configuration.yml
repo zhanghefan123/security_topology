@@ -1,5 +1,5 @@
 network_config:
-  local_network_address: 10.134.148.207
+  local_network_address: 192.168.112.131
   base_network_address: 192.168.0.0/16
 
 consensus_config:
@@ -27,12 +27,12 @@ services_config:
     client_port: 2379 # 重要
     peer_port: 2380 # 不是很重要
     data_dir: "/opt/bitnami/etcd/data"
-    etcd_name: "modified_etcd"
-    image_name: "modified_etcd"
+    etcd_name: "etcd_service"
+    image_name: "etcd_service"
     etcd_prefix:
         satellites_prefix: "/security_topology/satellites"
         isls_prefix: "/security_topology/isls"
 
   position_update_config:
-    image_name: "position_update"
+    image_name: "position_service"
     interval: 1

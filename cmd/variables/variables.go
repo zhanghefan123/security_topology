@@ -5,7 +5,8 @@ const (
 	ImagePythonEnv          = "python_env"
 	ImageGoEnv              = "go_env"
 	ImageNormalSatellite    = "normal_satellite"
-	ImageNameEtcd           = "modified_etcd"
+	ImageNameEtcd           = "etcd_service"
+	ImageNamePosition       = "position_service"
 )
 
 const (
@@ -28,5 +29,6 @@ var (
 		ImageGoEnv:              false,
 		ImageNormalSatellite:    false,
 		ImageNameEtcd:           false,
+		ImageNamePosition:       false,
 	}
 )

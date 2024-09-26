@@ -36,7 +36,7 @@ func TestEtcd(t *testing.T) {
 	actualEtcdNode := etcd.NewEtcdNode(types.NetworkNodeStatus_Logic, clientPort,
 		peerPort, dataDir, etcdName, imageName)
 	// 5. 创建抽象节点
-	etcdNode := node.NewAbstractNode(types.NetworkNodeType_EtcdNode, actualEtcdNode)
+	etcdNode := node.NewAbstractNode(types.NetworkNodeType_EtcdService, actualEtcdNode)
 	// 6. 进行容器的创建和启动
 	err = container_api.CreateContainer(dockerClient, etcdNode)
 	if err != nil {
