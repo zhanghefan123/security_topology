@@ -3,8 +3,8 @@ package normal_node
 import (
 	"fmt"
 	"os"
+	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/logger"
-	"zhanghefan123/security_topology/modules/sysconfig"
 	"zhanghefan123/security_topology/modules/utils/dir"
 )
 
@@ -57,7 +57,7 @@ func (normalNode *NormalNode) GenerateFrrConfig() {
 	finalConfigStr += FrrEndInfo
 
 	// 获取路径
-	outputDir := sysconfig.TopConfiguration.PathConfig.FrrPath.FrrHostPath
+	outputDir := configs.TopConfiguration.PathConfig.FrrPath.FrrHostPath
 
 	// 进行路径的创建
 	dir.GenerateDir(outputDir)

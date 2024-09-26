@@ -1,15 +1,13 @@
 package normal_node
 
 import (
+	"fmt"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 	"runtime"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/intf"
 	"zhanghefan123/security_topology/modules/entities/types"
-	"zhanghefan123/security_topology/modules/logger"
 )
-
-var moduleNormalNodeLogger = logger.GetLogger(logger.ModuleNormalNode)
 
 // NormalNode 基础的网络节点
 type NormalNode struct {
@@ -34,48 +32,40 @@ func NewNormalNode(status types.NetworkNodeStatus, id, ifIdx int, containerName 
 	}
 }
 
-func (normalNode *NormalNode) SetVethNamespace() {
-
-	// 1. 将主机命名空间之中的 veth 设置到正确的 namespace
-
-	// 获取环境的 namespace
+func (normalNode *NormalNode) SetVethNamespace() (err error) {
+	// 1. 获取环境的 namespace
 	hostNetNs, err := netns.Get()
 	if err != nil {
-		moduleNormalNodeLogger.Errorf("Get host netns error %v", err)
+		return fmt.Errorf("netns.Get() failed: %w", err)
 	}
 	defer func(ns netns.NsHandle) {
-		err := netns.Set(ns)
-		if err != nil {
-			moduleNormalNodeLogger.Errorf("reset netns error %v", err)
-		}
+		err = netns.Set(ns)
 	}(hostNetNs)
 
-	// 获取 pid
+	// 2. 获取 pid
 	pid := normalNode.Pid
 
-	// 获取容器的 netns
+	// 3. 获取容器的 netns
 	netNs, err := netns.GetFromPid(pid)
 	defer func(netNs *netns.NsHandle) {
-		err := netNs.Close()
-		if err != nil {
-			moduleNormalNodeLogger.Errorf("close netns error %v", err)
-		}
+		err = netNs.Close()
 	}(&netNs)
 	if err != nil {
-		moduleNormalNodeLogger.Errorf("Get netns error %v", err)
+		return fmt.Errorf("netns.Get() failed: %w", err)
 	}
 
-	// 遍历卫星的接口并设置到命名空间之中
+	// 4. 遍历卫星的接口并设置到命名空间之中
 	var veths []netlink.Link
+	var veth netlink.Link
 	for _, networkInterface := range normalNode.IfNameToInterfaceMap {
 		// find veth by name
-		veth, err := netlink.LinkByName(networkInterface.IfName)
+		veth, err = netlink.LinkByName(networkInterface.IfName)
 		if err != nil {
-			moduleNormalNodeLogger.Errorf("LinkByName error %v", err)
+			return fmt.Errorf("netlink.LinkByName(%s) failed: %w", networkInterface.IfName, err)
 		}
 		// set veth into namespace
-		if err := netlink.LinkSetNsFd(veth, int(netNs)); err != nil {
-			moduleNormalNodeLogger.Errorf("LinkSetNsFd error %v", err)
+		if err = netlink.LinkSetNsFd(veth, int(netNs)); err != nil {
+			return fmt.Errorf("netlink.LinkSetNsFd(%d) failed: %w", veth, err)
 		}
 		veths = append(veths, veth)
 	}
@@ -87,14 +77,14 @@ func (normalNode *NormalNode) SetVethNamespace() {
 
 	// 切换到容器的网络命名空间
 	if err = netns.Set(netNs); err != nil {
-		moduleNormalNodeLogger.Errorf("Set netns error %v", err)
+		return fmt.Errorf("netns.Set() failed: %w", err)
 	}
 
-	for _, veth := range veths {
+	for _, veth = range veths {
 		// 启动容器接口
 		err = netlink.LinkSetUp(veth)
 		if err != nil {
-			moduleNormalNodeLogger.Errorf("LinkSetUp error %v", err)
+			return fmt.Errorf("netlink.LinkSetUp(%d) failed: %w", veth, err)
 		}
 
 		// 设置 ip 地址
@@ -102,8 +92,8 @@ func (normalNode *NormalNode) SetVethNamespace() {
 		addr := normalNode.IfNameToInterfaceMap[ifName].Addr
 		ip, _ := netlink.ParseAddr(addr)
 		if err = netlink.AddrAdd(veth, ip); err != nil {
-			moduleNormalNodeLogger.Errorf("AddrAdd error %v", err)
+			return fmt.Errorf("netlink.AddrAdd(%s) failed: %w", ip, err)
 		}
 	}
-
+	return nil
 }

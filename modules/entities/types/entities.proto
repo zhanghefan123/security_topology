@@ -13,6 +13,8 @@ enum NetworkNodeType {
   NormalNode = 0;
   NormalSatellite = 1;
   ConsensusSatellite = 2;
+  EtcdNode = 3;
+  PositionService = 4;
 }
 
 enum NetworkLinkType {

@@ -1,21 +1,27 @@
 package satellite
 
 import (
+	"context"
 	"fmt"
+	"github.com/coreos/etcd/clientv3"
+	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/entities/types"
+	"zhanghefan123/security_topology/modules/utils/protobuf"
+	pbNode "zhanghefan123/security_topology/services/position/protobuf/node"
 )
 
 type NormalSatellite struct {
 	*normal_node.NormalNode
-	OrbitId      int    // 轨道的编号
-	IndexInOrbit int    // 轨道内的编号
-	ImageName    string // 镜像名称
+	OrbitId      int      // 轨道的编号
+	IndexInOrbit int      // 轨道内的编号
+	ImageName    string   // 镜像名称
+	Tle          []string // TLE 位置信息
 }
 
 // NewNormalSatellite 创建普通卫星
-func NewNormalSatellite(nodeId, orbitId, indexInOrbit int, imageName string) *node.AbstractNode {
+func NewNormalSatellite(nodeId, orbitId, indexInOrbit int, imageName string, tle []string) *node.AbstractNode {
 	satType := types.NetworkNodeType_NormalSatellite
 	sat := &NormalSatellite{
 		NormalNode: normal_node.NewNormalNode(types.NetworkNodeStatus_Logic, nodeId, 1,
@@ -23,9 +29,30 @@ func NewNormalSatellite(nodeId, orbitId, indexInOrbit int, imageName string) *no
 		OrbitId:      orbitId,
 		IndexInOrbit: indexInOrbit,
 		ImageName:    imageName,
+		Tle:          tle,
 	}
 	return &node.AbstractNode{
 		Type:       satType,
 		ActualNode: sat,
 	}
+}
+
+// StoreToEtcd 将节点信息存储到 etcd 之中
+func (normalSatellite *NormalSatellite) StoreToEtcd(etcdClient *clientv3.Client) error {
+	normalPbSatellite := &pbNode.Node{
+		Type:           pbNode.NodeType_NODE_TYPE_SATELLITE,
+		Id:             int32(normalSatellite.Id),
+		ContainerName:  normalSatellite.ContainerName,
+		Pid:            int32(normalSatellite.Pid),
+		Tle:            normalSatellite.Tle,
+		InterfaceDelay: make([]string, 0),
+	}
+	satelliteInBytes := protobuf.MustMarshal(normalPbSatellite)
+	etcdSatellitesPrefix := configs.TopConfiguration.ServicesConfig.EtcdConfig.EtcdPrefix.SatellitesPrefix
+	satelliteKey := fmt.Sprintf("%s/%d", etcdSatellitesPrefix, normalSatellite.Id)
+	_, err := etcdClient.Put(context.Background(), satelliteKey, string(satelliteInBytes))
+	if err != nil {
+		return fmt.Errorf("failed to store normal satellite into etcd: %w", err)
+	}
+	return nil
 }

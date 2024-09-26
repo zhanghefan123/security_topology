@@ -1,4 +1,5 @@
 network_config:
+  local_network_address: 10.134.148.207
   base_network_address: 192.168.0.0/16
 
 consensus_config:
@@ -7,6 +8,7 @@ consensus_config:
 constellation_config:
   orbit_number: 1
   satellite_per_orbit: 11
+  start_time: 2024|4|9|14|43|0 # 星座的启动时间
   satellite_config:
     type: 1 #  normal_node -> 0 normal_satellite -> 1 consensus_satellite -> 2
     image_name: normal_satellite
@@ -19,3 +21,18 @@ path_config:
   frr_path:
     frr_host_path: ../simulation/frr
     frr_container_path: /configuration/frr
+
+services_config:
+  etcd_config:
+    client_port: 2379 # 重要
+    peer_port: 2380 # 不是很重要
+    data_dir: "/opt/bitnami/etcd/data"
+    etcd_name: "modified_etcd"
+    image_name: "modified_etcd"
+    etcd_prefix:
+        satellites_prefix: "/security_topology/satellites"
+        isls_prefix: "/security_topology/isls"
+
+  position_update_config:
+    image_name: "position_update"
+    interval: 1

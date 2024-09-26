@@ -14,8 +14,4 @@ RUN tar xvf Python-3.8.0.tgz \
 
 RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 
-# 拷贝配置文件
-COPY ./resources/requirements.txt /
-
-RUN python -m pip install --upgrade pip \
-    && pip install -r requirements.txt --verbose
+RUN python -m pip install --upgrade pip

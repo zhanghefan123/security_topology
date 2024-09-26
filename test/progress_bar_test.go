@@ -16,7 +16,7 @@ func TestProgressBar(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		go func() {
 			time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
-			progressBar.Add(1)
+			progress_bar.Add(progressBar, 1)
 			waitGroup.Done()
 		}()
 	}

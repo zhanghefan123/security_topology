@@ -2,20 +2,22 @@ package constellation
 
 import (
 	"github.com/c-robinson/iplib/v2"
+	"github.com/coreos/etcd/clientv3"
+	docker "github.com/docker/docker/client"
+	"time"
+	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/types"
 	"zhanghefan123/security_topology/modules/logger"
-	"zhanghefan123/security_topology/modules/sysconfig"
 )
 
 var (
-	ConstellationInstance *Constellation
-	ConstellationLogger   = logger.GetLogger(logger.ModuleConstellation)
+	constellationLogger = logger.GetLogger(logger.ModuleConstellation)
 )
 
-// ConstellationParameters 星座参数
-type ConstellationParameters struct {
+// Parameters 星座参数
+type Parameters struct {
 	OrbitNumber       int // 轨道数量
 	SatellitePerOrbit int // 每轨道卫星数量
 }
@@ -30,8 +32,11 @@ type SatelliteParameters struct {
 
 // Constellation 星座
 type Constellation struct {
-	*ConstellationParameters                      // 星座基本参数
+	*Parameters                                   // 星座基本参数
 	*SatelliteParameters                          // 卫星基本参数
+	client                   *docker.Client       // 用来创建、停止、开启容器的客户端
+	etcdClient               *clientv3.Client     // etcd client 用于存取监听键值对
+	startTime                time.Time            // 星座的启动时间
 	SubNets                  []iplib.Net4         // 子网数量
 	Satellites               []*node.AbstractNode // 所有卫星
 	AllSatelliteLinks        []*link.AbstractLink // 所有的卫星链路
@@ -39,28 +44,33 @@ type Constellation struct {
 	IntraOrbitSatelliteLinks []*link.AbstractLink // 所有轨内链路
 	initModules              map[string]struct{}  // 初始化模块
 	startModules             map[string]struct{}  // 启动模块
+	etcdService              *node.AbstractNode   // etcd 服务
+	positionService          *node.AbstractNode   // position 服务
 }
 
 // NewConstellation 创建一个新的空的星座
-func NewConstellation() *Constellation {
-	orbitNumber := sysconfig.TopConfiguration.ConstellationConfig.OrbitNumber
-	satellitePerOrbit := sysconfig.TopConfiguration.ConstellationConfig.SatellitePerOrbit
+func NewConstellation(client *docker.Client, etcdClient *clientv3.Client, startTime time.Time) *Constellation {
+	orbitNumber := configs.TopConfiguration.ConstellationConfig.OrbitNumber
+	satellitePerOrbit := configs.TopConfiguration.ConstellationConfig.SatellitePerOrbit
 	constellation := &Constellation{
-		ConstellationParameters: &ConstellationParameters{
+		Parameters: &Parameters{
 			OrbitNumber:       orbitNumber,
 			SatellitePerOrbit: satellitePerOrbit,
 		},
 		SatelliteParameters: &SatelliteParameters{
-			SatelliteType:      types.NetworkNodeType(sysconfig.TopConfiguration.ConstellationConfig.SatelliteConfig.Type),
-			SatelliteImageName: sysconfig.TopConfiguration.ConstellationConfig.SatelliteConfig.ImageName,
-			SatelliteRPCPort:   sysconfig.TopConfiguration.ConstellationConfig.SatelliteConfig.RPCPort,
-			SatelliteP2PPort:   sysconfig.TopConfiguration.ConstellationConfig.SatelliteConfig.P2PPort,
+			SatelliteType:      types.NetworkNodeType(configs.TopConfiguration.ConstellationConfig.SatelliteConfig.Type),
+			SatelliteImageName: configs.TopConfiguration.ConstellationConfig.SatelliteConfig.ImageName,
+			SatelliteRPCPort:   configs.TopConfiguration.ConstellationConfig.SatelliteConfig.RPCPort,
+			SatelliteP2PPort:   configs.TopConfiguration.ConstellationConfig.SatelliteConfig.P2PPort,
 		},
+		client:                   client,
+		etcdClient:               etcdClient,
+		startTime:                startTime,
 		Satellites:               make([]*node.AbstractNode, 0),
 		InterOrbitSatelliteLinks: make([]*link.AbstractLink, 0),
 		IntraOrbitSatelliteLinks: make([]*link.AbstractLink, 0),
 		initModules:              make(map[string]struct{}),
 	}
-	ConstellationLogger.Infof("create new constellation")
+	constellationLogger.Infof("create new constellation")
 	return constellation
 }

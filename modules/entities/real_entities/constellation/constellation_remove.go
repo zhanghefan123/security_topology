@@ -5,15 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/vishvananda/netlink"
-	"net"
 	"os/exec"
 	"path/filepath"
-	"strings"
-	"sync"
-	"zhanghefan123/security_topology/modules/docker/container_api"
-	"zhanghefan123/security_topology/modules/entities/types"
-	"zhanghefan123/security_topology/modules/sysconfig"
-	"zhanghefan123/security_topology/modules/utils/progress_bar"
+	"zhanghefan123/security_topology/api/container_api"
+	"zhanghefan123/security_topology/api/multithread"
+	"zhanghefan123/security_topology/configs"
+	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
+	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 )
 
 const (
@@ -21,10 +19,10 @@ const (
 	RemoveSatelliteContainers = "RemoveSatelliteContainers"
 	RemoveLinks               = "RemoveLinks"
 	RemoveConfigurationFiles  = "RemoveConfigurationFiles"
+	RemoveEtcdService         = "RemoveEtcdService"
 )
 
 var (
-	ErrGetInterfaceFailed      = errors.New("GetInterfaceFailed")
 	ErrRemoveConfigurationFile = errors.New("RemoveConfigurationFile")
 )
 
@@ -37,10 +35,11 @@ func (c *Constellation) Remove() {
 		{RemoveSatelliteContainers: c.RemoveSatelliteContainers},
 		{RemoveLinks: c.RemoveLinks},
 		{RemoveConfigurationFiles: c.RemoveConfigurationFiles},
+		{RemoveEtcdService: c.RemoveEtcdService},
 	}
 	err := c.removeSteps(removeSteps)
 	if err != nil {
-		ConstellationLogger.Errorf("remove constellation failed")
+		constellationLogger.Errorf("remove constellation failed %v", err)
 	}
 }
 
@@ -50,87 +49,78 @@ func (c *Constellation) removeSteps(removeSteps []map[string]RemoveFunction) (er
 	for idx, removeStep := range removeSteps {
 		for name, removeFunc := range removeStep {
 			if err := removeFunc(); err != nil {
-				ConstellationLogger.Errorf("remove step [%s] failed, %s", name, err)
-				return err
+				return fmt.Errorf("remove step [%s] failed, %s", name, err)
 			}
-			ConstellationLogger.Infof("BASE REMOVE STEP (%d/%d) => remove step [%s] success)", idx+1, moduleNum, name)
+			constellationLogger.Infof("BASE REMOVE STEP (%d/%d) => remove step [%s] success)", idx+1, moduleNum, name)
 		}
 	}
 	return
 }
 
-func (c *Constellation) StopSatelliteContainers() error {
-	satelliteNumber := len(c.Satellites)
-	description := fmt.Sprintf("%20s", "stop satellites")
-	progressBar := progress_bar.NewProgressBar(satelliteNumber, description)
-	waitGroup := sync.WaitGroup{}
-	waitGroup.Add(satelliteNumber)
-	for _, satellite := range c.Satellites {
-		go func() {
-			container_api.StopContainer(satellite)
-			waitGroup.Done()
-			progressBar.Add(1)
-		}()
-	}
-	waitGroup.Wait()
-	if progressBar.IsFinished() {
-		fmt.Println()
-	}
-	return nil
-}
-
-func (c *Constellation) RemoveSatelliteContainers() error {
-	satelliteNumber := len(c.Satellites)
-	description := fmt.Sprintf("%20s", "remove satellites")
-	progressBar := progress_bar.NewProgressBar(satelliteNumber, description)
-	waitGroup := sync.WaitGroup{}
-	waitGroup.Add(satelliteNumber)
-	for _, satellite := range c.Satellites {
-		go func() {
-			container_api.RemoveContainer(satellite)
-			waitGroup.Done()
-			progressBar.Add(1)
-		}()
-	}
-	waitGroup.Wait()
-	if progressBar.IsFinished() {
-		fmt.Println()
-	}
-	return nil
-}
-
-func (c *Constellation) RemoveLinks() error {
-	interfaces, err := net.Interfaces()
+// RemoveEtcdService 进行 etcd 服务的关闭
+func (c *Constellation) RemoveEtcdService() error {
+	err := container_api.StopContainer(c.client, c.etcdService)
 	if err != nil {
-		ConstellationLogger.Errorf("get interfaces failed, %s", err)
-		return ErrGetInterfaceFailed
+		return fmt.Errorf("stop etcd service failed, %s", err)
 	}
-	prefix := types.GetPrefix(c.SatelliteType)
-	for _, iface := range interfaces {
-		ifName := iface.Name
-		if strings.Contains(ifName, prefix) {
-			link, err := netlink.LinkByName(ifName)
-			if err != nil {
-				ConstellationLogger.Errorf("get link failed, %s", err)
-				continue
-			}
-			if err := netlink.LinkDel(link); err != nil {
-				// ConstellationLogger.Errorf("delete link failed, %s", err)
-				continue
-			}
-			ConstellationLogger.Infof("delete interface %s success", ifName)
-		}
+	err = container_api.RemoveContainer(c.client, c.etcdService)
+	if err != nil {
+		return fmt.Errorf("remove etcd service failed, %s", err)
 	}
 	return nil
+}
+
+// StopSatelliteContainers 进行容器的停止
+func (c *Constellation) StopSatelliteContainers() error {
+	description := fmt.Sprintf("%20s", "stop satellites")
+	var taskFunc multithread.TaskFunc[*node.AbstractNode] = func(node *node.AbstractNode) error {
+		err := container_api.StopContainer(c.client, node)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	return multithread.RunInMultiThread(description, taskFunc, c.Satellites)
+}
+
+// RemoveSatelliteContainers 进行容器的删除
+func (c *Constellation) RemoveSatelliteContainers() error {
+	description := fmt.Sprintf("%20s", "remove satellites")
+	var taskFunc multithread.TaskFunc[*node.AbstractNode] = func(node *node.AbstractNode) error {
+		err := container_api.RemoveContainer(c.client, node)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	return multithread.RunInMultiThread(description, taskFunc, c.Satellites)
+}
+
+// RemoveLinks 进行链路的删除
+func (c *Constellation) RemoveLinks() error {
+	description := fmt.Sprintf("%20s", "remove links")
+	var taskFunc multithread.TaskFunc[*link.AbstractLink] = func(link *link.AbstractLink) error {
+		sourceIfName := link.SourceInterface.IfName
+		veth, err := netlink.LinkByName(sourceIfName)
+		if err != nil {
+			return nil // 查找不到可能是已经删掉了
+		}
+		err = netlink.LinkDel(veth)
+		if err != nil {
+			return err // 删不了是真正的错误，要返回
+		}
+		return nil
+	}
+	return multithread.RunInMultiThread(description, taskFunc, c.AllSatelliteLinks)
 }
 
 // RemoveConfigurationFiles 进行配置文件的删除
 func (c *Constellation) RemoveConfigurationFiles() error {
-	ConfigGeneratePath := sysconfig.TopConfiguration.PathConfig.ConfigGeneratePath
+	ConfigGeneratePath := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	if !(filepath.IsAbs(ConfigGeneratePath)) {
-		sysconfig.TopConfiguration.PathConfig.ConfigGeneratePath, _ = filepath.Abs(ConfigGeneratePath)
+		configs.TopConfiguration.PathConfig.ConfigGeneratePath, _ = filepath.Abs(ConfigGeneratePath)
 	}
-	cmd := exec.Command("rm", "-rf", sysconfig.TopConfiguration.PathConfig.ConfigGeneratePath+"/*")
+	cmd := exec.Command("rm", "-rf", configs.TopConfiguration.PathConfig.ConfigGeneratePath+"/*")
 	var out bytes.Buffer
 	cmd.Stdout = &out
 
