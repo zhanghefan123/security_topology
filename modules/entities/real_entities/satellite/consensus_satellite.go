@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/coreos/etcd/clientv3"
 	"zhanghefan123/security_topology/configs"
-	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/entities/types"
 	"zhanghefan123/security_topology/modules/utils/protobuf"
@@ -25,7 +24,7 @@ type ConsensusSatellite struct {
 
 // NewConsensusSatellite 创建新的共识卫星
 func NewConsensusSatellite(nodeId, orbitId, indexInOrbit int, imageName string,
-	startRpcPort int, startP2PPort int, tle []string) *node.AbstractNode {
+	startRpcPort int, startP2PPort int, tle []string) *ConsensusSatellite {
 	satType := types.NetworkNodeType_ConsensusSatellite
 	sat := &ConsensusSatellite{
 		NormalNode: normal_node.NewNormalNode(types.NetworkNodeStatus_Logic, nodeId, 1,
@@ -37,10 +36,7 @@ func NewConsensusSatellite(nodeId, orbitId, indexInOrbit int, imageName string,
 		StartP2PPort: startP2PPort,
 		Tle:          tle,
 	}
-	return &node.AbstractNode{
-		Type:       satType,
-		ActualNode: sat,
-	}
+	return sat
 }
 
 // StoreToEtcd 将节点信息存储到 etcd 之中

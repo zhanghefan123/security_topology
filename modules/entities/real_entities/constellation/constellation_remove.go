@@ -152,6 +152,6 @@ func (c *Constellation) RemovePositionService() error {
 // StopLocalServices 进行本地服务的停止
 func (c *Constellation) StopLocalServices() error {
 	c.serviceContextCancelFunc()
-	time.Sleep(5 * time.Second)
+	time.Sleep(1 * time.Second)
 	return nil
 }

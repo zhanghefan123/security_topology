@@ -8,9 +8,9 @@ import (
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/intf"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
+	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/satellite"
 	"zhanghefan123/security_topology/modules/entities/types"
-	"zhanghefan123/security_topology/modules/entities/utils"
 	"zhanghefan123/security_topology/modules/utils/position"
 	"zhanghefan123/security_topology/modules/utils/subnet"
 )
@@ -95,15 +95,18 @@ func (c *Constellation) GenerateSatellites() error {
 				// 创建普通卫星
 				sat := satellite.NewNormalSatellite(nodeId+1, orbitId,
 					indexInOrbit, c.SatelliteImageName, tle)
+				// 将普通卫星放在抽象节点之中
+				abstractNode := node.NewAbstractNode(types.NetworkNodeType_NormalSatellite, sat)
 				// 添加卫星
-				c.Satellites = append(c.Satellites, sat)
+				c.Satellites = append(c.Satellites, abstractNode)
 			} else if c.SatelliteType == types.NetworkNodeType_ConsensusSatellite { // 2. 如果是生成共识卫星
 				// 创建共识卫星
 				sat := satellite.NewConsensusSatellite(nodeId+1, orbitId,
 					indexInOrbit, c.SatelliteImageName,
 					c.SatelliteRPCPort, c.SatelliteP2PPort, tle)
+				abstractNode := node.NewAbstractNode(types.NetworkNodeType_ConsensusSatellite, sat)
 				// 添加卫星
-				c.Satellites = append(c.Satellites, sat)
+				c.Satellites = append(c.Satellites, abstractNode)
 			} else {
 				return ErrNotSupportedNetworkNodeType
 			}
@@ -122,7 +125,10 @@ func (c *Constellation) GenerateSubnets() error {
 		constellationLogger.Infof("already generate subnets")
 	}
 
-	subNets := subnet.GenerateSubnets(configs.TopConfiguration.NetworkConfig.BaseNetworkAddress)
+	subNets, err := subnet.GenerateSubnets(configs.TopConfiguration.NetworkConfig.BaseNetworkAddress)
+	if err != nil {
+		return fmt.Errorf("generate subnets: %w", err)
+	}
 	c.SubNets = subNets
 
 	c.initModules[GenerateSubnets] = struct{}{}
@@ -156,13 +162,15 @@ func (c *Constellation) GenerateFrrConfigurationFiles() error {
 	}
 
 	for _, sat := range c.Satellites {
-		normalNode, err := utils.GetNormalNodeFromAbstractNode(sat)
+		normalNode, err := sat.GetNormalNodeFromAbstractNode()
 		if err != nil {
-			return fmt.Errorf("generate frr configuration files failed: %v", err)
+			return fmt.Errorf("get normal node from abstract node failed %w", err)
 		}
-		normalNode.GenerateFrrConfig()
+		err = normalNode.GenerateFrrConfig()
+		if err != nil {
+			return fmt.Errorf("generate frr configuration files failed: %w", err)
+		}
 	}
-
 	c.initModules[GenerateFrrConfigurationFiles] = struct{}{}
 	constellationLogger.Infof("generate frr configuration files")
 	return nil

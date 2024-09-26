@@ -21,6 +21,7 @@ type NormalNode struct {
 	ContainerId          string                            // 容器的 ID
 }
 
+// NewNormalNode 创建普通系欸但
 func NewNormalNode(status types.NetworkNodeStatus, id, ifIdx int, containerName string) *NormalNode {
 	return &NormalNode{
 		Status:               status,
@@ -32,6 +33,7 @@ func NewNormalNode(status types.NetworkNodeStatus, id, ifIdx int, containerName 
 	}
 }
 
+// SetVethNamespace 设置 veth 命名空间
 func (normalNode *NormalNode) SetVethNamespace() (err error) {
 	// 1. 获取环境的 namespace
 	hostNetNs, err := netns.Get()

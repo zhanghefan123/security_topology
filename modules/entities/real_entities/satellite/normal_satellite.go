@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/coreos/etcd/clientv3"
 	"zhanghefan123/security_topology/configs"
-	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/entities/types"
 	"zhanghefan123/security_topology/modules/utils/protobuf"
@@ -21,7 +20,7 @@ type NormalSatellite struct {
 }
 
 // NewNormalSatellite 创建普通卫星
-func NewNormalSatellite(nodeId, orbitId, indexInOrbit int, imageName string, tle []string) *node.AbstractNode {
+func NewNormalSatellite(nodeId, orbitId, indexInOrbit int, imageName string, tle []string) *NormalSatellite {
 	satType := types.NetworkNodeType_NormalSatellite
 	sat := &NormalSatellite{
 		NormalNode: normal_node.NewNormalNode(types.NetworkNodeStatus_Logic, nodeId, 1,
@@ -31,10 +30,7 @@ func NewNormalSatellite(nodeId, orbitId, indexInOrbit int, imageName string, tle
 		ImageName:    imageName,
 		Tle:          tle,
 	}
-	return &node.AbstractNode{
-		Type:       satType,
-		ActualNode: sat,
-	}
+	return sat
 }
 
 // StoreToEtcd 将节点信息存储到 etcd 之中

@@ -2,11 +2,9 @@ package progress_bar
 
 import (
 	"github.com/schollz/progressbar/v3"
-	"zhanghefan123/security_topology/modules/logger"
 )
 
-var moduleUtils = logger.GetLogger(logger.ModuleUtils)
-
+// NewProgressBar 创建指定样式的进度条
 func NewProgressBar(max int, description string) *progressbar.ProgressBar {
 	bar := progressbar.NewOptions(max,
 		progressbar.OptionSetDescription(description),
@@ -27,9 +25,7 @@ func NewProgressBar(max int, description string) *progressbar.ProgressBar {
 	return bar
 }
 
+// Add 进行进度条的推进
 func Add(progressBar *progressbar.ProgressBar, number int) {
-	err := progressBar.Add(number)
-	if err != nil {
-		moduleUtils.Errorf("progress bar error")
-	}
+	_ = progressBar.Add(number)
 }

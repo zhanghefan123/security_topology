@@ -17,7 +17,6 @@ import (
 	"zhanghefan123/security_topology/modules/entities/real_entities/position"
 	"zhanghefan123/security_topology/modules/entities/real_entities/satellite"
 	"zhanghefan123/security_topology/modules/entities/types"
-	"zhanghefan123/security_topology/modules/entities/utils"
 	"zhanghefan123/security_topology/modules/utils/protobuf"
 	posPbNode "zhanghefan123/security_topology/services/position/protobuf/node"
 )
@@ -103,7 +102,7 @@ func (c *Constellation) StartSatelliteContainers() error {
 func (c *Constellation) SetVethNamespaces() error {
 	description := fmt.Sprintf("%20s", "set veth namespaces")
 	var taskFunc multithread.TaskFunc[*node.AbstractNode] = func(node *node.AbstractNode) error {
-		normalNode, err := utils.GetNormalNodeFromAbstractNode(node)
+		normalNode, err := node.GetNormalNodeFromAbstractNode()
 		if err != nil {
 			return err
 		}

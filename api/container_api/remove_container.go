@@ -7,13 +7,12 @@ import (
 	docker "github.com/docker/docker/client"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/types"
-	"zhanghefan123/security_topology/modules/entities/utils"
 )
 
 // RemoveContainer 进行容器的删除
 func RemoveContainer(client *docker.Client, node *node.AbstractNode) error {
 	var err error = nil
-	normalNode, err := utils.GetNormalNodeFromAbstractNode(node)
+	normalNode, err := node.GetNormalNodeFromAbstractNode()
 	if err != nil {
 		return fmt.Errorf("get normal node from abstract node error: %w", err)
 	}

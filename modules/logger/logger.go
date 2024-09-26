@@ -6,24 +6,10 @@ import (
 )
 
 const (
-	// 1. main 下的模块
-
 	ModuleMainCmdConstellation = "MAIN_CMD_CONSTELLATION"
 	ModuleMainCmdImages        = "MAIN_CMD_IMAGES"
-	ModuleMainCmdStatus        = "MAIN_CMD_STATUS"
-
-	// 2. containerconfig 下的模块
-	ModuleFrrConfig = "FRR_CONFIG"
-
-	ModuleConfig = "CONFIG"
-	ModuleUtils  = "UTILS"
-
-	ModuleNormalNode    = "NORMAL_NODE"
-	ModuleConstellation = "CONSTELLATION"
-
-	ModuleAbstractEntities = "ABSTRACT_ENTITIES"
-	ModuleProgressBar      = "PROGRESS_BAR"
-	ModuleContainerManager = "CONTAINER_MANAGER"
+	ModuleConfig               = "CONFIG"
+	ModuleConstellation        = "CONSTELLATION"
 )
 
 func init() {
