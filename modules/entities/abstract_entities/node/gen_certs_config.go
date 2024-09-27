@@ -7,9 +7,10 @@ import (
 	"os"
 	"path/filepath"
 	"zhanghefan123/security_topology/configs"
+	"zhanghefan123/security_topology/modules/utils/dir"
 )
 
-// GenerateSecretKey 进行密钥的生成
+// GeneratePeerIdAndPrivateKey 进行密钥的生成
 func (abstractNode *AbstractNode) GeneratePeerIdAndPrivateKey() (err error) {
 	var peerIdPath, privateKeyPath string
 	err, peerIdPath, privateKeyPath = abstractNode.GetPeerIdAndPrivateKeyPath()
@@ -71,6 +72,13 @@ func (abstractNode *AbstractNode) GetPeerIdAndPrivateKeyPath() (error, string, s
 	}
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	outputDir := filepath.Join(simulationDir, normalNode.ContainerName, "security")
+
+	// 创建目录
+	err = dir.Generate(simulationDir)
+	if err != nil {
+		return fmt.Errorf("get peer id and private key path failed: %w", err), "", ""
+	}
+
 	peerIdPath := filepath.Join(outputDir, "peerId")
 	privateKeyPath := filepath.Join(outputDir, "private.key")
 	return nil, peerIdPath, privateKeyPath

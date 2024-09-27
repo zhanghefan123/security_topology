@@ -19,6 +19,7 @@ const (
 	GenerateSubnets               = "GenerateSubnets"               // 创建子网
 	GenerateLinks                 = "GenerateLinks"                 // 生成链路
 	GenerateFrrConfigurationFiles = "GenerateFrrConfigurationFiles" // 生成 frr 配置
+	GeneratePeerIdAndPrivateKey   = "GeneratePeerIdAndPrivateKey"
 )
 
 type InitFunction func() error
@@ -30,6 +31,7 @@ func (c *Constellation) Init() {
 		{GenerateSubnets: c.GenerateSubnets},
 		{GenerateLinks: c.GenerateLinks},
 		{GenerateFrrConfigurationFiles: c.GenerateFrrConfigurationFiles},
+		{GeneratePeerIdAndPrivateKey: c.GeneratePeerIdAndPrivateKey},
 	}
 	err := c.initializeSteps(initSteps)
 	if err != nil {
@@ -118,6 +120,7 @@ func (c *Constellation) GenerateSatellites() error {
 func (c *Constellation) GenerateSubnets() error {
 	if _, ok := c.systemInitSteps[GenerateSubnets]; ok {
 		constellationLogger.Infof("already generate subnets")
+		return nil
 	}
 
 	subNets, err := subnet.GenerateSubnets(configs.TopConfiguration.NetworkConfig.BaseNetworkAddress)
@@ -135,6 +138,7 @@ func (c *Constellation) GenerateSubnets() error {
 func (c *Constellation) GenerateLinks() error {
 	if _, ok := c.systemInitSteps[GenerateLinks]; ok {
 		constellationLogger.Infof("already generate links")
+		return nil
 	}
 
 	if c.SatelliteType == types.NetworkNodeType_NormalSatellite {
@@ -147,23 +151,6 @@ func (c *Constellation) GenerateLinks() error {
 
 	c.systemInitSteps[GenerateLinks] = struct{}{}
 	constellationLogger.Infof("generate links")
-	return nil
-}
-
-// GenerateFrrConfigurationFiles 生成 frr 配置文件
-func (c *Constellation) GenerateFrrConfigurationFiles() error {
-	if _, ok := c.systemInitSteps[GenerateFrrConfigurationFiles]; ok {
-		constellationLogger.Infof("already generate frr configuration files")
-	}
-
-	for _, sat := range c.Satellites {
-		err := sat.GenerateFrrConfig()
-		if err != nil {
-			return fmt.Errorf("generate frr configuration files failed: %w", err)
-		}
-	}
-	c.systemInitSteps[GenerateFrrConfigurationFiles] = struct{}{}
-	constellationLogger.Infof("generate frr configuration files")
 	return nil
 }
 
@@ -311,4 +298,40 @@ func (c *Constellation) generateLinksForNormalSatellite() {
 		}
 		// <---------------- 生成异轨道的星间链路 ---------------->
 	}
+}
+
+// GenerateFrrConfigurationFiles 生成 frr 配置文件
+func (c *Constellation) GenerateFrrConfigurationFiles() error {
+	if _, ok := c.systemInitSteps[GenerateFrrConfigurationFiles]; ok {
+		constellationLogger.Infof("already generate frr configuration files")
+		return nil
+	}
+
+	for _, sat := range c.Satellites {
+		err := sat.GenerateFrrConfig()
+		if err != nil {
+			return fmt.Errorf("generate frr configuration files failed: %w", err)
+		}
+	}
+	c.systemInitSteps[GenerateFrrConfigurationFiles] = struct{}{}
+	constellationLogger.Infof("generate frr configuration files")
+	return nil
+}
+
+func (c *Constellation) GeneratePeerIdAndPrivateKey() error {
+	if _, ok := c.systemInitSteps[GeneratePeerIdAndPrivateKey]; ok {
+		constellationLogger.Infof("already generate peer id and private key")
+		return nil
+	}
+
+	for _, sat := range c.Satellites {
+		err := sat.GeneratePeerIdAndPrivateKey()
+		if err != nil {
+			return fmt.Errorf("generate peer id and private key failed: %w", err)
+		}
+	}
+
+	c.systemInitSteps[GeneratePeerIdAndPrivateKey] = struct{}{}
+	constellationLogger.Infof("generate peer id and private key")
+	return nil
 }
