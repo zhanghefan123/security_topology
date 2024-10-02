@@ -2,7 +2,6 @@ package images
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
 	"os/exec"
@@ -14,13 +13,6 @@ import (
 
 var (
 	cmdImagesLogger = logger.GetLogger(logger.ModuleMainCmdImages)
-
-	ErrNotSupportedImage       = errors.New("not supported image")
-	ErrNotSupportedOperation   = errors.New("not supported operation")
-	ErrImageAlreadyExists      = errors.New("image already exists")
-	ErrImageAlreadyDoesntExist = errors.New("image already does not exist")
-	ErrExecuteBuildCommand     = errors.New("err execute build command")
-	ErrExecuteRemoveCommand    = errors.New("err execute remove command")
 )
 
 // CreateImagesCmd 创建镜像管理子命令
@@ -52,12 +44,12 @@ func CreateImagesCmd() *cobra.Command {
 func correctnessCheck() error {
 	// 判断是否支持相应的镜像
 	if _, ok := variables.ExistedImages[variables.UserSelectedImage]; !ok {
-		return ErrNotSupportedImage
+		return fmt.Errorf("not supported image")
 	}
 
 	// 判断是否支持相应的操作
 	if _, ok := variables.AvailableOperations[variables.UserSelectedOperation]; !ok {
-		return ErrNotSupportedOperation
+		return fmt.Errorf("not supported operation")
 	}
 
 	// 获取当前生成的镜像
@@ -68,28 +60,35 @@ func correctnessCheck() error {
 
 	// 如果是构建镜像，但是镜像已经构建，那么返回错误
 	if (variables.UserSelectedOperation == variables.OperationBuild) && (variables.ExistedImages[variables.UserSelectedImage]) {
-		return ErrImageAlreadyExists
+		return fmt.Errorf("image %s is already built", variables.UserSelectedImage)
 	}
 
 	// 如果是删除镜像，但是镜像已经被删除，那么返回错误
 	if (variables.UserSelectedOperation == variables.OperationRemove) && (!(variables.ExistedImages[variables.UserSelectedImage])) {
-		return ErrImageAlreadyDoesntExist
+		return fmt.Errorf("image %s is already removed", variables.UserSelectedImage)
 	}
+
+	// 如果是所有镜像, 那么只能是删除
+	if (variables.UserSelectedImage == variables.AllImages) && (variables.UserSelectedOperation != variables.OperationRebuild) {
+		return fmt.Errorf("only could rebuild all images")
+	}
+
 	return nil
 }
 
 // buildImage 构建镜像
-func buildImage() error {
+func buildImage(userSelectedImage string) error {
 
 	var commandStr string
 
 	// 1. 区分不同的镜像, 创建 build 命令
-	if variables.UserSelectedImage == variables.ImageNamePosition {
+	if userSelectedImage == variables.ImageNamePosition {
 		commandStr = fmt.Sprintf("build -t %s:latest -f ../../realtime_position/Dockerfile ../../realtime_position/",
-			variables.UserSelectedImage)
+			userSelectedImage)
 	} else {
 		commandStr = fmt.Sprintf("build -t %s:latest -f ../images/%s/Dockerfile ../images/%s/",
-			variables.UserSelectedImage, variables.UserSelectedImage, variables.UserSelectedImage)
+			userSelectedImage, userSelectedImage, userSelectedImage)
+		fmt.Println(commandStr)
 	}
 
 	cmd := exec.Command("docker", strings.Split(commandStr, " ")...)
@@ -99,17 +98,18 @@ func buildImage() error {
 	// 2.运行命令并检查是否有错误
 	err := cmd.Run()
 	if err != nil {
-		return ErrExecuteBuildCommand
+		return fmt.Errorf("build image %s failed: %v", userSelectedImage, err)
 	}
 
 	// 3. 如果没有错误, 输出结果
-	cmdImagesLogger.Infof("build image %s successfully", variables.UserSelectedImage)
+	cmdImagesLogger.Infof("build image %s successfully", userSelectedImage)
 	return nil
 }
 
-func removeImage() error {
+// removeImage 进行镜像的删除
+func removeImage(userSelectedImage string) error {
 	// 1. 创建命令
-	commandStr := fmt.Sprintf("rmi %s", variables.UserSelectedImage)
+	commandStr := fmt.Sprintf("rmi %s", userSelectedImage)
 	cmd := exec.Command("docker", strings.Split(commandStr, " ")...)
 	var out bytes.Buffer
 	cmd.Stdout = &out
@@ -117,35 +117,56 @@ func removeImage() error {
 	// 2. 运行命令并检查是否有错误
 	err := cmd.Run()
 	if err != nil {
-		return ErrExecuteRemoveCommand
+		return fmt.Errorf("remove image %s failed: %w", userSelectedImage, err)
 	}
 
 	// 3. 日志输出
-	cmdImagesLogger.Infof("remove image %s successfully", variables.UserSelectedImage)
+	cmdImagesLogger.Infof("remove image %s successfully", userSelectedImage)
 	return nil
 }
 
 // core 核心处理逻辑
 func core() error {
-	if variables.UserSelectedOperation == variables.OperationBuild { // 处理 build 命令
-		err := buildImage()
-		if err != nil {
-			return fmt.Errorf("build image failed: %v", err)
+	userSelectedImage := variables.UserSelectedImage
+
+	// 进行所有的镜像的重建
+	if userSelectedImage == variables.AllImages {
+		// 进行所有的镜像的删除
+		for _, image := range variables.AvailableImagesInOrder {
+			err := removeImage(image)
+			if err != nil {
+				return fmt.Errorf("remove image %s failed: %v", image, err)
+			}
 		}
-	} else if variables.UserSelectedOperation == variables.OperationRebuild { // 处理 rebuild 命令
-		err := removeImage()
-		if err != nil {
-			return fmt.Errorf("remove image failed: %v", err)
+		// 按照指定的顺序进行镜像的生成
+		for _, image := range variables.AvailableImagesInOrder {
+			err := buildImage(image)
+			if err != nil {
+				return fmt.Errorf("build image %s failed: %v", image, err)
+			}
 		}
-		err = buildImage()
-		if err != nil {
-			return fmt.Errorf("build image failed: %v", err)
+		return nil
+	} else {
+		if variables.UserSelectedOperation == variables.OperationBuild { // 处理 build 命令
+			err := buildImage(userSelectedImage)
+			if err != nil {
+				return fmt.Errorf("build image failed: %v", err)
+			}
+		} else if variables.UserSelectedOperation == variables.OperationRebuild { // 处理 rebuild 命令
+			err := removeImage(userSelectedImage)
+			if err != nil {
+				return fmt.Errorf("remove image failed: %v", err)
+			}
+			err = buildImage(userSelectedImage)
+			if err != nil {
+				return fmt.Errorf("build image failed: %v", err)
+			}
+		} else if variables.UserSelectedOperation == variables.OperationRemove { // 处理 remove 命令
+			err := removeImage(userSelectedImage)
+			if err != nil {
+				return fmt.Errorf("remove image failed: %v", err)
+			}
 		}
-	} else if variables.UserSelectedOperation == variables.OperationRemove { // 处理 remove 命令
-		err := removeImage()
-		if err != nil {
-			return fmt.Errorf("remove image failed: %v", err)
-		}
+		return nil
 	}
-	return nil
 }

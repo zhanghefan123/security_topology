@@ -38,7 +38,8 @@ type Constellation struct {
 	client                   *docker.Client       // 用来创建、停止、开启容器的客户端
 	etcdClient               *clientv3.Client     // etcd client 用于存取监听键值对
 	startTime                time.Time            // 星座的启动时间
-	SubNets                  []iplib.Net4         // 子网数量
+	Ipv4SubNets              []iplib.Net4         // ipv4 子网
+	Ipv6SubNets              []iplib.Net6         // ipv6 子网
 	Satellites               []*node.AbstractNode // 所有卫星
 	AllSatelliteLinks        []*link.AbstractLink // 所有的卫星链路
 	InterOrbitSatelliteLinks []*link.AbstractLink // 所有轨间链路

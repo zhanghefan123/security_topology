@@ -7,6 +7,7 @@ const (
 	ImageNormalSatellite    = "normal_satellite"
 	ImageNameEtcd           = "etcd_service"
 	ImageNamePosition       = "position_service"
+	AllImages               = "all_images"
 )
 
 const (
@@ -16,9 +17,10 @@ const (
 )
 
 var (
-	UserSelectedImage     = ImageNormalSatellite
-	UserSelectedOperation = OperationBuild
-	AvailableOperations   = map[string]interface{}{
+	UserSelectedImage      = ImageNormalSatellite
+	UserSelectedOperation  = OperationBuild
+	AvailableImagesInOrder = []string{ImageUbuntuWithSoftware, ImageGoEnv, ImageNormalSatellite}
+	AvailableOperations    = map[string]interface{}{
 		OperationBuild:   struct{}{},
 		OperationRebuild: struct{}{},
 		OperationRemove:  struct{}{},
@@ -30,5 +32,6 @@ var (
 		ImageNormalSatellite:    false,
 		ImageNameEtcd:           false,
 		ImageNamePosition:       false,
+		AllImages:               false,
 	}
 )

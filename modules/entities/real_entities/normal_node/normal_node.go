@@ -11,25 +11,26 @@ import (
 
 // NormalNode 基础的网络节点
 type NormalNode struct {
-	Status               types.NetworkNodeStatus           // 节点状态
-	Id                   int                               // 节点编号
-	Pid                  int                               // 对应的进程编号
-	Ifidx                int                               // 接口索引
-	IfNameToInterfaceMap map[string]*intf.NetworkInterface // 从接口索引到对应的 ip 地址的映射
-	ConnectedSubnetList  []string                          // 连接到的子网的数量
-	ContainerName        string                            // 对应的容器的名称
-	ContainerId          string                            // 容器的 ID
+	Status                  types.NetworkNodeStatus           // 节点状态
+	Id                      int                               // 节点编号
+	Pid                     int                               // 对应的进程编号
+	Ifidx                   int                               // 接口索引
+	IfNameToInterfaceMap    map[string]*intf.NetworkInterface // 从接口索引到对应的 ip 地址的映射
+	ConnectedIpv4SubnetList []string                          // 连接到的 IPV4 的子网
+	ConnectedIpv6SubnetList []string                          // 连接到的 IPV6 的子网
+	ContainerName           string                            // 对应的容器的名称
+	ContainerId             string                            // 容器的 ID
 }
 
 // NewNormalNode 创建普通系欸但
 func NewNormalNode(status types.NetworkNodeStatus, id, ifIdx int, containerName string) *NormalNode {
 	return &NormalNode{
-		Status:               status,
-		Id:                   id,
-		Ifidx:                ifIdx,
-		IfNameToInterfaceMap: make(map[string]*intf.NetworkInterface),
-		ConnectedSubnetList:  make([]string, 0),
-		ContainerName:        containerName,
+		Status:                  status,
+		Id:                      id,
+		Ifidx:                   ifIdx,
+		IfNameToInterfaceMap:    make(map[string]*intf.NetworkInterface),
+		ConnectedIpv4SubnetList: make([]string, 0),
+		ContainerName:           containerName,
 	}
 }
 
@@ -89,13 +90,22 @@ func (normalNode *NormalNode) SetVethNamespace() (err error) {
 			return fmt.Errorf("netlink.LinkSetUp(%d) failed: %w", veth, err)
 		}
 
-		// 设置 ip 地址
+		// 设置 ipv4 地址
 		ifName := veth.Attrs().Name
-		addr := normalNode.IfNameToInterfaceMap[ifName].Addr
-		ip, _ := netlink.ParseAddr(addr)
-		if err = netlink.AddrAdd(veth, ip); err != nil {
-			return fmt.Errorf("netlink.AddrAdd(%s) failed: %w", ip, err)
+		ipv4Addr := normalNode.IfNameToInterfaceMap[ifName].Ipv4Addr
+		ipv4, _ := netlink.ParseAddr(ipv4Addr)
+		if err = netlink.AddrAdd(veth, ipv4); err != nil {
+			return fmt.Errorf("netlink.AddrAdd(%s) failed: %w", ipv4, err)
 		}
+
+		// 设置 ipv6 地址
+		ipv6Addr := normalNode.IfNameToInterfaceMap[ifName].Ipv6Addr
+		ipv6, _ := netlink.ParseAddr(ipv6Addr)
+		if err = netlink.AddrAdd(veth, ipv6); err != nil {
+			fmt.Printf("netlink.AddrAdd(%s) failed: %v", ipv6, err)
+			return fmt.Errorf("netlink.AddrAdd(%s) failed: %w", ipv6, err)
+		}
+
 	}
 	return nil
 }

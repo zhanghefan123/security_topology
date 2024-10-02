@@ -6,8 +6,8 @@ import (
 	"net"
 )
 
-// GenerateSubnets 生成子网
-func GenerateSubnets(baseNetworkAddress string) (subNets []iplib.Net4, err error) {
+// GenerateIPv4Subnets 生成 Ipv4 子网
+func GenerateIPv4Subnets(baseNetworkAddress string) (subNets []iplib.Net4, err error) {
 	var baseNet *net.IPNet
 	_, baseNet, err = net.ParseCIDR(baseNetworkAddress)
 	if err != nil {
@@ -24,9 +24,33 @@ func GenerateSubnets(baseNetworkAddress string) (subNets []iplib.Net4, err error
 	return subNets, nil
 }
 
-// GenerateTwoAddrsFrom30MaskSubnet 从 30 位的子网掩码的网络中生成两个地址
-func GenerateTwoAddrsFrom30MaskSubnet(subNet iplib.Net4) (string, string) {
+// GenerateIpv6Subnets 生成 Ipv6 子网
+func GenerateIpv6Subnets(baseNetworkAddress string) (subNets []iplib.Net6, err error) {
+	var baseNet *net.IPNet
+	_, baseNet, err = net.ParseCIDR(baseNetworkAddress)
+	if err != nil {
+		return nil, fmt.Errorf("parse cidr failed")
+	}
+	baseIp := baseNet.IP
+	maskLen, _ := baseNet.Mask.Size()
+	netIpv6 := iplib.NewNet6(baseIp, maskLen, 0)
+	subNets, err = netIpv6.Subnet(127, 0)
+	if err != nil {
+		return nil, fmt.Errorf("get subnets failed %w", err)
+	}
+	return subNets, nil
+}
+
+// GenerateTwoAddrsFromIpv4Subnet 从子网中生成两个地址
+func GenerateTwoAddrsFromIpv4Subnet(subNet iplib.Net4) (string, string) {
 	firstAddr, secondAddr := subNet.FirstAddress().String(), subNet.LastAddress().String()
 	firstAddr, secondAddr = fmt.Sprintf("%s/30", firstAddr), fmt.Sprintf("%s/30", secondAddr)
+	return firstAddr, secondAddr
+}
+
+// GenerateTwoAddrsFromIpv6Subnet 从子网之中生成两个地址
+func GenerateTwoAddrsFromIpv6Subnet(subNet iplib.Net6) (string, string) {
+	firstAddr, secondAddr := subNet.FirstAddress().String(), subNet.LastAddress().String()
+	firstAddr, secondAddr = fmt.Sprintf("%s/127", firstAddr), fmt.Sprintf("%s/127", secondAddr)
 	return firstAddr, secondAddr
 }

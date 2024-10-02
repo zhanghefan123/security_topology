@@ -17,19 +17,25 @@ func (abstractNode *AbstractNode) GeneratePeerIdAndPrivateKey() (err error) {
 	if err != nil {
 		return fmt.Errorf("GetPeerIdAndPrivateKeyPath err: %w", err)
 	}
+
 	var peerIdFile *os.File
 	var privateKeyFile *os.File
 	peerIdFile, err = os.Create(peerIdPath)
-	if err != nil {
-		return fmt.Errorf("generate peer id file err: %w", err)
-	}
-	privateKeyFile, err = os.Create(privateKeyPath)
-	if err != nil {
-		return fmt.Errorf("generate private key file err: %w", err)
-	}
 	defer func() {
 		err = peerIdFile.Close()
 	}()
+	if err != nil {
+		return fmt.Errorf("generate peer id file err: %w", err)
+	}
+
+	privateKeyFile, err = os.Create(privateKeyPath)
+	defer func() {
+		err = privateKeyFile.Close()
+	}()
+	if err != nil {
+		return fmt.Errorf("generate private key file err: %w", err)
+	}
+
 	// 产生私钥匙
 	var privateKey crypto.PrivKey
 	privateKey, _, err = crypto.GenerateKeyPair(crypto.RSA, 2048)
@@ -74,7 +80,7 @@ func (abstractNode *AbstractNode) GetPeerIdAndPrivateKeyPath() (error, string, s
 	outputDir := filepath.Join(simulationDir, normalNode.ContainerName, "security")
 
 	// 创建目录
-	err = dir.Generate(simulationDir)
+	err = dir.Generate(outputDir)
 	if err != nil {
 		return fmt.Errorf("get peer id and private key path failed: %w", err), "", ""
 	}

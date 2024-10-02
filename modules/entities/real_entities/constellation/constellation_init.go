@@ -2,6 +2,7 @@ package constellation
 
 import (
 	"fmt"
+	"github.com/c-robinson/iplib/v2"
 	"reflect"
 	"strconv"
 	"zhanghefan123/security_topology/configs"
@@ -16,7 +17,7 @@ import (
 
 const (
 	GenerateSatellites            = "GenerateSatellites"            // 生成卫星
-	GenerateSubnets               = "GenerateSubnets"               // 创建子网
+	GenerateSubnets               = "GenerateIPv4Subnets"           // 创建子网
 	GenerateLinks                 = "GenerateLinks"                 // 生成链路
 	GenerateFrrConfigurationFiles = "GenerateFrrConfigurationFiles" // 生成 frr 配置
 	GeneratePeerIdAndPrivateKey   = "GeneratePeerIdAndPrivateKey"
@@ -122,12 +123,23 @@ func (c *Constellation) GenerateSubnets() error {
 		constellationLogger.Infof("already generate subnets")
 		return nil
 	}
+	var err error
+	var ipv4Subnets []iplib.Net4
+	var ipv6Subnets []iplib.Net6
 
-	subNets, err := subnet.GenerateSubnets(configs.TopConfiguration.NetworkConfig.BaseNetworkAddress)
+	// 进行 ipv4 的子网的生成
+	ipv4Subnets, err = subnet.GenerateIPv4Subnets(configs.TopConfiguration.NetworkConfig.BaseV4NetworkAddress)
 	if err != nil {
 		return fmt.Errorf("generate subnets: %w", err)
 	}
-	c.SubNets = subNets
+	c.Ipv4SubNets = ipv4Subnets
+
+	// 进行 ipv6 的子网的生成
+	ipv6Subnets, err = subnet.GenerateIpv6Subnets(configs.TopConfiguration.NetworkConfig.BaseV6NetworkAddress)
+	if err != nil {
+		return fmt.Errorf("generate subnets: %w", err)
+	}
+	c.Ipv6SubNets = ipv6Subnets
 
 	c.systemInitSteps[GenerateSubnets] = struct{}{}
 	constellationLogger.Infof("generate subnets")
@@ -168,20 +180,24 @@ func (c *Constellation) generateLinksForConsensusSatellites() {
 		if reflect.DeepEqual(sourceSat, targetSat) {
 			continue
 		} else {
-			currentLinkNums := len(c.AllSatelliteLinks)                                                         // 当前链路数量
-			linkId := currentLinkNums + 1                                                                       // 当前链路数量 + 1 -> 链路 id
-			linkType := types.NetworkLinkType_IntraOrbitSatelliteLink                                           // 链路类型
-			nodeType := types.NetworkNodeType_ConsensusSatellite                                                // 节点类型
-			subNet := c.SubNets[currentLinkNums]                                                                // 获取当前子网
-			sourceSat.ConnectedSubnetList = append(sourceSat.ConnectedSubnetList, subNet.String())              // 卫星添加子网
-			targetSat.ConnectedSubnetList = append(targetSat.ConnectedSubnetList, subNet.String())              // 卫星添加子网
-			sourceAddr, targetAddr := subnet.GenerateTwoAddrsFrom30MaskSubnet(subNet)                           // 提取第一个和第二个地址
-			sourceIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), sourceSat.Id, sourceSat.Ifidx) // 源接口名
-			targetIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), targetSat.Id, targetSat.Ifidx) // 目的接口名
-			sourceIntf := intf.NewNetworkInterface(sourceSat.Ifidx, sourceIfName, sourceAddr)                   // 创建第一个接口
-			targetIntf := intf.NewNetworkInterface(targetSat.Ifidx, targetIfName, targetAddr)                   // 创建第二个接口
-			sourceSat.IfNameToInterfaceMap[sourceIfName] = sourceIntf                                           // 设置源卫星地址
-			targetSat.IfNameToInterfaceMap[targetIfName] = targetIntf                                           // 设置目的卫星地址
+			currentLinkNums := len(c.AllSatelliteLinks)                                                           // 当前链路数量
+			linkId := currentLinkNums + 1                                                                         // 当前链路数量 + 1 -> 链路 id
+			linkType := types.NetworkLinkType_IntraOrbitSatelliteLink                                             // 链路类型
+			nodeType := types.NetworkNodeType_ConsensusSatellite                                                  // 节点类型
+			ipv4SubNet := c.Ipv4SubNets[currentLinkNums]                                                          // 获取当前ipv4 子网
+			ipv6SubNet := c.Ipv6SubNets[currentLinkNums]                                                          // 获取当前 ipv6 子网
+			sourceSat.ConnectedIpv4SubnetList = append(sourceSat.ConnectedIpv4SubnetList, ipv4SubNet.String())    // 卫星添加ipv4子网
+			targetSat.ConnectedIpv4SubnetList = append(targetSat.ConnectedIpv4SubnetList, ipv4SubNet.String())    // 卫星添加ipv4子网
+			sourceSat.ConnectedIpv6SubnetList = append(sourceSat.ConnectedIpv6SubnetList, ipv6SubNet.String())    // 卫星添加ipv6子网
+			targetSat.ConnectedIpv6SubnetList = append(targetSat.ConnectedIpv6SubnetList, ipv6SubNet.String())    // 卫星添加ipv6子网
+			sourceIpv4Addr, targetIpv4Addr := subnet.GenerateTwoAddrsFromIpv4Subnet(ipv4SubNet)                   // 提取ipv4第一个和第二个地址
+			sourceIpv6Addr, targetIpv6Addr := subnet.GenerateTwoAddrsFromIpv6Subnet(ipv6SubNet)                   // 提取ipv6第一个和第二个地址
+			sourceIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), sourceSat.Id, sourceSat.Ifidx)   // 源接口名
+			targetIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), targetSat.Id, targetSat.Ifidx)   // 目的接口名
+			sourceIntf := intf.NewNetworkInterface(sourceSat.Ifidx, sourceIfName, sourceIpv4Addr, sourceIpv6Addr) // 创建第一个接口
+			targetIntf := intf.NewNetworkInterface(targetSat.Ifidx, targetIfName, targetIpv4Addr, targetIpv6Addr) // 创建第二个接口
+			sourceSat.IfNameToInterfaceMap[sourceIfName] = sourceIntf                                             // 设置源卫星地址
+			targetSat.IfNameToInterfaceMap[targetIfName] = targetIntf                                             // 设置目的卫星地址
 			intraOrbitLink := link.NewAbstractLink(linkType, linkId,
 				nodeType, nodeType,
 				sourceSat.Id, targetSat.Id,
@@ -199,20 +215,24 @@ func (c *Constellation) generateLinksForConsensusSatellites() {
 			targetIndexInOrbit = sourceSat.IndexInOrbit
 			targetSatId = targetOrbitId*c.SatellitePerOrbit + targetIndexInOrbit
 			targetSat, _ = c.Satellites[targetSatId].ActualNode.(*satellite.ConsensusSatellite)
-			currentLinkNums := len(c.AllSatelliteLinks)                                                         // 当前链路数量
-			linkId := currentLinkNums + 1                                                                       // 当前链路数量 + 1 -> 链路 id
-			linkType := types.NetworkLinkType_InterOrbitSatelliteLink                                           // 链路类型
-			nodeType := types.NetworkNodeType_ConsensusSatellite                                                // 节点类型
-			subNet := c.SubNets[currentLinkNums]                                                                // 获取当前子网
-			sourceSat.ConnectedSubnetList = append(sourceSat.ConnectedSubnetList, subNet.String())              // 源卫星添加子网
-			targetSat.ConnectedSubnetList = append(targetSat.ConnectedSubnetList, subNet.String())              // 目的卫星添加子网
-			sourceAddr, targetAddr := subnet.GenerateTwoAddrsFrom30MaskSubnet(subNet)                           // 提取第一个和第二个地址
-			sourceIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), sourceSat.Id, sourceSat.Ifidx) // 源接口名
-			targetIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), targetSat.Id, targetSat.Ifidx) // 目的接口名
-			sourceIntf := intf.NewNetworkInterface(sourceSat.Ifidx, sourceIfName, sourceAddr)                   // 创建第一个接口
-			targetIntf := intf.NewNetworkInterface(targetSat.Ifidx, targetIfName, targetAddr)                   // 创建第二个接口
-			sourceSat.IfNameToInterfaceMap[sourceIfName] = sourceIntf                                           // 设置源卫星地址
-			targetSat.IfNameToInterfaceMap[targetIfName] = targetIntf                                           // 设置目的卫星地址
+			currentLinkNums := len(c.AllSatelliteLinks)                                                           // 当前链路数量
+			linkId := currentLinkNums + 1                                                                         // 当前链路数量 + 1 -> 链路 id
+			linkType := types.NetworkLinkType_InterOrbitSatelliteLink                                             // 链路类型
+			nodeType := types.NetworkNodeType_ConsensusSatellite                                                  // 节点类型
+			ipv4SubNet := c.Ipv4SubNets[currentLinkNums]                                                          // 获取当前ipv4 子网
+			ipv6SubNet := c.Ipv6SubNets[currentLinkNums]                                                          // 获取当前 ipv6 子网
+			sourceSat.ConnectedIpv4SubnetList = append(sourceSat.ConnectedIpv4SubnetList, ipv4SubNet.String())    // 卫星添加ipv4子网
+			targetSat.ConnectedIpv4SubnetList = append(targetSat.ConnectedIpv4SubnetList, ipv4SubNet.String())    // 卫星添加ipv4子网
+			sourceSat.ConnectedIpv6SubnetList = append(sourceSat.ConnectedIpv6SubnetList, ipv6SubNet.String())    // 卫星添加ipv6子网
+			targetSat.ConnectedIpv6SubnetList = append(targetSat.ConnectedIpv6SubnetList, ipv6SubNet.String())    // 卫星添加ipv6子网
+			sourceIpv4Addr, targetIpv4Addr := subnet.GenerateTwoAddrsFromIpv4Subnet(ipv4SubNet)                   // 提取ipv4第一个和第二个地址
+			sourceIpv6Addr, targetIpv6Addr := subnet.GenerateTwoAddrsFromIpv6Subnet(ipv6SubNet)                   // 提取ipv6第一个和第二个地址
+			sourceIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), sourceSat.Id, sourceSat.Ifidx)   // 源接口名
+			targetIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), targetSat.Id, targetSat.Ifidx)   // 目的接口名
+			sourceIntf := intf.NewNetworkInterface(sourceSat.Ifidx, sourceIfName, sourceIpv4Addr, sourceIpv6Addr) // 创建第一个接口
+			targetIntf := intf.NewNetworkInterface(targetSat.Ifidx, targetIfName, targetIpv4Addr, targetIpv6Addr) // 创建第二个接口
+			sourceSat.IfNameToInterfaceMap[sourceIfName] = sourceIntf                                             // 设置源卫星地址
+			targetSat.IfNameToInterfaceMap[targetIfName] = targetIntf                                             // 设置目的卫星地址
 			interOrbitLink := link.NewAbstractLink(linkType, linkId,
 				nodeType, nodeType,
 				sourceSat.Id, targetSat.Id,
@@ -241,20 +261,24 @@ func (c *Constellation) generateLinksForNormalSatellite() {
 		if reflect.DeepEqual(sourceSat, targetSat) {
 			continue
 		} else {
-			currentLinkNums := len(c.AllSatelliteLinks)                                                         // 当前链路数量
-			linkId := currentLinkNums + 1                                                                       // 当前链路数量 + 1 -> 链路 id
-			linkType := types.NetworkLinkType_IntraOrbitSatelliteLink                                           // 链路类型
-			nodeType := types.NetworkNodeType_NormalSatellite                                                   // 节点类型
-			subNet := c.SubNets[currentLinkNums]                                                                // 获取当前子网
-			sourceSat.ConnectedSubnetList = append(sourceSat.ConnectedSubnetList, subNet.String())              // 卫星添加子网
-			targetSat.ConnectedSubnetList = append(targetSat.ConnectedSubnetList, subNet.String())              // 卫星添加子网
-			sourceAddr, targetAddr := subnet.GenerateTwoAddrsFrom30MaskSubnet(subNet)                           // 提取第一个和第二个地址
-			sourceIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), sourceSat.Id, sourceSat.Ifidx) // 源接口名
-			targetIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), targetSat.Id, targetSat.Ifidx) // 目的接口名
-			sourceIntf := intf.NewNetworkInterface(sourceSat.Ifidx, sourceIfName, sourceAddr)                   // 创建第一个接口
-			targetIntf := intf.NewNetworkInterface(targetSat.Ifidx, targetIfName, targetAddr)                   // 创建第二个接口
-			sourceSat.IfNameToInterfaceMap[sourceIfName] = sourceIntf                                           // 设置源卫星地址
-			targetSat.IfNameToInterfaceMap[targetIfName] = targetIntf                                           // 设置目的卫星地址
+			currentLinkNums := len(c.AllSatelliteLinks)                                                           // 当前链路数量
+			linkId := currentLinkNums + 1                                                                         // 当前链路数量 + 1 -> 链路 id
+			linkType := types.NetworkLinkType_IntraOrbitSatelliteLink                                             // 链路类型
+			nodeType := types.NetworkNodeType_NormalSatellite                                                     // 节点类型
+			ipv4SubNet := c.Ipv4SubNets[currentLinkNums]                                                          // 获取当前ipv4 子网
+			ipv6SubNet := c.Ipv6SubNets[currentLinkNums]                                                          // 获取当前 ipv6 子网
+			sourceSat.ConnectedIpv4SubnetList = append(sourceSat.ConnectedIpv4SubnetList, ipv4SubNet.String())    // 卫星添加ipv4子网
+			targetSat.ConnectedIpv4SubnetList = append(targetSat.ConnectedIpv4SubnetList, ipv4SubNet.String())    // 卫星添加ipv4子网
+			sourceSat.ConnectedIpv6SubnetList = append(sourceSat.ConnectedIpv6SubnetList, ipv6SubNet.String())    // 卫星添加ipv6子网
+			targetSat.ConnectedIpv6SubnetList = append(targetSat.ConnectedIpv6SubnetList, ipv6SubNet.String())    // 卫星添加ipv6子网
+			sourceIpv4Addr, targetIpv4Addr := subnet.GenerateTwoAddrsFromIpv4Subnet(ipv4SubNet)                   // 提取ipv4第一个和第二个地址
+			sourceIpv6Addr, targetIpv6Addr := subnet.GenerateTwoAddrsFromIpv6Subnet(ipv6SubNet)                   // 提取ipv6第一个和第二个地址
+			sourceIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), sourceSat.Id, sourceSat.Ifidx)   // 源接口名
+			targetIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), targetSat.Id, targetSat.Ifidx)   // 目的接口名
+			sourceIntf := intf.NewNetworkInterface(sourceSat.Ifidx, sourceIfName, sourceIpv4Addr, sourceIpv6Addr) // 创建第一个接口
+			targetIntf := intf.NewNetworkInterface(targetSat.Ifidx, targetIfName, targetIpv4Addr, targetIpv6Addr) // 创建第二个接口
+			sourceSat.IfNameToInterfaceMap[sourceIfName] = sourceIntf                                             // 设置源卫星地址
+			targetSat.IfNameToInterfaceMap[targetIfName] = targetIntf                                             // 设置目的卫星地址
 			intraOrbitLink := link.NewAbstractLink(linkType, linkId,
 				nodeType, nodeType,
 				sourceSat.Id, targetSat.Id,
@@ -272,20 +296,24 @@ func (c *Constellation) generateLinksForNormalSatellite() {
 			targetIndexInOrbit = sourceSat.IndexInOrbit
 			targetSatId = targetOrbitId*c.SatellitePerOrbit + targetIndexInOrbit
 			targetSat, _ = c.Satellites[targetSatId].ActualNode.(*satellite.NormalSatellite)
-			currentLinkNums := len(c.AllSatelliteLinks)                                                         // 当前链路数量
-			linkId := currentLinkNums + 1                                                                       // 当前链路数量 + 1 -> 链路 id
-			linkType := types.NetworkLinkType_InterOrbitSatelliteLink                                           // 链路类型
-			nodeType := types.NetworkNodeType_ConsensusSatellite                                                // 节点类型
-			subNet := c.SubNets[currentLinkNums]                                                                // 获取当前子网
-			sourceSat.ConnectedSubnetList = append(sourceSat.ConnectedSubnetList, subNet.String())              // 源卫星添加子网
-			targetSat.ConnectedSubnetList = append(targetSat.ConnectedSubnetList, subNet.String())              // 目的卫星添加子网
-			sourceAddr, targetAddr := subnet.GenerateTwoAddrsFrom30MaskSubnet(subNet)                           // 提取第一个和第二个地址
-			sourceIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), sourceSat.Id, sourceSat.Ifidx) // 源接口名
-			targetIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), targetSat.Id, targetSat.Ifidx) // 目的接口名
-			sourceIntf := intf.NewNetworkInterface(sourceSat.Ifidx, sourceIfName, sourceAddr)                   // 创建第一个接口
-			targetIntf := intf.NewNetworkInterface(targetSat.Ifidx, targetIfName, targetAddr)                   // 创建第二个接口
-			sourceSat.IfNameToInterfaceMap[sourceIfName] = sourceIntf                                           // 设置源卫星地址
-			targetSat.IfNameToInterfaceMap[targetIfName] = targetIntf                                           // 设置目的卫星地址
+			currentLinkNums := len(c.AllSatelliteLinks)                                                           // 当前链路数量
+			linkId := currentLinkNums + 1                                                                         // 当前链路数量 + 1 -> 链路 id
+			linkType := types.NetworkLinkType_InterOrbitSatelliteLink                                             // 链路类型
+			nodeType := types.NetworkNodeType_ConsensusSatellite                                                  // 节点类型
+			ipv4SubNet := c.Ipv4SubNets[currentLinkNums]                                                          // 获取当前ipv4 子网
+			ipv6SubNet := c.Ipv6SubNets[currentLinkNums]                                                          // 获取当前 ipv6 子网
+			sourceSat.ConnectedIpv4SubnetList = append(sourceSat.ConnectedIpv4SubnetList, ipv4SubNet.String())    // 卫星添加ipv4子网
+			targetSat.ConnectedIpv4SubnetList = append(targetSat.ConnectedIpv4SubnetList, ipv4SubNet.String())    // 卫星添加ipv4子网
+			sourceSat.ConnectedIpv6SubnetList = append(sourceSat.ConnectedIpv6SubnetList, ipv6SubNet.String())    // 卫星添加ipv6子网
+			targetSat.ConnectedIpv6SubnetList = append(targetSat.ConnectedIpv6SubnetList, ipv6SubNet.String())    // 卫星添加ipv6子网
+			sourceIpv4Addr, targetIpv4Addr := subnet.GenerateTwoAddrsFromIpv4Subnet(ipv4SubNet)                   // 提取ipv4第一个和第二个地址
+			sourceIpv6Addr, targetIpv6Addr := subnet.GenerateTwoAddrsFromIpv6Subnet(ipv6SubNet)                   // 提取ipv6第一个和第二个地址
+			sourceIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), sourceSat.Id, sourceSat.Ifidx)   // 源接口名
+			targetIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), targetSat.Id, targetSat.Ifidx)   // 目的接口名
+			sourceIntf := intf.NewNetworkInterface(sourceSat.Ifidx, sourceIfName, sourceIpv4Addr, sourceIpv6Addr) // 创建第一个接口
+			targetIntf := intf.NewNetworkInterface(targetSat.Ifidx, targetIfName, targetIpv4Addr, targetIpv6Addr) // 创建第二个接口
+			sourceSat.IfNameToInterfaceMap[sourceIfName] = sourceIntf                                             // 设置源卫星地址
+			targetSat.IfNameToInterfaceMap[targetIfName] = targetIntf                                             // 设置目的卫星地址
 			interOrbitLink := link.NewAbstractLink(linkType, linkId,
 				nodeType, nodeType,
 				sourceSat.Id, targetSat.Id,
@@ -308,7 +336,10 @@ func (c *Constellation) GenerateFrrConfigurationFiles() error {
 	}
 
 	for _, sat := range c.Satellites {
-		err := sat.GenerateFrrConfig()
+		// 生成 ospfv4 配置
+		//err := sat.GenerateOspfV4FrrConfig()
+		// 生成 ospfv6 配置
+		err := sat.GenerateOspfV6FrrConfig()
 		if err != nil {
 			return fmt.Errorf("generate frr configuration files failed: %w", err)
 		}

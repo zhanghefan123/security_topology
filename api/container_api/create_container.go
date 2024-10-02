@@ -183,6 +183,26 @@ func CreateNormalSatellite(client *docker.Client, satellite *satellite.NormalSat
 		return fmt.Errorf("normal satellite not in logic status cannot create")
 	}
 
+	// 2. 创建 sysctls
+	sysctls := map[string]string{
+		// ipv4 的相关网络配置
+		"net.ipv4.ip_forward":          "1",
+		"net.ipv4.conf.all.forwarding": "1",
+
+		// ipv6 的相关网络配置
+		"net.ipv6.conf.default.disable_ipv6":     "0",
+		"net.ipv6.conf.all.disable_ipv6":         "0",
+		"net.ipv6.conf.all.forwarding":           "1",
+		"net.ipv6.conf.default.seg6_enabled":     "1",
+		"net.ipv6.conf.eth0.seg6_enabled":        "1",
+		"net.ipv6.conf.lo.seg6_enabled":          "1",
+		"net.ipv6.conf.all.seg6_enabled":         "1",
+		"net.ipv6.conf.all.keep_addr_on_down":    "1",
+		"net.ipv6.route.skip_notify_on_dev_down": "1",
+		"net.ipv4.conf.all.rp_filter":            "0",
+		"net.ipv6.seg6_flowlabel":                "1",
+	}
+
 	// 3. 创建容器
 	//容器数据卷映射
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
@@ -210,6 +230,7 @@ func CreateNormalSatellite(client *docker.Client, satellite *satellite.NormalSat
 		Binds:      volumes,
 		CapAdd:     []string{"NET_ADMIN"},
 		Privileged: true,
+		Sysctls:    sysctls,
 	}
 
 	// 7. 进行容器的创建
@@ -238,6 +259,26 @@ func CreateConsensusSatellite(client *docker.Client, satellite *satellite.Consen
 	// 1. 检查状态
 	if satellite.Status != types.NetworkNodeStatus_Logic {
 		return fmt.Errorf("consensus satellite not in logic status cannot create")
+	}
+
+	// 2. 创建 sysctls
+	sysctls := map[string]string{
+		// ipv4 的相关网络配置
+		"net.ipv4.ip_forward":          "1",
+		"net.ipv4.conf.all.forwarding": "1",
+
+		// ipv6 的相关网络配置
+		"net.ipv6.conf.default.disable_ipv6":     "0",
+		"net.ipv6.conf.all.disable_ipv6":         "0",
+		"net.ipv6.conf.all.forwarding":           "1",
+		"net.ipv6.conf.default.seg6_enabled":     "1",
+		"net.ipv6.conf.eth0.seg6_enabled":        "1",
+		"net.ipv6.conf.lo.seg6_enabled":          "1",
+		"net.ipv6.conf.all.seg6_enabled":         "1",
+		"net.ipv6.conf.all.keep_addr_on_down":    "1",
+		"net.ipv6.route.skip_notify_on_dev_down": "1",
+		"net.ipv4.conf.all.rp_filter":            "0",
+		"net.ipv6.seg6_flowlabel":                "1",
 	}
 
 	// 3. 创建容器
@@ -291,6 +332,7 @@ func CreateConsensusSatellite(client *docker.Client, satellite *satellite.Consen
 		Binds:      volumes,
 		CapAdd:     []string{"NET_ADMIN"},
 		Privileged: true,
+		Sysctls:    sysctls,
 	}
 
 	// 进行容器的创建

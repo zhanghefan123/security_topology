@@ -1,11 +1,9 @@
 package constellation
 
 import (
-	"bytes"
-	"errors"
 	"fmt"
 	"github.com/vishvananda/netlink"
-	"os/exec"
+	"os"
 	"path/filepath"
 	"time"
 	"zhanghefan123/security_topology/api/container_api"
@@ -23,10 +21,6 @@ const (
 	RemoveEtcdService         = "RemoveEtcdService"
 	RemovePositionService     = "RemovePositionService"
 	StopLocalServices         = "StopLocalServices"
-)
-
-var (
-	ErrRemoveConfigurationFile = errors.New("RemoveConfigurationFile")
 )
 
 type RemoveFunction func() error
@@ -145,13 +139,11 @@ func (c *Constellation) RemoveConfigurationFiles() error {
 	if !(filepath.IsAbs(ConfigGeneratePath)) {
 		configs.TopConfiguration.PathConfig.ConfigGeneratePath, _ = filepath.Abs(ConfigGeneratePath)
 	}
-	cmd := exec.Command("rm", "-rf", configs.TopConfiguration.PathConfig.ConfigGeneratePath+"/*")
-	var out bytes.Buffer
-	cmd.Stdout = &out
 
-	err := cmd.Run()
+	// 不要通过命令行 rm -rf 的方法进行删除
+	err := os.RemoveAll(ConfigGeneratePath)
 	if err != nil {
-		return ErrRemoveConfigurationFile
+		return fmt.Errorf("execute remove configuration files failed")
 	}
 
 	c.systemStopSteps[RemoveConfigurationFiles] = struct{}{}

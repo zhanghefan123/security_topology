@@ -9,56 +9,58 @@ import (
 )
 
 const (
-	FrrStartInfo = `frr version 7.2.1
+	FrrV6StartInfo = `frr version 9.1.0
 frr defaults traditional
 hostname %s
 log syslog informational
-no ipv6 forwarding
 service integrated-vtysh-config
 !
-router ospf
-   redistribute connected
+router ospf6
+	ospf6 router-id %d.%d.%d.%d
+ 	redistribute connected
+	area 0.0.0.0 range ::/0
+exit
+!
+`
+	InterfaceV6Command = `interface %s
+	ipv6 ospf6 area 0.0.0.0
+!
 `
 
-	InterfaceCommand = `interface %s
-   ip ospf network point-to-point
-   ip ospf hello-interval 5
-   ip ospf dead-interval 20
-   ip ospf retransmit-interval 5`
-
-	FrrEndInfo = `!
+	FrrEndV6Info = `
 line vty
 !
 `
 )
 
-// GenerateFrrConfig 进行 frr 配置文件的生成
-func (abstractNode *AbstractNode) GenerateFrrConfig() error {
+// GenerateOspfV6FrrConfig 进行 frr 配置文件的生成
+func (abstractNode *AbstractNode) GenerateOspfV6FrrConfig() error {
 	finalConfigStr := ""
 
 	normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
 	if err != nil {
-		return fmt.Errorf("generate frr config error: %w", err)
+		return fmt.Errorf("generate ospfv6 frr config error: %w", err)
 	}
 
-	frrStartInfo := fmt.Sprintf(FrrStartInfo, normalNode.ContainerName)
+	frrStartInfo := fmt.Sprintf(FrrV6StartInfo, normalNode.ContainerName, normalNode.Id, normalNode.Id,
+		normalNode.Id, normalNode.Id)
 
 	finalConfigStr += frrStartInfo
 
-	// 遍历所有连接的子网
-	area := "0.0.0.0"
-	for _, subNet := range normalNode.ConnectedSubnetList {
-		finalConfigStr += fmt.Sprintf("\t network %s area %s\n", subNet, area)
-	}
+	// 遍历所有的子网
+	//area := "0.0.0.0"
+	//for _, subnet := range normalNode.ConnectedIpv6SubnetList {
+	//	finalConfigStr += fmt.Sprintf("\t network %s area %s\n", subnet, area)
+	//}
 
 	// 遍历所有的接口
 	for _, intf := range normalNode.IfNameToInterfaceMap {
-		interfaceCommand := fmt.Sprintf(InterfaceCommand, intf.IfName)
-		finalConfigStr += interfaceCommand + "\n"
+		interfaceCommand := fmt.Sprintf(InterfaceV6Command, intf.IfName)
+		finalConfigStr += interfaceCommand
 	}
 
 	// 添加尾部
-	finalConfigStr += FrrEndInfo
+	finalConfigStr += FrrEndV6Info
 
 	// 获取路径
 	// /simulation/containerName/route
@@ -68,7 +70,7 @@ func (abstractNode *AbstractNode) GenerateFrrConfig() error {
 	// 进行路径的创建
 	err = dir.Generate(outputDir)
 	if err != nil {
-		return fmt.Errorf("GenerateFrrConfig err: %s", err)
+		return fmt.Errorf("GenerateOspfV6FrrConfig err: %s", err)
 	}
 
 	var f *os.File
