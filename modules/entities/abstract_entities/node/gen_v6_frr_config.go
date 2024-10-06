@@ -47,12 +47,6 @@ func (abstractNode *AbstractNode) GenerateOspfV6FrrConfig() error {
 
 	finalConfigStr += frrStartInfo
 
-	// 遍历所有的子网
-	//area := "0.0.0.0"
-	//for _, subnet := range normalNode.ConnectedIpv6SubnetList {
-	//	finalConfigStr += fmt.Sprintf("\t network %s area %s\n", subnet, area)
-	//}
-
 	// 遍历所有的接口
 	for _, intf := range normalNode.IfNameToInterfaceMap {
 		interfaceCommand := fmt.Sprintf(InterfaceV6Command, intf.IfName)

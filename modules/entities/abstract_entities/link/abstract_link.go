@@ -7,6 +7,7 @@ import (
 	"github.com/vishvananda/netlink"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/intf"
+	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/types"
 	"zhanghefan123/security_topology/modules/utils/protobuf"
 	"zhanghefan123/security_topology/services/position/protobuf/link"
@@ -21,15 +22,20 @@ type AbstractLink struct {
 	TargetNodeId    int                    `json:"target_node_id"` // 目的节点 id
 	SourceInterface *intf.NetworkInterface `json:"-"`              // 源接口
 	TargetInterface *intf.NetworkInterface `json:"-"`              // 目的接口
-	SourceNode      interface{}            `json:"-"`              // 源节点
-	TargetNode      interface{}            `json:"-"`              // 目的节点
+	SourceNode      *node.AbstractNode     `json:"-"`              // 源节点
+	TargetNode      *node.AbstractNode     `json:"-"`              // 目的节点
 }
 
 func NewAbstractLink(typ types.NetworkLinkType, id int,
 	sourceNodeType, targetNodeType types.NetworkNodeType,
 	sourceNodeId, targetNodeId int,
 	sourceIntf, targetIntf *intf.NetworkInterface,
-	sourceNode, targetNode interface{}) *AbstractLink {
+	sourceNode, targetNode *node.AbstractNode) *AbstractLink {
+
+	// 进行星座拓扑的边的添加 (注意这是有向图, 需要进行双向的链路的添加)
+	configs.ConstellationGraph.SetEdge(configs.ConstellationGraph.NewEdge(sourceNode, targetNode))
+	configs.ConstellationGraph.SetEdge(configs.ConstellationGraph.NewEdge(targetNode, sourceNode))
+
 	return &AbstractLink{
 		Type:            typ,
 		Id:              id,

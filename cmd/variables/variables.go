@@ -17,10 +17,10 @@ const (
 )
 
 var (
-	UserSelectedImage      = ImageNormalSatellite
-	UserSelectedOperation  = OperationBuild
-	AvailableImagesInOrder = []string{ImageUbuntuWithSoftware, ImageGoEnv, ImageNormalSatellite}
-	AvailableOperations    = map[string]interface{}{
+	UserSelectedImage     = ImageNormalSatellite
+	UserSelectedOperation = OperationBuild
+	ImagesInBuildOrder    = []string{ImageUbuntuWithSoftware, ImageGoEnv, ImageNormalSatellite}
+	AvailableOperations   = map[string]interface{}{
 		OperationBuild:   struct{}{},
 		OperationRebuild: struct{}{},
 		OperationRemove:  struct{}{},

@@ -207,6 +207,7 @@ func CreateNormalSatellite(client *docker.Client, satellite *satellite.NormalSat
 	//容器数据卷映射
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	nodeDir := filepath.Join(simulationDir, satellite.ContainerName)
+	enableFrr := configs.TopConfiguration.NetworkConfig.EnableFrr
 	volumes := []string{
 		fmt.Sprintf("%s:%s", nodeDir, fmt.Sprintf("/configuration/%s", satellite.ContainerName)),
 	}
@@ -215,6 +216,7 @@ func CreateNormalSatellite(client *docker.Client, satellite *satellite.NormalSat
 	envs := []string{
 		fmt.Sprintf("%s=%d", "NODE_ID", satellite.Id),
 		fmt.Sprintf("%s=%s", "CONTAINER_NAME", satellite.ContainerName),
+		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
 	}
 
 	// 5. containerConfig
@@ -285,13 +287,17 @@ func CreateConsensusSatellite(client *docker.Client, satellite *satellite.Consen
 	// 容器数据卷映射
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	nodeDir := filepath.Join(simulationDir, satellite.ContainerName)
+	enableFrr := configs.TopConfiguration.NetworkConfig.EnableFrr
+
 	volumes := []string{
 		fmt.Sprintf("%s:%s", nodeDir, fmt.Sprintf("/configuration/%s", satellite.ContainerName)),
 	}
 
-	// 环境变量
+	// 4. 环境变量
 	envs := []string{
 		fmt.Sprintf("%s=%d", "NODE_ID", satellite.Id),
+		fmt.Sprintf("%s=%s", "CONTAINER_NAME", satellite.ContainerName),
+		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
 	}
 
 	// 暴露的端口

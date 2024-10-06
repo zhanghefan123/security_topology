@@ -26,16 +26,21 @@ func CopyFrrConfigurationFile() {
 
 func StartFrr() {
 	cmd := exec.Command("service", "frr", "start")
-	var out bytes.Buffer
-	cmd.Stdout = &out
-
-	err := cmd.Run()
+	output, err := cmd.CombinedOutput()
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println(string(output))
 }
 
 func Start() {
-	CopyFrrConfigurationFile()
-	StartFrr()
+	enableFrr := os.Getenv("ENABLE_FRR")
+	if enableFrr == "true" {
+		fmt.Println("start frr")
+		CopyFrrConfigurationFile()
+		StartFrr()
+	} else {
+		fmt.Println("not start frr")
+	}
+
 }

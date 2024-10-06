@@ -132,14 +132,17 @@ func core() error {
 	// 进行所有的镜像的重建
 	if userSelectedImage == variables.AllImages {
 		// 进行所有的镜像的删除
-		for _, image := range variables.AvailableImagesInOrder {
-			err := removeImage(image)
-			if err != nil {
-				return fmt.Errorf("remove image %s failed: %v", image, err)
+		for _, image := range variables.ImagesInBuildOrder {
+			// 判断这些镜像是否存在
+			if exist, ok := variables.ExistedImages[image]; ok && exist {
+				err := removeImage(image)
+				if err != nil {
+					return fmt.Errorf("remove image %s failed: %v", image, err)
+				}
 			}
 		}
 		// 按照指定的顺序进行镜像的生成
-		for _, image := range variables.AvailableImagesInOrder {
+		for _, image := range variables.ImagesInBuildOrder {
 			err := buildImage(image)
 			if err != nil {
 				return fmt.Errorf("build image %s failed: %v", image, err)

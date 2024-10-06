@@ -33,17 +33,18 @@ type SatelliteParameters struct {
 
 // Constellation 星座
 type Constellation struct {
-	*Parameters                                   // 星座基本参数
-	*SatelliteParameters                          // 卫星基本参数
-	client                   *docker.Client       // 用来创建、停止、开启容器的客户端
-	etcdClient               *clientv3.Client     // etcd client 用于存取监听键值对
-	startTime                time.Time            // 星座的启动时间
-	Ipv4SubNets              []iplib.Net4         // ipv4 子网
-	Ipv6SubNets              []iplib.Net6         // ipv6 子网
-	Satellites               []*node.AbstractNode // 所有卫星
-	AllSatelliteLinks        []*link.AbstractLink // 所有的卫星链路
-	InterOrbitSatelliteLinks []*link.AbstractLink // 所有轨间链路
-	IntraOrbitSatelliteLinks []*link.AbstractLink // 所有轨内链路
+	*Parameters                                                       // 星座基本参数
+	*SatelliteParameters                                              // 卫星基本参数
+	client                   *docker.Client                           // 用来创建、停止、开启容器的客户端
+	etcdClient               *clientv3.Client                         // etcd client 用于存取监听键值对
+	startTime                time.Time                                // 星座的启动时间
+	Ipv4SubNets              []iplib.Net4                             // ipv4 子网
+	Ipv6SubNets              []iplib.Net6                             // ipv6 子网
+	Satellites               []*node.AbstractNode                     // 所有卫星
+	AllSatelliteLinks        []*link.AbstractLink                     // 所有的卫星链路
+	AllSatelliteLinksMap     map[string]map[string]*link.AbstractLink // map[source][target]*link.AbstractLink // 创建链路映射
+	InterOrbitSatelliteLinks []*link.AbstractLink                     // 所有轨间链路
+	IntraOrbitSatelliteLinks []*link.AbstractLink                     // 所有轨内链路
 
 	systemInitSteps  map[string]struct{} // 系统初始化步骤
 	systemStartSteps map[string]struct{} // 系统启动步骤
@@ -79,6 +80,7 @@ func NewConstellation(client *docker.Client, etcdClient *clientv3.Client, startT
 		systemInitSteps:          make(map[string]struct{}),
 		systemStartSteps:         make(map[string]struct{}),
 		systemStopSteps:          make(map[string]struct{}),
+		AllSatelliteLinksMap:     make(map[string]map[string]*link.AbstractLink),
 	}
 	constellationLogger.Infof("create new constellation")
 	return constellation
