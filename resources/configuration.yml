@@ -1,5 +1,5 @@
 network_config:
-  local_network_address: 192.168.112.131
+  local_network_address: 192.168.112.130
   base_v4_network_address: 192.168.0.0/16
   base_v6_network_address: 2001:db8:1234:5678::/112
   enable_frr: false
@@ -23,6 +23,7 @@ path_config:
   frr_path:
     frr_host_path: ../simulation/frr
     frr_container_path: /configuration/frr
+  real_time_position_dir: srv6_position
 
 services_config:
   etcd_config:

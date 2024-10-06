@@ -6,9 +6,10 @@ import (
 )
 
 type PathConfig struct {
-	ResourcesPath      string  `mapstructure:"resources_path"`
-	ConfigGeneratePath string  `mapstructure:"config_generate_path"`
-	FrrPath            FrrPath `mapstructure:"frr_path"`
+	ResourcesPath       string  `mapstructure:"resources_path"`
+	ConfigGeneratePath  string  `mapstructure:"config_generate_path"`
+	FrrPath             FrrPath `mapstructure:"frr_path"`
+	RealTimePositionDir string  `mapstructure:"real_time_position_dir"`
 }
 
 // ConvertToAbsPath 将可能的相对路径全部转换为绝对路径

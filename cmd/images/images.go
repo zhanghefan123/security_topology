@@ -8,6 +8,7 @@ import (
 	"strings"
 	"zhanghefan123/security_topology/cmd/tools"
 	"zhanghefan123/security_topology/cmd/variables"
+	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/logger"
 )
 
@@ -81,10 +82,13 @@ func buildImage(userSelectedImage string) error {
 
 	var commandStr string
 
+	realTimePositionDir := configs.TopConfiguration.PathConfig.RealTimePositionDir
+
 	// 1. 区分不同的镜像, 创建 build 命令
 	if userSelectedImage == variables.ImageNamePosition {
-		commandStr = fmt.Sprintf("build -t %s:latest -f ../../realtime_position/Dockerfile ../../realtime_position/",
-			userSelectedImage)
+		commandStr = fmt.Sprintf("build -t %s:latest -f ../../%s/Dockerfile ../../%s/",
+			userSelectedImage, realTimePositionDir, realTimePositionDir)
+		fmt.Println(commandStr)
 	} else {
 		commandStr = fmt.Sprintf("build -t %s:latest -f ../images/%s/Dockerfile ../images/%s/",
 			userSelectedImage, userSelectedImage, userSelectedImage)
