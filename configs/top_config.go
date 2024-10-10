@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"zhanghefan123/security_topology/configs/apps"
 	"zhanghefan123/security_topology/configs/consensus"
 	"zhanghefan123/security_topology/configs/constellation"
 	"zhanghefan123/security_topology/configs/network"
@@ -29,6 +30,7 @@ type TopConfig struct {
 	ConstellationConfig constellation.ConstellationConfig `mapstructure:"constellation_config"`
 	PathConfig          path.PathConfig                   `mapstructure:"path_config"`
 	ServicesConfig      services.ServicesConfig           `mapstructure:"services_config"`
+	AppsConfig          apps.AppsConfig                   `mapstructure:"apps_config"`
 }
 
 func NewDefaultTopConfig() *TopConfig {

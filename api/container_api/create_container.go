@@ -203,30 +203,33 @@ func CreateNormalSatellite(client *docker.Client, satellite *satellite.NormalSat
 		"net.ipv6.seg6_flowlabel":                "1",
 	}
 
-	// 3. 创建容器
-	//容器数据卷映射
+	// 3. 获取配置
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	nodeDir := filepath.Join(simulationDir, satellite.ContainerName)
 	enableFrr := configs.TopConfiguration.NetworkConfig.EnableFrr
+	ipv6ServerPort := configs.TopConfiguration.AppsConfig.IPv6Config.ServerPort
+
+	// 4. 创建容器卷映射
 	volumes := []string{
 		fmt.Sprintf("%s:%s", nodeDir, fmt.Sprintf("/configuration/%s", satellite.ContainerName)),
 	}
 
-	// 4. 环境变量
+	// 5. 配置环境变量
 	envs := []string{
 		fmt.Sprintf("%s=%d", "NODE_ID", satellite.Id),
 		fmt.Sprintf("%s=%s", "CONTAINER_NAME", satellite.ContainerName),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
+		fmt.Sprintf("%s=%d", "IPV6_SERVER_PORT", ipv6ServerPort),
 	}
 
-	// 5. containerConfig
+	// 6. containerConfig
 	containerConfig := &container.Config{
 		Image: satellite.ImageName,
 		Tty:   true,
 		Env:   envs,
 	}
 
-	// 6. hostConfig
+	// 7. hostConfig
 	hostConfig := &container.HostConfig{
 		// 容器数据卷映射
 		Binds:      volumes,
@@ -235,7 +238,7 @@ func CreateNormalSatellite(client *docker.Client, satellite *satellite.NormalSat
 		Sysctls:    sysctls,
 	}
 
-	// 7. 进行容器的创建
+	// 8. 进行容器的创建
 	response, err := client.ContainerCreate(
 		context.Background(),
 		containerConfig,
@@ -250,7 +253,7 @@ func CreateNormalSatellite(client *docker.Client, satellite *satellite.NormalSat
 
 	satellite.ContainerId = response.ID
 
-	// 8. 状态转换
+	// 9. 状态转换
 	satellite.Status = types.NetworkNodeStatus_Created
 
 	return nil

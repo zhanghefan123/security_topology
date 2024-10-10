@@ -39,3 +39,7 @@ services_config:
   position_update_config:
     image_name: "position_service"
     interval: 1
+
+apps_config:
+  ipv6_config:
+    server_port: 8080

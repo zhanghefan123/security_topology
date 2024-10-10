@@ -1,13 +1,18 @@
-package main
+package tcp
 
 import (
 	"fmt"
 	"net"
+	"os"
 )
 
+// StartServer 进行服务端的启动
 func StartServer() (err error) {
-	// 监听所有地址的 8080 端口
-	listenAddr := "[::]:8080"
+	var listenPort string
+	var listenAddr string
+
+	listenPort = os.Getenv("IPV6_SERVER_PORT")
+	listenAddr = fmt.Sprintf("[::]:%s", listenPort)
 
 	// 进行地址的指定的地址的监听
 	var listener net.Listener
@@ -65,6 +70,5 @@ func HandleConnection(connection net.Conn) (err error) {
 		}
 		// 如果读取正常则进行结果的打印
 		fmt.Printf("Received message from client: %s\n", string(buffer[:n]))
-		return nil
 	}
 }

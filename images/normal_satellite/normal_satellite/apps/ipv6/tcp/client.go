@@ -1,4 +1,4 @@
-package main
+package tcp
 
 import (
 	"bufio"
@@ -7,8 +7,11 @@ import (
 	"os"
 )
 
+// StartClient 进行tcp客户端的启动
 func StartClient() (err error) {
+	var serverPort string
 	var serverAddr string
+	serverPort = os.Getenv("IPV6_SERVER_PORT")
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Println("Please input server addr: ")
 	if scanner.Scan() {
@@ -16,7 +19,7 @@ func StartClient() (err error) {
 	}
 
 	var connection net.Conn
-	connection, err = net.Dial("tcp", serverAddr)
+	connection, err = net.Dial("tcp", fmt.Sprintf("[%s]:%s", serverAddr, serverPort))
 	if err != nil {
 		return fmt.Errorf("error connecting to server %s: %w", serverAddr, err)
 	}
@@ -29,10 +32,9 @@ func StartClient() (err error) {
 
 	// 循环进行用户输入的读取
 	for {
-		streamScanner := bufio.NewScanner(os.Stdin)
 		fmt.Println("Please input the message you want to send: ")
-		if streamScanner.Scan() {
-			line := streamScanner.Text()
+		if scanner.Scan() {
+			line := scanner.Text()
 
 			// 输入关键字时退出
 			if line == "q" || line == "quit" {
