@@ -38,12 +38,14 @@ func ReadSRv6Routes() (result []string) {
 func InsertSRv6Routes(srv6Routes []string) {
 	startInsertSignal := make(chan struct{})
 
+	// 这里需要进行睡眠5s的原因是当接口没有完全建立起来的时候, 进行路由的插入, 会造成路由插入的失败
 	go func() {
 		time.Sleep(5 * time.Second)
 		close(startInsertSignal)
 	}()
 
 	<-startInsertSignal
+
 	for _, route := range srv6Routes {
 		routeSplit := strings.Split(route, " ")
 		cmd := exec.Command(routeSplit[0], routeSplit[1:]...)
