@@ -13,25 +13,26 @@ func StartServer() (err error) {
 	var udpConn *net.UDPConn
 
 	listenPort = os.Getenv("IPV6_SERVER_PORT")
-	serverAddr = fmt.Sprintf("[::]%s", listenPort)
+	serverAddr = fmt.Sprintf("[::]:%s", listenPort)
 
 	// 进行 udp 地址的解析
-	addr, err = net.ResolveUDPAddr("udp", serverAddr)
+	addr, err = net.ResolveUDPAddr("udp6", serverAddr)
 	if err != nil {
 		return fmt.Errorf("failed to resolve UDP address: %w", err)
 	}
 
-	// 创建 udp 连接
-	udpConn, err = net.ListenUDP("udp", addr)
+	// 监听 udp 地址
+	udpConn, err = net.ListenUDP("udp6", addr)
 	if err != nil {
 		return fmt.Errorf("failed to start UDP client: %w", err)
 	}
 	defer func(udpConn *net.UDPConn) {
-		err = udpConn.Close()
-		if err != nil {
+		if udpConn.Close() != nil {
 			err = fmt.Errorf("failed to close UDP connection: %w", err)
 		}
 	}(udpConn)
+
+	fmt.Println("Listening on UDP port " + listenPort)
 
 	var n int
 	var clientAddr *net.UDPAddr
@@ -45,6 +46,6 @@ func StartServer() (err error) {
 
 		// 打印接收到的消息
 		message := string(buffer[:n])
-		fmt.Printf("receive message %s from client %s", message, clientAddr)
+		fmt.Printf("receive message %s from client %s\n", message, clientAddr)
 	}
 }

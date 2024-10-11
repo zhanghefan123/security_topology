@@ -7,6 +7,8 @@ RUN cd /normal_satellite && go mod tidy
 
 RUN cd /normal_satellite/main && go build
 
+RUN cd /normal_satellite/apps/ipv6 && go build
+
 WORKDIR /normal_satellite/main
 
 # 进行拷贝
