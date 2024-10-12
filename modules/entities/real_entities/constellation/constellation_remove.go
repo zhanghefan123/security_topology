@@ -25,16 +25,25 @@ const (
 
 type RemoveFunction func() error
 
+type RemoveModule struct {
+	remove         bool           // 是否进行删除 -> 只有相应的模块启动了才需要进行删除
+	removeFunction RemoveFunction // 相应的删除函数
+}
+
 // Remove 删除整个星座
 func (c *Constellation) Remove() {
-	removeSteps := []map[string]RemoveFunction{
-		{StopSatelliteContainers: c.StopSatelliteContainers},
-		{RemoveSatelliteContainers: c.RemoveSatelliteContainers},
-		{RemoveLinks: c.RemoveLinks},
-		{RemoveConfigurationFiles: c.RemoveConfigurationFiles},
-		{RemoveEtcdService: c.RemoveEtcdService},
-		{RemovePositionService: c.RemovePositionService},
-		{StopLocalServices: c.StopLocalServices},
+
+	removePositionService := configs.TopConfiguration.ServicesConfig.PositionUpdateConfig.Enabled
+	removeUpdatedDelayService := configs.TopConfiguration.ServicesConfig.DelayUpdateConfig.Enabled
+
+	removeSteps := []map[string]RemoveModule{
+		{StopSatelliteContainers: RemoveModule{true, c.StopSatelliteContainers}},
+		{RemoveSatelliteContainers: RemoveModule{true, c.RemoveSatelliteContainers}},
+		{RemoveLinks: RemoveModule{true, c.RemoveLinks}},
+		{RemoveConfigurationFiles: RemoveModule{true, c.RemoveConfigurationFiles}},
+		{RemoveEtcdService: RemoveModule{true, c.RemoveEtcdService}},
+		{RemovePositionService: RemoveModule{removePositionService, c.RemovePositionService}},
+		{StopLocalServices: RemoveModule{removeUpdatedDelayService, c.StopLocalServices}},
 	}
 	err := c.removeSteps(removeSteps)
 	if err != nil {
@@ -42,15 +51,32 @@ func (c *Constellation) Remove() {
 	}
 }
 
-// startSteps 调用所有的启动方法
-func (c *Constellation) removeSteps(removeSteps []map[string]RemoveFunction) (err error) {
-	moduleNum := len(removeSteps)
-	for idx, removeStep := range removeSteps {
-		for name, removeFunc := range removeStep {
-			if err := removeFunc(); err != nil {
-				return fmt.Errorf("remove step [%s] failed, %s", name, err)
+// removeModuleNum 获取删除模块的数量
+func (c *Constellation) removeStepsNum(removeSteps []map[string]RemoveModule) int {
+	result := 0
+	for _, removeStep := range removeSteps {
+		for _, removeModule := range removeStep {
+			if removeModule.remove {
+				result += 1
 			}
-			constellationLogger.Infof("BASE REMOVE STEP (%d/%d) => remove step [%s] success)", idx+1, moduleNum, name)
+		}
+	}
+	return result
+}
+
+// startSteps 调用所有的启动方法
+func (c *Constellation) removeSteps(removeSteps []map[string]RemoveModule) (err error) {
+	moduleNum := c.removeStepsNum(removeSteps)
+	count := 0
+	for _, removeStep := range removeSteps {
+		for name, removeModule := range removeStep {
+			if removeModule.remove {
+				if err = removeModule.removeFunction(); err != nil {
+					return fmt.Errorf("remove step [%s] failed, %s", name, err)
+				}
+				constellationLogger.Infof("BASE REMOVE STEP (%d/%d) => remove step [%s] success)", count+1, moduleNum, name)
+				count += 1
+			}
 		}
 	}
 	return

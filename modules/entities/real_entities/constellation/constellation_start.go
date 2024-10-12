@@ -35,17 +35,25 @@ const (
 
 type StartFunction func() error
 
+type StartModule struct {
+	start         bool          // 是否启动
+	startFunction StartFunction // 相应的启动函数
+}
+
 // Start 启动
 func (c *Constellation) Start() {
-	startSteps := []map[string]StartFunction{
-		{GenerateSatelliteLinks: c.GenerateSatelliteVethPairs}, // step1 先创建 veth pair 然后改变链路的命名空间
-		{StartSatelliteContainers: c.StartSatelliteContainers}, // step2 一定要在 step1 之后，因为创建了容器后才有命名空间
-		{SetVethNameSpaces: c.SetVethNamespaces},               // step3 一定要在 step2 之后，因为创建了容器才能设置 veth 的 namespace
-		{StartEtcdService: c.StartEtcdService},                 // step4 进行 etcd 服务的启动
-		{StoreToEtcd: c.StoreToEtcd},                           // step5 一定要在 step4 之后，因为创建了 etcd 服务才能进行存
-		{CreateServiceContext: c.CreateServiceContext},         // step6 创建服务上下文
-		{StartPositionService: c.StartPositionService},         // step7 启动位置 position
-		{StartUpdateDelayService: c.StartUpdateDelayService},   // step8 开启监听的服务
+	enablePositionService := configs.TopConfiguration.ServicesConfig.PositionUpdateConfig.Enabled
+	enableUpdatedDelayService := configs.TopConfiguration.ServicesConfig.DelayUpdateConfig.Enabled
+
+	startSteps := []map[string]StartModule{
+		{GenerateSatelliteLinks: StartModule{true, c.GenerateSatelliteVethPairs}},                    // step1 先创建 veth pair 然后改变链路的命名空间
+		{StartSatelliteContainers: StartModule{true, c.StartSatelliteContainers}},                    // step2 一定要在 step1 之后，因为创建了容器后才有命名空间
+		{SetVethNameSpaces: StartModule{true, c.SetVethNamespaces}},                                  // step3 一定要在 step2 之后，因为创建了容器才能设置 veth 的 namespace
+		{StartEtcdService: StartModule{true, c.StartEtcdService}},                                    // step4 进行 etcd 服务的启动
+		{StoreToEtcd: StartModule{true, c.StoreToEtcd}},                                              // step5 一定要在 step4 之后，因为创建了 etcd 服务才能进行存
+		{CreateServiceContext: StartModule{true, c.CreateServiceContext}},                            // step6 创建服务上下文
+		{StartPositionService: StartModule{enablePositionService, c.StartPositionService}},           // step7 启动位置 position
+		{StartUpdateDelayService: StartModule{enableUpdatedDelayService, c.StartUpdateDelayService}}, // step8 开启监听的服务
 	}
 	err := c.startSteps(startSteps)
 	if err != nil {
@@ -53,16 +61,32 @@ func (c *Constellation) Start() {
 	}
 }
 
-// startSteps 调用所有的启动方法
-func (c *Constellation) startSteps(startSteps []map[string]StartFunction) (err error) {
-	moduleNum := len(startSteps)
-	for idx, startStep := range startSteps {
-		for name, startFunc := range startStep {
-			if err := startFunc(); err != nil {
-				constellationLogger.Errorf("start step [%s] failed, %s", name, err)
-				return err
+// startModuleNum 获取启动的模块的数量
+func (c *Constellation) startStepsNum(startSteps []map[string]StartModule) int {
+	result := 0
+	for _, startStep := range startSteps {
+		for _, startModule := range startStep {
+			if startModule.start {
+				result += 1
 			}
-			constellationLogger.Infof("BASE START STEP (%d/%d) => start step [%s] success)", idx+1, moduleNum, name)
+		}
+	}
+	return result
+}
+
+// startSteps 调用所有的启动方法
+func (c *Constellation) startSteps(startSteps []map[string]StartModule) (err error) {
+	moduleNum := c.startStepsNum(startSteps)
+	for idx, startStep := range startSteps {
+		for name, startModule := range startStep {
+			// 判断是否需要进行启动, 如果要进行启动，再调用
+			if startModule.start {
+				if err = startModule.startFunction(); err != nil {
+					constellationLogger.Errorf("start step [%s] failed, %s", name, err)
+					return err
+				}
+				constellationLogger.Infof("BASE START STEP (%d/%d) => start step [%s] success)", idx+1, moduleNum, name)
+			}
 		}
 	}
 	return

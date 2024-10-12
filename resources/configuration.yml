@@ -1,5 +1,5 @@
 network_config:
-  local_network_address: 192.168.112.130
+  local_network_address: 10.134.148.219
   base_v4_network_address: 192.168.0.0/16
   base_v6_network_address: 2001:db8:1234:5678::/112
   enable_frr: false
@@ -9,7 +9,7 @@ consensus_config:
 
 constellation_config:
   orbit_number: 1
-  satellite_per_orbit: 6
+  satellite_per_orbit: 11
   start_time: 2024|4|9|14|43|0 # 星座的启动时间
   satellite_config:
     type: 1 #  normal_node -> 0 normal_satellite -> 1 consensus_satellite -> 2
@@ -39,6 +39,10 @@ services_config:
   position_update_config:
     image_name: "position_service"
     interval: 1
+    enabled: false
+
+  delay_update_config:
+    enabled: false
 
 apps_config:
   ipv6_config:

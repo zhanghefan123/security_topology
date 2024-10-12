@@ -154,7 +154,7 @@ func HandleBatch(udpConn *net.UDPConn) error {
 			fmt.Println(fmt.Sprintf("total messages: %d current messages: %d", numberOfMessages, index+1))
 		}
 
-		time.Sleep(time.Duration(sendInterval) * time.Second)
+		time.Sleep(time.Duration(sendInterval*1000) * time.Millisecond)
 	}
 
 	return nil

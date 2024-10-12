@@ -1,6 +1,7 @@
 package position
 
 type PositionUpdateConfig struct {
-	ImageName string `mapstructure:"image_name"`
-	Interval  int    `mapstructure:"interval"`
+	Enabled   bool   `mapstructure:"enabled"`    // 是否进行启动
+	ImageName string `mapstructure:"image_name"` // 镜像的名称
+	Interval  int    `mapstructure:"interval"`   // 发送时间间隔
 }
