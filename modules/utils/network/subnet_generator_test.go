@@ -1,4 +1,4 @@
-package subnet
+package network
 
 import (
 	"fmt"

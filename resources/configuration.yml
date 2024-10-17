@@ -1,5 +1,4 @@
 network_config:
-  local_network_address: 10.134.148.219
   base_v4_network_address: 192.168.0.0/16
   base_v6_network_address: 2001:db8:1234:5678::/112
   enable_frr: false

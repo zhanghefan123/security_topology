@@ -12,8 +12,8 @@ import (
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/satellite"
 	"zhanghefan123/security_topology/modules/entities/types"
+	"zhanghefan123/security_topology/modules/utils/network"
 	"zhanghefan123/security_topology/modules/utils/position"
-	"zhanghefan123/security_topology/modules/utils/subnet"
 )
 
 const (
@@ -131,14 +131,14 @@ func (c *Constellation) GenerateSubnets() error {
 	var ipv6Subnets []iplib.Net6
 
 	// 进行 ipv4 的子网的生成
-	ipv4Subnets, err = subnet.GenerateIPv4Subnets(configs.TopConfiguration.NetworkConfig.BaseV4NetworkAddress)
+	ipv4Subnets, err = network.GenerateIPv4Subnets(configs.TopConfiguration.NetworkConfig.BaseV4NetworkAddress)
 	if err != nil {
 		return fmt.Errorf("generate subnets: %w", err)
 	}
 	c.Ipv4SubNets = ipv4Subnets
 
 	// 进行 ipv6 的子网的生成
-	ipv6Subnets, err = subnet.GenerateIpv6Subnets(configs.TopConfiguration.NetworkConfig.BaseV6NetworkAddress)
+	ipv6Subnets, err = network.GenerateIpv6Subnets(configs.TopConfiguration.NetworkConfig.BaseV6NetworkAddress)
 	if err != nil {
 		return fmt.Errorf("generate subnets: %w", err)
 	}
@@ -195,8 +195,8 @@ func (c *Constellation) generateLinksForConsensusSatellites() {
 			targetSat.ConnectedIpv4SubnetList = append(targetSat.ConnectedIpv4SubnetList, ipv4SubNet.String())    // 卫星添加ipv4子网
 			sourceSat.ConnectedIpv6SubnetList = append(sourceSat.ConnectedIpv6SubnetList, ipv6SubNet.String())    // 卫星添加ipv6子网
 			targetSat.ConnectedIpv6SubnetList = append(targetSat.ConnectedIpv6SubnetList, ipv6SubNet.String())    // 卫星添加ipv6子网
-			sourceIpv4Addr, targetIpv4Addr := subnet.GenerateTwoAddrsFromIpv4Subnet(ipv4SubNet)                   // 提取ipv4第一个和第二个地址
-			sourceIpv6Addr, targetIpv6Addr := subnet.GenerateTwoAddrsFromIpv6Subnet(ipv6SubNet)                   // 提取ipv6第一个和第二个地址
+			sourceIpv4Addr, targetIpv4Addr := network.GenerateTwoAddrsFromIpv4Subnet(ipv4SubNet)                  // 提取ipv4第一个和第二个地址
+			sourceIpv6Addr, targetIpv6Addr := network.GenerateTwoAddrsFromIpv6Subnet(ipv6SubNet)                  // 提取ipv6第一个和第二个地址
 			sourceIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), sourceSat.Id, sourceSat.Ifidx)   // 源接口名
 			targetIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), targetSat.Id, targetSat.Ifidx)   // 目的接口名
 			sourceIntf := intf.NewNetworkInterface(sourceSat.Ifidx, sourceIfName, sourceIpv4Addr, sourceIpv6Addr) // 创建第一个接口
@@ -235,8 +235,8 @@ func (c *Constellation) generateLinksForConsensusSatellites() {
 			targetSat.ConnectedIpv4SubnetList = append(targetSat.ConnectedIpv4SubnetList, ipv4SubNet.String())    // 卫星添加ipv4子网
 			sourceSat.ConnectedIpv6SubnetList = append(sourceSat.ConnectedIpv6SubnetList, ipv6SubNet.String())    // 卫星添加ipv6子网
 			targetSat.ConnectedIpv6SubnetList = append(targetSat.ConnectedIpv6SubnetList, ipv6SubNet.String())    // 卫星添加ipv6子网
-			sourceIpv4Addr, targetIpv4Addr := subnet.GenerateTwoAddrsFromIpv4Subnet(ipv4SubNet)                   // 提取ipv4第一个和第二个地址
-			sourceIpv6Addr, targetIpv6Addr := subnet.GenerateTwoAddrsFromIpv6Subnet(ipv6SubNet)                   // 提取ipv6第一个和第二个地址
+			sourceIpv4Addr, targetIpv4Addr := network.GenerateTwoAddrsFromIpv4Subnet(ipv4SubNet)                  // 提取ipv4第一个和第二个地址
+			sourceIpv6Addr, targetIpv6Addr := network.GenerateTwoAddrsFromIpv6Subnet(ipv6SubNet)                  // 提取ipv6第一个和第二个地址
 			sourceIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), sourceSat.Id, sourceSat.Ifidx)   // 源接口名
 			targetIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), targetSat.Id, targetSat.Ifidx)   // 目的接口名
 			sourceIntf := intf.NewNetworkInterface(sourceSat.Ifidx, sourceIfName, sourceIpv4Addr, sourceIpv6Addr) // 创建第一个接口
@@ -287,8 +287,8 @@ func (c *Constellation) generateLinksForNormalSatellite() {
 			targetSat.ConnectedIpv4SubnetList = append(targetSat.ConnectedIpv4SubnetList, ipv4SubNet.String())    // 卫星添加ipv4子网
 			sourceSat.ConnectedIpv6SubnetList = append(sourceSat.ConnectedIpv6SubnetList, ipv6SubNet.String())    // 卫星添加ipv6子网
 			targetSat.ConnectedIpv6SubnetList = append(targetSat.ConnectedIpv6SubnetList, ipv6SubNet.String())    // 卫星添加ipv6子网
-			sourceIpv4Addr, targetIpv4Addr := subnet.GenerateTwoAddrsFromIpv4Subnet(ipv4SubNet)                   // 提取ipv4第一个和第二个地址
-			sourceIpv6Addr, targetIpv6Addr := subnet.GenerateTwoAddrsFromIpv6Subnet(ipv6SubNet)                   // 提取ipv6第一个和第二个地址
+			sourceIpv4Addr, targetIpv4Addr := network.GenerateTwoAddrsFromIpv4Subnet(ipv4SubNet)                  // 提取ipv4第一个和第二个地址
+			sourceIpv6Addr, targetIpv6Addr := network.GenerateTwoAddrsFromIpv6Subnet(ipv6SubNet)                  // 提取ipv6第一个和第二个地址
 			sourceIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), sourceSat.Id, sourceSat.Ifidx)   // 源接口名
 			targetIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), targetSat.Id, targetSat.Ifidx)   // 目的接口名
 			sourceIntf := intf.NewNetworkInterface(sourceSat.Ifidx, sourceIfName, sourceIpv4Addr, sourceIpv6Addr) // 创建第一个接口
@@ -326,8 +326,8 @@ func (c *Constellation) generateLinksForNormalSatellite() {
 			targetSat.ConnectedIpv4SubnetList = append(targetSat.ConnectedIpv4SubnetList, ipv4SubNet.String())    // 卫星添加ipv4子网
 			sourceSat.ConnectedIpv6SubnetList = append(sourceSat.ConnectedIpv6SubnetList, ipv6SubNet.String())    // 卫星添加ipv6子网
 			targetSat.ConnectedIpv6SubnetList = append(targetSat.ConnectedIpv6SubnetList, ipv6SubNet.String())    // 卫星添加ipv6子网
-			sourceIpv4Addr, targetIpv4Addr := subnet.GenerateTwoAddrsFromIpv4Subnet(ipv4SubNet)                   // 提取ipv4第一个和第二个地址
-			sourceIpv6Addr, targetIpv6Addr := subnet.GenerateTwoAddrsFromIpv6Subnet(ipv6SubNet)                   // 提取ipv6第一个和第二个地址
+			sourceIpv4Addr, targetIpv4Addr := network.GenerateTwoAddrsFromIpv4Subnet(ipv4SubNet)                  // 提取ipv4第一个和第二个地址
+			sourceIpv6Addr, targetIpv6Addr := network.GenerateTwoAddrsFromIpv6Subnet(ipv6SubNet)                  // 提取ipv6第一个和第二个地址
 			sourceIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), sourceSat.Id, sourceSat.Ifidx)   // 源接口名
 			targetIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), targetSat.Id, targetSat.Ifidx)   // 目的接口名
 			sourceIntf := intf.NewNetworkInterface(sourceSat.Ifidx, sourceIfName, sourceIpv4Addr, sourceIpv6Addr) // 创建第一个接口

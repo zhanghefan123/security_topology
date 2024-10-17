@@ -15,6 +15,7 @@ import (
 	"zhanghefan123/security_topology/configs/path"
 	"zhanghefan123/security_topology/configs/services"
 	"zhanghefan123/security_topology/modules/logger"
+	networkUtils "zhanghefan123/security_topology/modules/utils/network"
 )
 
 var (
@@ -49,11 +50,20 @@ func InitLocalConfig() error {
 	if err := tempViper.Unmarshal(TopConfiguration); err != nil {
 		return fmt.Errorf("unmarshal config error: %v", err)
 	}
+	// 将路径转换为绝对路径
 	err := TopConfiguration.PathConfig.ConvertToAbsPath()
 	if err != nil {
 		return fmt.Errorf("convert to abs path error: %v", err)
 	}
+	// 进行时间的解析
 	TopConfiguration.ConstellationConfig.GoStartTime = ResolveStartTime()
+	// 获取本地的网络地址
+	localNetworkAddr, err := networkUtils.GetLocalNetworkAddr()
+	if err != nil {
+		return fmt.Errorf("get local network addr error: %v", err)
+	}
+	// 进行本地网路地址的设置
+	TopConfiguration.NetworkConfig.LocalNetworkAddress = localNetworkAddr
 	PrintLocalConfig()
 	return nil
 }
