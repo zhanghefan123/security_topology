@@ -6,10 +6,13 @@ import (
 )
 
 const (
+	ModuleMainCmdHttpService   = "MAIN_CMD_HTTP_SERVICE"
 	ModuleMainCmdConstellation = "MAIN_CMD_CONSTELLATION"
 	ModuleMainCmdImages        = "MAIN_CMD_IMAGES"
 	ModuleConfig               = "CONFIG"
 	ModuleConstellation        = "CONSTELLATION"
+	ModuleTopology             = "TOPOLOGY"
+	ModuleHttpService          = "HTTP_SERVICE"
 )
 
 func init() {

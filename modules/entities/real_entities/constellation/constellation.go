@@ -19,8 +19,8 @@ var (
 
 // Parameters -星座参数
 type Parameters struct {
-	OrbitNumber       int // 轨道数量
-	SatellitePerOrbit int // 每轨道卫星数量
+	OrbitNumber       int `json:"orbit_number"`        // 轨道数量
+	SatellitePerOrbit int `json:"satellite_per_orbit"` // 每轨道卫星数量
 }
 
 // SatelliteParameters 卫星参数

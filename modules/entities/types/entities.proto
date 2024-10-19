@@ -15,6 +15,7 @@ enum NetworkNodeType {
   ConsensusSatellite = 2;
   EtcdService = 3;
   PositionService = 4;
+  Router = 5;
 }
 
 enum NetworkLinkType {

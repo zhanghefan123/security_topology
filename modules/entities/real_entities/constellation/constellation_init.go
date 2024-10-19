@@ -50,7 +50,7 @@ func (c *Constellation) initializeSteps(initSteps []map[string]InitFunction) (er
 	moduleNum := len(initSteps)
 	for idx, initStep := range initSteps {
 		for name, initFunc := range initStep {
-			if err := initFunc(); err != nil {
+			if err = initFunc(); err != nil {
 				return fmt.Errorf("init step [%s] failed, %s", name, err)
 			}
 			constellationLogger.Infof("BASE INIT STEP (%d/%d) => init step [%s] success)", idx+1, moduleNum, name)

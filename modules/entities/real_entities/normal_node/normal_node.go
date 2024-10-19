@@ -20,6 +20,8 @@ type NormalNode struct {
 	ConnectedIpv6SubnetList []string                          // 连接到的 IPV6 的子网
 	ContainerName           string                            // 对应的容器的名称
 	ContainerId             string                            // 容器的 ID
+	X                       int                               // 在前端之中的横坐标
+	Y                       int                               // 在前端之中的纵坐标
 }
 
 // NewNormalNode 创建普通系欸但

@@ -15,7 +15,6 @@ import (
 )
 
 var (
-	dockerClient           *docker.Client
 	constellationInstance  *constellation.Constellation
 	cmdConstellationLogger = logger.GetLogger(logger.ModuleMainCmdConstellation)
 )
@@ -61,6 +60,7 @@ func core() {
 // Initialize 初始化函数
 func Initialize() {
 	var err error // 创建错误
+	var dockerClient *docker.Client
 	// 初始化本地配置
 	err = configs.InitLocalConfig()
 	if err != nil {
