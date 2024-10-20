@@ -17,21 +17,29 @@ var (
 )
 
 type Topology struct {
-	client           *docker.Client
-	etcdClient       *clientv3.Client
-	topologyParams   *params.TopologyParams
-	Ipv4SubNets      []iplib.Net4
-	Ipv6SubNets      []iplib.Net6
-	Routers          []*nodes.Router
-	NormalNodes      []*normal_node.NormalNode
-	ConsensusNodes   []*nodes.ConsensusNode
-	MaliciousNodes   []*nodes.MaliciousNode
-	Links            []*link.AbstractLink
-	LinksMap         map[string]map[string]*link.AbstractLink // map[sourceContainerName][targetContainerName]*link.AbstractLink
-	AllAbstractNodes []*node.AbstractNode                     // 所有的抽象节点
+	client         *docker.Client
+	etcdClient     *clientv3.Client
+	topologyParams *params.TopologyParams
+	Ipv4SubNets    []iplib.Net4
+	Ipv6SubNets    []iplib.Net6
+
+	Routers        []*nodes.Router
+	NormalNodes    []*normal_node.NormalNode
+	ConsensusNodes []*nodes.ConsensusNode
+	MaliciousNodes []*nodes.MaliciousNode
+
+	RouterAbstractNodes    []*node.AbstractNode
+	NormalAbstractNodes    []*node.AbstractNode
+	ConsensusAbstractNodes []*node.AbstractNode
+	MaliciousAbstractNodes []*node.AbstractNode
+	AllAbstractNodes       []*node.AbstractNode
+
+	Links    []*link.AbstractLink
+	LinksMap map[string]map[string]*link.AbstractLink // map[sourceContainerName][targetContainerName]*link.AbstractLink
 
 	topologyInitSteps  map[string]struct{} // 拓扑初始化步骤
 	topologyStartSteps map[string]struct{} // 拓扑启动步骤
+	topologyStopSteps  map[string]struct{} // 拓扑停止步骤
 }
 
 // NewTopology 创建新的拓扑
@@ -48,6 +56,7 @@ func NewTopology(client *docker.Client, etcdClient *clientv3.Client, params *par
 		LinksMap:           make(map[string]map[string]*link.AbstractLink),
 		topologyInitSteps:  make(map[string]struct{}),
 		topologyStartSteps: make(map[string]struct{}),
+		topologyStopSteps:  make(map[string]struct{}),
 	}
 	topologyLogger.Infof("create new images")
 	return topology

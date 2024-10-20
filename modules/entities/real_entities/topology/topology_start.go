@@ -69,7 +69,7 @@ func (t *Topology) startSteps(startSteps []map[string]StartModule) (err error) {
 // GenerateNodesVethPairs 进行节点之间的 veth pairs 的生成
 func (t *Topology) GenerateNodesVethPairs() error {
 	if _, ok := t.topologyStartSteps[GenerateNodesVethPairs]; ok {
-		topologyLogger.Infof("GenerateSatelliteVethPairs is already running")
+		topologyLogger.Infof("GenerateNodesVethPairs is already running")
 		return nil
 	}
 	description := fmt.Sprintf("%20s", "generate veth pairs")
@@ -82,7 +82,7 @@ func (t *Topology) GenerateNodesVethPairs() error {
 	}
 
 	t.topologyStartSteps[GenerateNodesVethPairs] = struct{}{}
-	topologyLogger.Infof("generate satellite veth pairs")
+	topologyLogger.Infof("generate nodes veth pairs")
 
 	return multithread.RunInMultiThread[*link.AbstractLink](description, taskFunc, t.Links)
 }
@@ -90,10 +90,10 @@ func (t *Topology) GenerateNodesVethPairs() error {
 // StartNodeContainers 启动节点容器
 func (t *Topology) StartNodeContainers() error {
 	if _, ok := t.topologyStartSteps[StartNodeContainers]; ok {
-		topologyLogger.Infof("StartSatelliteContainers is already running")
+		topologyLogger.Infof("StartNodeContainers is already running")
 		return nil
 	}
-	description := fmt.Sprintf("%20s", "start satellites")
+	description := fmt.Sprintf("%20s", "start nodes")
 	var taskFunc multithread.TaskFunc[*node.AbstractNode] = func(node *node.AbstractNode) error {
 		err := container_api.CreateContainer(t.client, node)
 		if err != nil {
@@ -107,7 +107,7 @@ func (t *Topology) StartNodeContainers() error {
 	}
 
 	t.topologyStartSteps[StartNodeContainers] = struct{}{}
-	topologyLogger.Infof("execute start satellite containers")
+	topologyLogger.Infof("execute start node containers")
 
 	return multithread.RunInMultiThread(description, taskFunc, t.AllAbstractNodes)
 }

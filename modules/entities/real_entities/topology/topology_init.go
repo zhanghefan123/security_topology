@@ -72,15 +72,31 @@ func (t *Topology) GenerateNodes() error {
 		case types.NetworkNodeType_Router: // 进行普通路由节点的添加
 			routerTmp := nodes.NewRouter(nodeParam.Index, nodeParam.X, nodeParam.Y)
 			t.Routers = append(t.Routers, routerTmp)
+			// 注意只能唯一创建一次
+			abstractRouter := node.NewAbstractNode(types.NetworkNodeType_Router, routerTmp)
+			t.RouterAbstractNodes = append(t.RouterAbstractNodes, abstractRouter)
+			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractRouter)
 		case types.NetworkNodeType_NormalNode:
 			normalNodeTmp := normal_node.NewNormalNode(types.NetworkNodeType_NormalNode, nodeParam.Index, fmt.Sprintf("%s-%d", nodeType.String(), nodeParam.Index))
 			t.NormalNodes = append(t.NormalNodes, normalNodeTmp)
+			// 注意只能唯一创建一次
+			abstractNormalNode := node.NewAbstractNode(types.NetworkNodeType_NormalNode, normalNodeTmp)
+			t.NormalAbstractNodes = append(t.NormalAbstractNodes, abstractNormalNode)
+			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractNormalNode)
 		case types.NetworkNodeType_ConsensusNode:
 			consensusNodeTmp := nodes.NewConsensusNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
 			t.ConsensusNodes = append(t.ConsensusNodes, consensusNodeTmp)
+			// 注意只能唯一创建一次
+			abstractConsensusNode := node.NewAbstractNode(types.NetworkNodeType_ConsensusNode, consensusNodeTmp)
+			t.ConsensusAbstractNodes = append(t.ConsensusAbstractNodes, abstractConsensusNode)
+			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractConsensusNode)
 		case types.NetworkNodeType_MaliciousNode:
 			maliciousNodeTmp := nodes.NewMaliciousNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
 			t.MaliciousNodes = append(t.MaliciousNodes, maliciousNodeTmp)
+			// 注意只能唯一创建一次
+			abstractMaliciousNode := node.NewAbstractNode(types.NetworkNodeType_MaliciousNode, maliciousNodeTmp)
+			t.MaliciousAbstractNodes = append(t.MaliciousAbstractNodes, abstractMaliciousNode)
+			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractMaliciousNode)
 		}
 	}
 
@@ -198,13 +214,13 @@ func (t *Topology) getSourceNodeAndTargetNode(sourceNodeParam, targetNodeParam p
 	// 拿到源节点
 	switch *sourceNodeType {
 	case types.NetworkNodeType_Router:
-		sourceNode = node.NewAbstractNode(types.NetworkNodeType_Router, t.Routers[sourceNodeParam.Index-1])
+		sourceNode = t.RouterAbstractNodes[sourceNodeParam.Index-1]
 	case types.NetworkNodeType_NormalNode:
-		sourceNode = node.NewAbstractNode(types.NetworkNodeType_NormalNode, t.NormalNodes[sourceNodeParam.Index-1])
+		sourceNode = t.NormalAbstractNodes[sourceNodeParam.Index-1]
 	case types.NetworkNodeType_ConsensusNode:
-		sourceNode = node.NewAbstractNode(types.NetworkNodeType_ConsensusNode, t.ConsensusNodes[sourceNodeParam.Index-1])
+		sourceNode = t.ConsensusAbstractNodes[sourceNodeParam.Index-1]
 	case types.NetworkNodeType_MaliciousNode:
-		sourceNode = node.NewAbstractNode(types.NetworkNodeType_MaliciousNode, t.MaliciousNodes[sourceNodeParam.Index-1])
+		sourceNode = t.MaliciousAbstractNodes[sourceNodeParam.Index-1]
 	default:
 		return nil, nil, fmt.Errorf("unsupported source node type: %s", *sourceNodeType)
 	}
@@ -212,13 +228,13 @@ func (t *Topology) getSourceNodeAndTargetNode(sourceNodeParam, targetNodeParam p
 	// 拿到目的节点
 	switch *targetNodeType {
 	case types.NetworkNodeType_Router:
-		targetNode = node.NewAbstractNode(types.NetworkNodeType_Router, t.Routers[sourceNodeParam.Index-1])
+		targetNode = t.RouterAbstractNodes[targetNodeParam.Index-1]
 	case types.NetworkNodeType_NormalNode:
-		targetNode = node.NewAbstractNode(types.NetworkNodeType_NormalNode, t.NormalNodes[sourceNodeParam.Index-1])
+		targetNode = t.NormalAbstractNodes[targetNodeParam.Index-1]
 	case types.NetworkNodeType_ConsensusNode:
-		targetNode = node.NewAbstractNode(types.NetworkNodeType_ConsensusNode, t.ConsensusNodes[sourceNodeParam.Index-1])
+		targetNode = t.ConsensusAbstractNodes[targetNodeParam.Index-1]
 	case types.NetworkNodeType_MaliciousNode:
-		targetNode = node.NewAbstractNode(types.NetworkNodeType_MaliciousNode, t.MaliciousNodes[sourceNodeParam.Index-1])
+		targetNode = t.MaliciousAbstractNodes[targetNodeParam.Index-1]
 	default:
 		return nil, nil, fmt.Errorf("unsupported target node type: %s", *sourceNodeType)
 	}
