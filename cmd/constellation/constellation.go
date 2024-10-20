@@ -43,7 +43,11 @@ func core() {
 
 	// 启动流程
 	// =======================================================
-	Initialize()
+	err := Initialize()
+	if err != nil {
+		cmdConstellationLogger.Errorf("constellation initialization error: %v", err)
+		return
+	}
 	PrintExitLogo()
 	// =======================================================
 
@@ -58,18 +62,18 @@ func core() {
 }
 
 // Initialize 初始化函数
-func Initialize() {
+func Initialize() error {
 	var err error // 创建错误
 	var dockerClient *docker.Client
 	// 初始化本地配置
 	err = configs.InitLocalConfig()
 	if err != nil {
-		cmdConstellationLogger.Errorf("init local configuration failed: %v", err)
+		return fmt.Errorf("init local config failed: %w", err)
 	}
 	// 初始化 dockerClient
 	dockerClient, err = client.NewDockerClient() // 创建新的 docker client
 	if err != nil {
-		cmdConstellationLogger.Errorf("error initilize constellation: %v", err) // 打印错误
+		return fmt.Errorf("create docker client failed: %w", err)
 	}
 	// 初始化 etcdClient
 	listenAddr := configs.TopConfiguration.NetworkConfig.LocalNetworkAddress
@@ -77,8 +81,15 @@ func Initialize() {
 	etcdClient, err := etcd_api.NewEtcdClient(listenAddr, listenPort)
 	startTime := configs.TopConfiguration.ConstellationConfig.GoStartTime
 	constellationInstance = constellation.NewConstellation(dockerClient, etcdClient, startTime) // 创建一个星座, 使用的参数是 dockerClient
-	constellationInstance.Init()                                                                // 进行星座的初始化
-	constellationInstance.Start()                                                               // 进行星座的启动
+	err = constellationInstance.Init()                                                          // 进行星座的初始化
+	if err != nil {
+		return fmt.Errorf("init constellation failed: %w", err)
+	}
+	err = constellationInstance.Start() // 进行星座的启动
+	if err != nil {
+		return fmt.Errorf("start constellation failed: %w", err)
+	}
+	return nil
 }
 
 // Delete 进行星座的删除

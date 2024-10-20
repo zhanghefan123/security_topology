@@ -1,4 +1,4 @@
-package create_container
+package create_apis
 
 import (
 	"context"
@@ -59,7 +59,7 @@ func CreateNormalSatellite(client *docker.Client, satellite *satellites.NormalSa
 
 	// 6. containerConfig
 	containerConfig := &container.Config{
-		Image: satellite.ImageName,
+		Image: configs.TopConfiguration.ImagesConfig.NormalSatelliteImageName,
 		Tty:   true,
 		Env:   envs,
 	}

@@ -1,4 +1,4 @@
-package satellite
+package satellites
 
 import (
 	"context"
@@ -15,19 +15,18 @@ type NormalSatellite struct {
 	*normal_node.NormalNode
 	OrbitId      int      // 轨道的编号
 	IndexInOrbit int      // 轨道内的编号
-	ImageName    string   // 镜像名称
 	Tle          []string // TLE 位置信息
 }
 
 // NewNormalSatellite 创建普通卫星
-func NewNormalSatellite(nodeId, orbitId, indexInOrbit int, imageName string, tle []string) *NormalSatellite {
+func NewNormalSatellite(nodeId, orbitId, indexInOrbit int, tle []string) *NormalSatellite {
+	// 当前的类型
 	satType := types.NetworkNodeType_NormalSatellite
+	// 创建普通卫星
 	sat := &NormalSatellite{
-		NormalNode: normal_node.NewNormalNode(types.NetworkNodeStatus_Logic, nodeId, 1,
-			fmt.Sprintf("%s-%d", satType.String(), nodeId)),
+		NormalNode:   normal_node.NewNormalNode(types.NetworkNodeType_NormalSatellite, nodeId, fmt.Sprintf("%s-%d", satType.String(), nodeId)),
 		OrbitId:      orbitId,
 		IndexInOrbit: indexInOrbit,
-		ImageName:    imageName,
 		Tle:          tle,
 	}
 	return sat
@@ -51,4 +50,12 @@ func (normalSatellite *NormalSatellite) StoreToEtcd(etcdClient *clientv3.Client)
 		return fmt.Errorf("failed to store normal satellite into etcd: %w", err)
 	}
 	return nil
+}
+
+func (normalSatellite *NormalSatellite) GetOrbitId() int {
+	return normalSatellite.OrbitId
+}
+
+func (normalSatellite *NormalSatellite) GetIndexInOrbit() int {
+	return normalSatellite.IndexInOrbit
 }

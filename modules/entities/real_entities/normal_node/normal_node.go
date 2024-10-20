@@ -1,19 +1,16 @@
-package basic_node
+package normal_node
 
 import (
 	"fmt"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
-	"gonum.org/v1/gonum/graph"
 	"runtime"
-	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/intf"
 	"zhanghefan123/security_topology/modules/entities/types"
 )
 
 // NormalNode 基础的网络节点
 type NormalNode struct {
-	graph.Node                                                // 图节点
 	Type                    types.NetworkNodeType             // 节点的类型
 	Status                  types.NetworkNodeStatus           // 节点状态
 	Id                      int                               // 节点编号
@@ -30,12 +27,7 @@ type NormalNode struct {
 
 // NewNormalNode 创建普通系欸但
 func NewNormalNode(typ types.NetworkNodeType, id int, containerName string) *NormalNode {
-	// 进行图节点的创建
-	graphNode := configs.ConstellationGraph.NewNode()
-	// 进行图节点的添加
-	configs.ConstellationGraph.AddNode(graphNode)
 	return &NormalNode{
-		Node:                    graphNode,
 		Type:                    typ,
 		Status:                  types.NetworkNodeStatus_Logic,
 		Id:                      id,
@@ -120,4 +112,16 @@ func (normalNode *NormalNode) SetVethNamespace() (err error) {
 
 	}
 	return nil
+}
+
+func (normalNode *NormalNode) GetId() int {
+	return normalNode.Id
+}
+
+func (normalNode *NormalNode) AppendIpv4Subnet(ipv4Subnet string) {
+	normalNode.ConnectedIpv4SubnetList = append(normalNode.ConnectedIpv4SubnetList, ipv4Subnet)
+}
+
+func (normalNode *NormalNode) AppendIpv6Subnet(ipv6Subnet string) {
+	normalNode.ConnectedIpv6SubnetList = append(normalNode.ConnectedIpv6SubnetList, ipv6Subnet)
 }

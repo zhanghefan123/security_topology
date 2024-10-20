@@ -15,19 +15,17 @@ import (
 	"zhanghefan123/security_topology/modules/utils/dir"
 )
 
-// CalculateSegmentRoute 进行到其他节点的段路由的计算
-func CalculateSegmentRoute(abstractNode *node.AbstractNode, linksMap *map[string]map[string]*link.AbstractLink) error {
+// CalculateAndWriteSegmentRoute 进行到其他节点的段路由的计算
+func CalculateAndWriteSegmentRoute(abstractNode *node.AbstractNode, linksMap *map[string]map[string]*link.AbstractLink) error {
 	var err error
 	var ipRouteStrings []string
-	var normalNode *normal_node.NormalNode
-
-	err, ipRouteStrings = GenerateSegmentRoutingStrings(abstractNode, linksMap)
+	ipRouteStrings, err = GenerateSegmentRoutingStrings(abstractNode, linksMap)
 	if err != nil {
 		return fmt.Errorf("GenerateIpRouteStrings: %s", err)
 	}
-	normalNode, err = abstractNode.GetNormalNodeFromAbstractNode()
+	normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
 	if err != nil {
-		return fmt.Errorf("GetNormalNodeFromAbstractNode: %s", err)
+		return fmt.Errorf("GetNormalNodeFromAbstractNode: %w", err)
 	}
 	err = WriteSegmentRoutingStringsIntoFile(normalNode.ContainerName, ipRouteStrings)
 	if err != nil {
@@ -40,21 +38,21 @@ func CalculateSegmentRoute(abstractNode *node.AbstractNode, linksMap *map[string
 func GetNormalNodeFromGraphNode(graphNode graph.Node) (*normal_node.NormalNode, error) {
 	currentAbstract, ok := graphNode.(*node.AbstractNode)
 	if !ok {
-		return nil, fmt.Errorf("convert to abstract failed")
+		return nil, fmt.Errorf("convert to normal node failed")
 	}
-	currentNormal, err := currentAbstract.GetNormalNodeFromAbstractNode()
+	normalNode, err := currentAbstract.GetNormalNodeFromAbstractNode()
 	if err != nil {
-		return nil, fmt.Errorf("convert to abstract failed %w", err)
+		return nil, fmt.Errorf("GetNormalNodeFromAbstractNode: %w", err)
 	}
-	return currentNormal, nil
+	return normalNode, nil
 }
 
 // GenerateSegmentRoutingStrings  到所有节点的静态路由的生成
-func GenerateSegmentRoutingStrings(abstractNode *node.AbstractNode, linksMap *map[string]map[string]*link.AbstractLink) (error, []string) {
+func GenerateSegmentRoutingStrings(abstractNode *node.AbstractNode, linksMap *map[string]map[string]*link.AbstractLink) ([]string, error) {
 	var err error
 	var finalResult []string
 	constellationGraph := configs.ConstellationGraph
-	shortestPath := path.DijkstraFrom(*abstractNode, constellationGraph)
+	shortestPath := path.DijkstraFrom(abstractNode, constellationGraph)
 	iterator := constellationGraph.Nodes()
 	for {
 		hasNext := iterator.Next()
@@ -81,11 +79,11 @@ func GenerateSegmentRoutingStrings(abstractNode *node.AbstractNode, linksMap *ma
 				target := hopList[index+1]
 				sourceNormal, err = GetNormalNodeFromGraphNode(source)
 				if err != nil {
-					return fmt.Errorf("calcualate route error: %w", err), nil
+					return nil, fmt.Errorf("calcualate route error: %w", err)
 				}
 				targetNormal, err = GetNormalNodeFromGraphNode(target)
 				if err != nil {
-					return fmt.Errorf("calcualate route error: %w", err), nil
+					return nil, fmt.Errorf("calcualate route error: %w", err)
 				}
 				// 找到相应的链路 -> 带有方向的
 				isl := (*linksMap)[sourceNormal.ContainerName][targetNormal.ContainerName]
@@ -123,7 +121,7 @@ func GenerateSegmentRoutingStrings(abstractNode *node.AbstractNode, linksMap *ma
 			finalResult = append(finalResult, generateIpRouteString)
 		}
 	}
-	return nil, finalResult
+	return finalResult, nil
 }
 
 // GenerateSegmentRoutingString 到单个节点的静态路由的生成

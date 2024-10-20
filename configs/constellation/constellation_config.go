@@ -3,10 +3,9 @@ package constellation
 import "time"
 
 type SatelliteConfig struct {
-	Type      int32  `mapstructure:"type"`
-	ImageName string `mapstructure:"image_name"`
-	P2PPort   int    `mapstructure:"p2p_port"`
-	RPCPort   int    `mapstructure:"rpc_port"`
+	Type    int32 `mapstructure:"type"`
+	P2PPort int   `mapstructure:"p2p_port"`
+	RPCPort int   `mapstructure:"rpc_port"`
 }
 
 type ConstellationConfig struct {

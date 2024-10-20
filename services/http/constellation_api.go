@@ -38,7 +38,14 @@ func StartConstellation(c *gin.Context) {
 	}
 	//
 	// 处理逻辑 -> 应该只需要更新卫星数量和每个轨道的卫星数量即可
-	startConstellationInner(constellationParams)
+	err = startConstellationInner(constellationParams)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "down",
+			"message": fmt.Sprintf("startConstellationInner err: %w", err),
+		})
+		return
+	}
 
 	// 进行结果的返回
 	c.JSON(http.StatusOK, gin.H{
@@ -48,18 +55,18 @@ func StartConstellation(c *gin.Context) {
 }
 
 // startConstellationInner 实际的启动星座的逻辑
-func startConstellationInner(constellationParams *constellation.Parameters) {
+func startConstellationInner(constellationParams *constellation.Parameters) error {
 	var err error // 创建错误
 	var dockerClient *docker.Client
 	// 初始化本地配置
 	err = configs.InitLocalConfig()
 	if err != nil {
-		HttpServiceLogger.Errorf("init local configuration failed: %v", err)
+		return fmt.Errorf("init local config err: %v", err)
 	}
 	// 初始化 dockerClient
 	dockerClient, err = client.NewDockerClient() // 创建新的 docker client
 	if err != nil {
-		HttpServiceLogger.Errorf("error initilize constellation: %v", err) // 打印错误
+		return fmt.Errorf("create docker client err: %v", err)
 	}
 	// 初始化 etcdClient
 	listenAddr := configs.TopConfiguration.NetworkConfig.LocalNetworkAddress
@@ -71,8 +78,15 @@ func startConstellationInner(constellationParams *constellation.Parameters) {
 	configs.TopConfiguration.ConstellationConfig.SatellitePerOrbit = constellationParams.SatellitePerOrbit
 	// 创建星座实例
 	constellationInstance = constellation.NewConstellation(dockerClient, etcdClient, startTime) // 创建一个星座, 使用的参数是 dockerClient
-	constellationInstance.Init()                                                                // 进行星座的初始化
-	constellationInstance.Start()
+	err = constellationInstance.Init()                                                          // 进行星座的初始化
+	if err != nil {
+		return fmt.Errorf("init constellation err: %w", err)
+	}
+	err = constellationInstance.Start()
+	if err != nil {
+		return fmt.Errorf("start constellation err: %w", err)
+	}
+	return nil
 }
 
 // StopConstellation 进行星座的停止

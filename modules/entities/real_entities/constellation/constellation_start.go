@@ -13,9 +13,9 @@ import (
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
-	"zhanghefan123/security_topology/modules/entities/real_entities/etcd"
-	"zhanghefan123/security_topology/modules/entities/real_entities/position"
-	"zhanghefan123/security_topology/modules/entities/real_entities/satellite"
+	"zhanghefan123/security_topology/modules/entities/real_entities/satellites"
+	"zhanghefan123/security_topology/modules/entities/real_entities/services/etcd"
+	"zhanghefan123/security_topology/modules/entities/real_entities/services/position"
 	"zhanghefan123/security_topology/modules/entities/types"
 	"zhanghefan123/security_topology/modules/utils/protobuf"
 	posPbNode "zhanghefan123/security_topology/services/position/protobuf/node"
@@ -41,7 +41,7 @@ type StartModule struct {
 }
 
 // Start 启动
-func (c *Constellation) Start() {
+func (c *Constellation) Start() error {
 	enablePositionService := configs.TopConfiguration.ServicesConfig.PositionUpdateConfig.Enabled
 	enableUpdatedDelayService := configs.TopConfiguration.ServicesConfig.DelayUpdateConfig.Enabled
 
@@ -57,11 +57,12 @@ func (c *Constellation) Start() {
 	}
 	err := c.startSteps(startSteps)
 	if err != nil {
-		constellationLogger.Errorf("constellation start error")
+		return fmt.Errorf("constellation start error: %w", err)
 	}
+	return nil
 }
 
-// startModuleNum 获取启动的模块的数量
+// startStepsNum 获取启动的模块的数量
 func (c *Constellation) startStepsNum(startSteps []map[string]StartModule) int {
 	result := 0
 	for _, startStep := range startSteps {
@@ -135,7 +136,7 @@ func (c *Constellation) StartSatelliteContainers() error {
 	c.systemStartSteps[StartSatelliteContainers] = struct{}{}
 	constellationLogger.Infof("execute start satellite containers")
 
-	return multithread.RunInMultiThread(description, taskFunc, c.Satellites)
+	return multithread.RunInMultiThread(description, taskFunc, c.AllAbstractNodes)
 }
 
 // SetVethNamespaces 设置 veth 命名空间
@@ -161,7 +162,7 @@ func (c *Constellation) SetVethNamespaces() error {
 	c.systemStartSteps[SetVethNameSpaces] = struct{}{}
 	constellationLogger.Infof("execute set veth namespaces")
 
-	return multithread.RunInMultiThread(description, taskFunc, c.Satellites)
+	return multithread.RunInMultiThread(description, taskFunc, c.AllAbstractNodes)
 }
 
 // StartEtcdService 开启 etcd 服务
@@ -177,21 +178,22 @@ func (c *Constellation) StartEtcdService() error {
 	peerPort := etcdConfig.PeerPort
 	dataDir := etcdConfig.DataDir
 	etcdName := etcdConfig.EtcdName
-	imageName := etcdConfig.ImageName
 
 	// 2. 根据配置创建节点
-	actualEtcdNode := etcd.NewEtcdNode(types.NetworkNodeStatus_Logic, clientPort,
-		peerPort, dataDir, etcdName, imageName)
+	etcdService := etcd.NewEtcdNode(types.NetworkNodeStatus_Logic, clientPort, peerPort, dataDir, etcdName)
 
-	// 3. 创建抽象节点
-	c.etcdService = node.NewAbstractNode(types.NetworkNodeType_EtcdService, actualEtcdNode)
+	// 3. 配置
+	c.etcdService = etcdService
 
-	// 4. 进行容器的创建和启动
-	err := container_api.CreateContainer(c.client, c.etcdService)
+	// 4. 创建抽象节点
+	abstractEtcdService := node.NewAbstractNode(types.NetworkNodeType_EtcdService, c.etcdService)
+
+	// 5. 进行容器的创建和启动
+	err := container_api.CreateContainer(c.client, abstractEtcdService)
 	if err != nil {
 		return fmt.Errorf("create etcd container failed, %s", err.Error())
 	}
-	err = container_api.StartContainer(c.client, c.etcdService)
+	err = container_api.StartContainer(c.client, abstractEtcdService)
 	if err != nil {
 		return fmt.Errorf("start etcd container failed, %s", err.Error())
 	}
@@ -223,13 +225,12 @@ func (c *Constellation) StoreToEtcd() (err error) {
 	}()
 	go func() {
 		defer waitGroup.Done()
-		for _, sat := range c.Satellites {
+		for _, sat := range c.AllAbstractNodes {
 			if sat.Type == types.NetworkNodeType_NormalSatellite {
-				normalSat, _ := sat.ActualNode.(*satellite.NormalSatellite)
+				normalSat, _ := sat.ActualNode.(*satellites.NormalSatellite)
 				err = normalSat.StoreToEtcd(c.etcdClient)
-
 			} else if sat.Type == types.NetworkNodeType_NormalSatellite {
-				consensusSat, _ := sat.ActualNode.(*satellite.ConsensusSatellite)
+				consensusSat, _ := sat.ActualNode.(*satellites.ConsensusSatellite)
 				err = consensusSat.StoreToEtcd(c.etcdClient)
 			}
 			if err != nil {
@@ -267,33 +268,33 @@ func (c *Constellation) StartPositionService() error {
 	}
 
 	// 1. 解析配置
-	etcdConfig := configs.TopConfiguration.ServicesConfig.EtcdConfig                            // etcd 配置
-	etcdListenAddr := configs.TopConfiguration.NetworkConfig.LocalNetworkAddress                // etcd 监听地址
-	etcdClientPort := etcdConfig.ClientPort                                                     // etcd 客户端口
-	etcdISLsPrefix := etcdConfig.EtcdPrefix.ISLsPrefix                                          // etcd isl 的前缀
-	etcdSatellitesPrefix := etcdConfig.EtcdPrefix.SatellitesPrefix                              // etcd satellite 的前缀
-	constellationStartTime := configs.TopConfiguration.ConstellationConfig.StartTime            // 星座启动时间
-	positionImageName := configs.TopConfiguration.ServicesConfig.PositionUpdateConfig.ImageName // 镜像名称
-	updateInterval := configs.TopConfiguration.ServicesConfig.PositionUpdateConfig.Interval     // 更新时间间隔
+	etcdConfig := configs.TopConfiguration.ServicesConfig.EtcdConfig                        // etcd 配置
+	etcdListenAddr := configs.TopConfiguration.NetworkConfig.LocalNetworkAddress            // etcd 监听地址
+	etcdClientPort := etcdConfig.ClientPort                                                 // etcd 客户端口
+	etcdISLsPrefix := etcdConfig.EtcdPrefix.ISLsPrefix                                      // etcd isl 的前缀
+	etcdSatellitesPrefix := etcdConfig.EtcdPrefix.SatellitesPrefix                          // etcd satellite 的前缀
+	constellationStartTime := configs.TopConfiguration.ConstellationConfig.StartTime        // 星座启动时间
+	updateInterval := configs.TopConfiguration.ServicesConfig.PositionUpdateConfig.Interval // 更新时间间隔
 
 	// 2. 根据配置创建节点
 	positionService := position.NewPositionService(types.NetworkNodeStatus_Logic,
 		etcdListenAddr, etcdClientPort,
 		etcdISLsPrefix, etcdSatellitesPrefix,
-		constellationStartTime, updateInterval, positionImageName)
+		constellationStartTime, updateInterval)
 
 	// 3. 创建抽象节点
-	c.positionService = node.NewAbstractNode(types.NetworkNodeType_PositionService,
-		positionService)
+	c.positionService = positionService
+
+	abstractPositionService := node.NewAbstractNode(types.NetworkNodeType_PositionService, positionService)
 
 	// 4. 进行容器的创建
-	err := container_api.CreateContainer(c.client, c.positionService)
+	err := container_api.CreateContainer(c.client, abstractPositionService)
 	if err != nil {
 		return fmt.Errorf("create position service failed, %s", err)
 	}
 
 	// 5. 进行容器的启动
-	err = container_api.StartContainer(c.client, c.positionService)
+	err = container_api.StartContainer(c.client, abstractPositionService)
 	if err != nil {
 		return fmt.Errorf("start position service failed, %s", err)
 	}

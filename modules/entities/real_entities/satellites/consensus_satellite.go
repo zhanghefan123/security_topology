@@ -1,4 +1,4 @@
-package satellite
+package satellites
 
 import (
 	"context"
@@ -16,22 +16,19 @@ type ConsensusSatellite struct {
 	*normal_node.NormalNode
 	OrbitId      int      // 轨道的编号
 	IndexInOrbit int      // 轨道内的编号
-	ImageName    string   // 镜像名称
 	StartRpcPort int      // 起始的 RPC 端口
 	StartP2PPort int      // 起始的 P2P 端口
 	Tle          []string // tle
 }
 
 // NewConsensusSatellite 创建新的共识卫星
-func NewConsensusSatellite(nodeId, orbitId, indexInOrbit int, imageName string,
-	startRpcPort int, startP2PPort int, tle []string) *ConsensusSatellite {
+func NewConsensusSatellite(nodeId, orbitId, indexInOrbit int, startRpcPort int, startP2PPort int, tle []string) *ConsensusSatellite {
+	// 当前的类型
 	satType := types.NetworkNodeType_ConsensusSatellite
 	sat := &ConsensusSatellite{
-		NormalNode: normal_node.NewNormalNode(types.NetworkNodeStatus_Logic, nodeId, 1,
-			fmt.Sprintf("%s-%d", satType.String(), nodeId)),
+		NormalNode:   normal_node.NewNormalNode(types.NetworkNodeType_ConsensusSatellite, nodeId, fmt.Sprintf("%s-%d", satType.String(), nodeId)),
 		OrbitId:      orbitId,
 		IndexInOrbit: indexInOrbit,
-		ImageName:    imageName,
 		StartRpcPort: startRpcPort,
 		StartP2PPort: startP2PPort,
 		Tle:          tle,
@@ -57,4 +54,12 @@ func (consensusSatellite *ConsensusSatellite) StoreToEtcd(etcdClient *clientv3.C
 		return fmt.Errorf("failed to store normal satellite into etcd: %w", err)
 	}
 	return nil
+}
+
+func (consensusSatellite *ConsensusSatellite) GetOrbitId() int {
+	return consensusSatellite.OrbitId
+}
+
+func (consensusSatellite *ConsensusSatellite) GetIndexInOrbit() int {
+	return consensusSatellite.IndexInOrbit
 }

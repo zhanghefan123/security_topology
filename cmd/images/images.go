@@ -154,12 +154,13 @@ func core() error {
 		}
 		return nil
 	} else {
-		if variables.UserSelectedOperation == variables.OperationBuild { // 处理 build 命令
+		switch variables.UserSelectedOperation {
+		case variables.OperationBuild:
 			err := buildImage(userSelectedImage)
 			if err != nil {
 				return fmt.Errorf("build image failed: %v", err)
 			}
-		} else if variables.UserSelectedOperation == variables.OperationRebuild { // 处理 rebuild 命令
+		case variables.OperationRebuild:
 			err := removeImage(userSelectedImage)
 			if err != nil {
 				return fmt.Errorf("remove image failed: %v", err)
@@ -168,7 +169,7 @@ func core() error {
 			if err != nil {
 				return fmt.Errorf("build image failed: %v", err)
 			}
-		} else if variables.UserSelectedOperation == variables.OperationRemove { // 处理 remove 命令
+		case variables.OperationRemove:
 			err := removeImage(userSelectedImage)
 			if err != nil {
 				return fmt.Errorf("remove image failed: %v", err)

@@ -11,6 +11,7 @@ import (
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
+	"zhanghefan123/security_topology/modules/entities/types"
 )
 
 const (
@@ -101,7 +102,7 @@ func (c *Constellation) StopSatelliteContainers() error {
 	c.systemStopSteps[StopSatelliteContainers] = struct{}{}
 	constellationLogger.Infof("execute stop satellite containers")
 
-	return multithread.RunInMultiThread(description, taskFunc, c.Satellites)
+	return multithread.RunInMultiThread(description, taskFunc, c.AllAbstractNodes)
 }
 
 // RemoveSatelliteContainers 进行容器的删除
@@ -123,7 +124,7 @@ func (c *Constellation) RemoveSatelliteContainers() error {
 	c.systemStopSteps[RemoveSatelliteContainers] = struct{}{}
 	constellationLogger.Infof("execute remove satellite containers")
 
-	return multithread.RunInMultiThread(description, taskFunc, c.Satellites)
+	return multithread.RunInMultiThread(description, taskFunc, c.AllAbstractNodes)
 }
 
 // RemoveLinks 进行链路的删除
@@ -185,11 +186,11 @@ func (c *Constellation) RemoveEtcdService() error {
 		return nil
 	}
 
-	err := container_api.StopContainer(c.client, c.etcdService)
+	err := container_api.StopContainer(c.client, node.NewAbstractNode(types.NetworkNodeType_EtcdService, c.etcdService))
 	if err != nil {
 		return fmt.Errorf("stop etcd service failed, %s", err)
 	}
-	err = container_api.RemoveContainer(c.client, c.etcdService)
+	err = container_api.RemoveContainer(c.client, node.NewAbstractNode(types.NetworkNodeType_EtcdService, c.etcdService))
 	if err != nil {
 		return fmt.Errorf("remove etcd service failed, %s", err)
 	}
@@ -207,11 +208,11 @@ func (c *Constellation) RemovePositionService() error {
 		return nil
 	}
 
-	err := container_api.StopContainer(c.client, c.positionService)
+	err := container_api.StopContainer(c.client, node.NewAbstractNode(types.NetworkNodeType_PositionService, c.positionService))
 	if err != nil {
 		return fmt.Errorf("stop position service failed %v", err)
 	}
-	err = container_api.RemoveContainer(c.client, c.positionService)
+	err = container_api.RemoveContainer(c.client, node.NewAbstractNode(types.NetworkNodeType_PositionService, c.positionService))
 	if err != nil {
 		return fmt.Errorf("remove position service failed %v", err)
 	}

@@ -1,4 +1,4 @@
-package router
+package nodes
 
 import (
 	"fmt"
@@ -14,9 +14,8 @@ type Router struct {
 func NewRouter(nodeId, X, Y int) *Router {
 	routerType := types.NetworkNodeType_Router
 	normalNode := normal_node.NewNormalNode(
-		types.NetworkNodeStatus_Logic,
+		types.NetworkNodeType_Router,
 		nodeId,
-		1,
 		fmt.Sprintf("%s-%d", routerType.String(), nodeId),
 	)
 	normalNode.X = X

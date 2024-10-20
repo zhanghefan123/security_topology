@@ -7,7 +7,12 @@ const (
 	ImageNormalSatellite    = "normal_satellite"
 	ImageNameEtcd           = "etcd_service"
 	ImageNamePosition       = "position_service"
-	AllImages               = "all_images"
+	ImageNameRouter         = "router"
+	ImageNameNormalNode     = "normal_node"
+	ImageNameConsensusNode  = "consensus_node"
+	ImageNameMaliciousNode  = "malicious_node"
+
+	AllImages = "all_images"
 )
 
 const (
@@ -32,6 +37,11 @@ var (
 		ImageNormalSatellite:    false,
 		ImageNameEtcd:           false,
 		ImageNamePosition:       false,
-		AllImages:               false,
+		ImageNameRouter:         false,
+		ImageNameNormalNode:     false,
+		ImageNameConsensusNode:  false,
+		ImageNameMaliciousNode:  false,
+
+		AllImages: false,
 	}
 )

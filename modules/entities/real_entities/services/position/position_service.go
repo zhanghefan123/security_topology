@@ -13,13 +13,12 @@ type PositionService struct {
 	EtcdSatellitesPrefix   string // 卫星在 etcd 之中的前缀
 	ConstellationStartTime string // 星座的启动时间
 	UpdateInterval         int    // 更新的时间间隔
-	ImageName              string // 镜像名称
 }
 
 // NewPositionService 创建新的位置服务对象
 func NewPositionService(status types.NetworkNodeStatus, etcdListenAddr string, etcdClientPort int,
 	etcdISLsPrefix, etcdSatellitesPrefix,
-	constellationStartTime string, UpdateInterval int, ImageName string) *PositionService {
+	constellationStartTime string, UpdateInterval int) *PositionService {
 	return &PositionService{
 		NormalNode: &normal_node.NormalNode{
 			Status: status,
@@ -30,6 +29,5 @@ func NewPositionService(status types.NetworkNodeStatus, etcdListenAddr string, e
 		EtcdSatellitesPrefix:   etcdSatellitesPrefix,
 		ConstellationStartTime: constellationStartTime,
 		UpdateInterval:         UpdateInterval,
-		ImageName:              ImageName,
 	}
 }

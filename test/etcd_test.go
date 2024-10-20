@@ -10,7 +10,7 @@ import (
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/docker/client"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
-	"zhanghefan123/security_topology/modules/entities/real_entities/etcd"
+	"zhanghefan123/security_topology/modules/entities/real_entities/services/etcd"
 	"zhanghefan123/security_topology/modules/entities/types"
 )
 
@@ -31,7 +31,7 @@ func TestEtcd(t *testing.T) {
 	peerPort := etcdConfig.PeerPort
 	dataDir := etcdConfig.DataDir
 	etcdName := etcdConfig.EtcdName
-	imageName := etcdConfig.ImageName
+	imageName := configs.TopConfiguration.ImagesConfig.EtcdServiceImageName
 	// 4. 根据配置创建节点
 	actualEtcdNode := etcd.NewEtcdNode(types.NetworkNodeStatus_Logic, clientPort,
 		peerPort, dataDir, etcdName, imageName)

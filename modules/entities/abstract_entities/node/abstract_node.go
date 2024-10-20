@@ -4,23 +4,26 @@ import (
 	"fmt"
 	"gonum.org/v1/gonum/graph"
 	"zhanghefan123/security_topology/configs"
-	"zhanghefan123/security_topology/modules/entities/real_entities/etcd"
+	"zhanghefan123/security_topology/modules/entities/real_entities/nodes"
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
-	"zhanghefan123/security_topology/modules/entities/real_entities/position"
-	"zhanghefan123/security_topology/modules/entities/real_entities/satellite"
+	"zhanghefan123/security_topology/modules/entities/real_entities/satellites"
+	"zhanghefan123/security_topology/modules/entities/real_entities/services/etcd"
+	"zhanghefan123/security_topology/modules/entities/real_entities/services/position"
 	"zhanghefan123/security_topology/modules/entities/types"
 )
 
 // AbstractNode 抽象节点
 type AbstractNode struct {
-	graph.Node                       // 用来计算路由的
+	graph.Node
 	Type       types.NetworkNodeType // 节点类型
 	ActualNode interface{}           // 实际的节点
 }
 
 // NewAbstractNode 创建新的抽象节点
 func NewAbstractNode(nodeType types.NetworkNodeType, actualNode interface{}) *AbstractNode {
+	// 进行图节点的创建
 	graphNode := configs.ConstellationGraph.NewNode()
+	// 进行图节点的添加
 	configs.ConstellationGraph.AddNode(graphNode)
 	return &AbstractNode{
 		Node:       graphNode,
@@ -31,22 +34,35 @@ func NewAbstractNode(nodeType types.NetworkNodeType, actualNode interface{}) *Ab
 
 // GetNormalNodeFromAbstractNode 从抽象节点之中进行普通节点的获取
 func (abstractNode *AbstractNode) GetNormalNodeFromAbstractNode() (*normal_node.NormalNode, error) {
-	if abstractNode.Type == types.NetworkNodeType_NormalSatellite {
-		if normalSat, ok := abstractNode.ActualNode.(*satellite.NormalSatellite); ok {
+	switch abstractNode.Type {
+	case types.NetworkNodeType_NormalSatellite:
+		if normalSat, ok := abstractNode.ActualNode.(*satellites.NormalSatellite); ok {
 			return normalSat.NormalNode, nil
 		}
-	} else if abstractNode.Type == types.NetworkNodeType_ConsensusSatellite {
-		if consensusSat, ok := abstractNode.ActualNode.(*satellite.ConsensusSatellite); ok {
+	case types.NetworkNodeType_ConsensusSatellite:
+		if consensusSat, ok := abstractNode.ActualNode.(*satellites.ConsensusSatellite); ok {
 			return consensusSat.NormalNode, nil
 		}
-	} else if abstractNode.Type == types.NetworkNodeType_EtcdService {
+	case types.NetworkNodeType_EtcdService:
 		if etcdService, ok := abstractNode.ActualNode.(*etcd.EtcdNode); ok {
 			return etcdService.NormalNode, nil
 		}
-	} else if abstractNode.Type == types.NetworkNodeType_PositionService {
+	case types.NetworkNodeType_PositionService:
 		if positionService, ok := abstractNode.ActualNode.(*position.PositionService); ok {
 			return positionService.NormalNode, nil
 		}
+	case types.NetworkNodeType_Router:
+		if routerTmp, ok := abstractNode.ActualNode.(*nodes.Router); ok {
+			return routerTmp.NormalNode, nil
+		}
+	case types.NetworkNodeType_NormalNode:
+		if normalNode, ok := abstractNode.ActualNode.(*normal_node.NormalNode); ok {
+			return normalNode, nil
+		}
+	case types.NetworkNodeType_ConsensusNode:
+		if consensusNode, ok := abstractNode.ActualNode.(*nodes.ConsensusNode); ok {
+			return consensusNode.NormalNode, nil
+		}
 	}
-	return nil, fmt.Errorf("cannot get normal node from abstractn node")
+	return nil, fmt.Errorf("cannot get normal node from abstract node")
 }

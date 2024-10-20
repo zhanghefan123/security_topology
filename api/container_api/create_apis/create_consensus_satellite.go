@@ -1,4 +1,4 @@
-package create_container
+package create_apis
 
 import (
 	"context"
@@ -62,7 +62,7 @@ func CreateConsensusSatellite(client *docker.Client, satellite *satellites.Conse
 
 	// containerConfig
 	containerConfig := &container.Config{
-		Image: satellite.ImageName,
+		Image: configs.TopConfiguration.ImagesConfig.ConsensusSatelliteImageName,
 		// 容器暴露的端口
 		ExposedPorts: nat.PortSet{
 			// rpc 端口

@@ -8,8 +8,8 @@ import (
 func CreateRootCmd() *cobra.Command {
 	var rootCmd = &cobra.Command{
 		Use:   "main",
-		Short: "Cmd interface of security topology",
-		Long:  "Cmd interface of security topology",
+		Short: "Cmd interface of security images",
+		Long:  "Cmd interface of security images",
 	}
 	return rootCmd
 }

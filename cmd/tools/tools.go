@@ -14,10 +14,12 @@ func InitFlagSet() *pflag.FlagSet {
 		FlagNameOfImageName,
 		FlagNameShortHandOfImageName,
 		variables.UserSelectedImage,
-		fmt.Sprintf("available images: %s %s %s %s %s %s",
+		fmt.Sprintf("available images: %s %s %s %s %s %s %s %s %s %s",
 			variables.ImageUbuntuWithSoftware, variables.ImagePythonEnv,
 			variables.ImageGoEnv, variables.ImageNormalSatellite,
-			variables.ImageNameEtcd, variables.ImageNamePosition))
+			variables.ImageNameEtcd, variables.ImageNamePosition,
+			variables.ImageNameRouter, variables.ImageNameNormalNode,
+			variables.ImageNameConsensusNode, variables.ImageNameMaliciousNode))
 	flags.StringVarP(&variables.UserSelectedOperation,
 		FlagNameOfOperationType,
 		FlagNameShortHandOfOperationType,

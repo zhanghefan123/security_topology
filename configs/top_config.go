@@ -11,6 +11,7 @@ import (
 	"zhanghefan123/security_topology/configs/apps"
 	"zhanghefan123/security_topology/configs/consensus"
 	"zhanghefan123/security_topology/configs/constellation"
+	"zhanghefan123/security_topology/configs/images"
 	"zhanghefan123/security_topology/configs/network"
 	"zhanghefan123/security_topology/configs/path"
 	"zhanghefan123/security_topology/configs/services"
@@ -29,9 +30,15 @@ type TopConfig struct {
 	NetworkConfig       network.NetworkConfig             `mapstructure:"network_config"`
 	ConsensusConfig     consensus.ConsensusConfig         `mapstructure:"consensus_config"`
 	ConstellationConfig constellation.ConstellationConfig `mapstructure:"constellation_config"`
+	ImagesConfig        images.ImagesConfig               `mapstructure:"images_config"`
 	PathConfig          path.PathConfig                   `mapstructure:"path_config"`
 	ServicesConfig      services.ServicesConfig           `mapstructure:"services_config"`
 	AppsConfig          apps.AppsConfig                   `mapstructure:"apps_config"`
+}
+
+var availableOspfVersions = map[string]struct{}{
+	"ospfv2": {},
+	"ospfv3": {},
 }
 
 func NewDefaultTopConfig() *TopConfig {
@@ -64,6 +71,10 @@ func InitLocalConfig() error {
 	}
 	// 进行本地网路地址的设置
 	TopConfiguration.NetworkConfig.LocalNetworkAddress = localNetworkAddr
+	// 进行 ospf 版本号的判断
+	if _, ok := availableOspfVersions[TopConfiguration.NetworkConfig.OspfVersion]; !ok {
+		return fmt.Errorf("unsupported OSPF version: %s", TopConfiguration.NetworkConfig.OspfVersion)
+	}
 	PrintLocalConfig()
 	return nil
 }

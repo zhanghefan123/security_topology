@@ -10,40 +10,24 @@ import (
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/docker/client"
 	"zhanghefan123/security_topology/modules/entities/real_entities/topology"
+	"zhanghefan123/security_topology/services/http/params"
 )
 
 var (
 	topologyInstance *topology.Topology
 )
 
-type NodeParam struct {
-	Index int    `json:"index"`
-	Type  string `json:"type"`
-	X     int    `json:"x"`
-	Y     int    `json:"y"`
-}
-
-type LinkParam struct {
-	SourceNode NodeParam `json:"source_node"`
-	TargetNode NodeParam `json:"target_node"`
-}
-
-type TopologyParams struct {
-	Nodes []NodeParam `json:"nodes"`
-	Links []LinkParam `json:"links"`
-}
-
 // StartTopology 进行拓扑的启动
 func StartTopology(c *gin.Context) {
 	if topologyInstance != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "",
-			"message": "topology already created",
+			"message": "images already created",
 		})
 	}
 
 	// 反序列化
-	topologyParams := &TopologyParams{}
+	topologyParams := &params.TopologyParams{}
 	err := c.BindJSON(topologyParams)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -63,7 +47,7 @@ func StartTopology(c *gin.Context) {
 }
 
 // startTopologyInner 实际的拓扑启动逻辑
-func startTopologyInner(topologyParams *TopologyParams) {
+func startTopologyInner(topologyParams *params.TopologyParams) {
 	var err error
 	var dockerClient *docker.Client
 	// 初始化本地配置
@@ -91,7 +75,7 @@ func StopTopology(c *gin.Context) {
 	if topologyInstance == nil {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "down",
-			"message": "topology already stopped",
+			"message": "images already stopped",
 		})
 	}
 
@@ -99,7 +83,7 @@ func StopTopology(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "down",
-		"message": "successfully stop the topology",
+		"message": "successfully stop the images",
 	})
 }
 

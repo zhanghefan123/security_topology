@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"zhanghefan123/security/normal_satellite/modules/frr"
-	"zhanghefan123/security/normal_satellite/modules/srv6"
+	"zhanghefan123/security/normal_node/modules/frr"
 )
 
 func main() {
@@ -17,7 +16,6 @@ func main() {
 	// =======================================================
 	PrintExitLogo()
 	frr.Start()
-	srv6.Start()
 	// =======================================================
 
 	<-signalChan

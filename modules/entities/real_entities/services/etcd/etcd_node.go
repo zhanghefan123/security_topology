@@ -12,12 +12,11 @@ type EtcdNode struct {
 	PeerPort   int
 	DataDir    string
 	EtcdName   string
-	ImageName  string
 }
 
 // NewEtcdNode 创建新的 etcd 节点
 func NewEtcdNode(status types.NetworkNodeStatus, clientPort, peerPort int,
-	dataDir, etcdName, imageName string) *EtcdNode {
+	dataDir, etcdName string) *EtcdNode {
 	return &EtcdNode{
 		NormalNode: &normal_node.NormalNode{
 			Status: status,
@@ -26,6 +25,5 @@ func NewEtcdNode(status types.NetworkNodeStatus, clientPort, peerPort int,
 		PeerPort:   peerPort,
 		DataDir:    dataDir,
 		EtcdName:   etcdName,
-		ImageName:  imageName,
 	}
 }

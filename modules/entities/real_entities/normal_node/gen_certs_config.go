@@ -1,4 +1,4 @@
-package basic_node
+package normal_node
 
 import (
 	"fmt"
