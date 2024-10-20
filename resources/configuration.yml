@@ -10,21 +10,16 @@ consensus_config:
   consensus_protocol: pbft
 
 #  C:\zhf_projects\security\security_topology\modules\entities\types\entities.pb.go:
+#  satellite_config.type 只能够选择下面的两种
 #  NetworkNodeType_NormalSatellite    NetworkNodeType = 0
 #  NetworkNodeType_ConsensusSatellite NetworkNodeType = 1
-#  NetworkNodeType_EtcdService        NetworkNodeType = 2
-#  NetworkNodeType_PositionService    NetworkNodeType = 3
-#  NetworkNodeType_Router             NetworkNodeType = 4
-#  NetworkNodeType_NormalNode         NetworkNodeType = 5
-#  NetworkNodeType_ConsensusNode      NetworkNodeType = 6
-#  NetworkNodeType_MaliciousNode      NetworkNodeType = 7
 
 constellation_config:
   orbit_number: 1
   satellite_per_orbit: 11
   start_time: 2024|4|9|14|43|0 # 星座的启动时间
   satellite_config:
-    type: 7
+    type: 0
     p2p_port: 11300
     rpc_port: 12300
 

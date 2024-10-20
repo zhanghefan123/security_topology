@@ -9,51 +9,47 @@ import (
 )
 
 const (
-	FrrV4StartInfo = `frr version 7.2.1
+	FrrV6StartInfo = `frr version 9.1.0
 frr defaults traditional
 hostname %s
 log syslog informational
-no ipv6 forwarding
 service integrated-vtysh-config
 !
-router ospf
-   redistribute connected
+router ospf6
+	ospf6 router-id %d.%d.%d.%d
+ 	redistribute connected
+	area 0.0.0.0 range ::/0
+exit
+!
+`
+	InterfaceV6Command = `interface %s
+	ipv6 ospf6 area 0.0.0.0
+!
 `
 
-	InterfaceV4Command = `interface %s
-   ip ospf network point-to-point
-   ip ospf hello-interval 5
-   ip ospf dead-interval 20
-   ip ospf retransmit-interval 5`
-
-	FrrEndV4Info = `!
+	FrrEndV6Info = `
 line vty
 !
 `
 )
 
-// GenerateOspfV4FrrConfig 进行 frr 配置文件的生成
-func (normalNode *NormalNode) GenerateOspfV4FrrConfig() error {
+// GenerateOspfV3FrrConfig 进行 frr 配置文件的生成
+func (normalNode *NormalNode) GenerateOspfV3FrrConfig() error {
 	finalConfigStr := ""
 
-	frrStartInfo := fmt.Sprintf(FrrV4StartInfo, normalNode.ContainerName)
+	frrStartInfo := fmt.Sprintf(FrrV6StartInfo, normalNode.ContainerName, normalNode.Id, normalNode.Id,
+		normalNode.Id, normalNode.Id)
 
 	finalConfigStr += frrStartInfo
 
-	// 遍历所有连接的子网
-	area := "0.0.0.0"
-	for _, subNet := range normalNode.ConnectedIpv4SubnetList {
-		finalConfigStr += fmt.Sprintf("\t network %s area %s\n", subNet, area)
-	}
-
 	// 遍历所有的接口
 	for _, intf := range normalNode.IfNameToInterfaceMap {
-		interfaceCommand := fmt.Sprintf(InterfaceV4Command, intf.IfName)
-		finalConfigStr += interfaceCommand + "\n"
+		interfaceCommand := fmt.Sprintf(InterfaceV6Command, intf.IfName)
+		finalConfigStr += interfaceCommand
 	}
 
 	// 添加尾部
-	finalConfigStr += FrrEndV4Info
+	finalConfigStr += FrrEndV6Info
 
 	// 获取路径
 	// /simulation/containerName/route
@@ -63,7 +59,7 @@ func (normalNode *NormalNode) GenerateOspfV4FrrConfig() error {
 	// 进行路径的创建
 	err := dir.Generate(outputDir)
 	if err != nil {
-		return fmt.Errorf("GenerateOspfV4FrrConfig err: %s", err)
+		return fmt.Errorf("GenerateOspfV3FrrConfig err: %s", err)
 	}
 
 	var f *os.File

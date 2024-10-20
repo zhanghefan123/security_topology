@@ -24,7 +24,7 @@ const (
 )
 
 // Init 进行初始化
-func (t *Topology) Init() {
+func (t *Topology) Init() error {
 	initSteps := []map[string]InitFunction{
 		{GenerateNodes: t.GenerateNodes},
 		{GenerateSubnets: t.GenerateSubnets},
@@ -34,8 +34,9 @@ func (t *Topology) Init() {
 	err := t.initializeSteps(initSteps)
 	if err != nil {
 		// 所有的错误都添加了完整的上下文信息并在这里进行打印
-		topologyLogger.Errorf("constellation init failed: %v", err)
+		return fmt.Errorf("constellation init failed: %w", err)
 	}
+	return nil
 }
 
 // InitializeSteps 按步骤进行初始化
@@ -233,17 +234,16 @@ func (t *Topology) GenerateFrrConfigurationFiles() error {
 	}
 
 	selectedOspfVersion := configs.TopConfiguration.NetworkConfig.OspfVersion
-
 	for _, router := range t.Routers {
 		if selectedOspfVersion == "ospfv2" {
 			// 生成 ospfv2 配置
-			err := router.GenerateOspfV4FrrConfig()
+			err := router.GenerateOspfV2FrrConfig()
 			if err != nil {
 				return fmt.Errorf("generate ospfv2 frr configuration files failed, %s", err)
 			}
 		} else if selectedOspfVersion == "ospfv3" {
 			// 生成 ospfv3 配置
-			err := router.GenerateOspfV6FrrConfig()
+			err := router.GenerateOspfV3FrrConfig()
 			if err != nil {
 				return fmt.Errorf("generate ospfv3 frr configuration files failed, %s", err)
 			}
@@ -256,13 +256,13 @@ func (t *Topology) GenerateFrrConfigurationFiles() error {
 	for _, normalNode := range t.NormalNodes {
 		if selectedOspfVersion == "ospfv2" {
 			// 生成 ospfv2 配置
-			err := normalNode.GenerateOspfV4FrrConfig()
+			err := normalNode.GenerateOspfV2FrrConfig()
 			if err != nil {
 				return fmt.Errorf("generate ospfv2 frr configuration files failed, %s", err)
 			}
 		} else if selectedOspfVersion == "ospfv3" {
 			// 生成 ospfv3 配置
-			err := normalNode.GenerateOspfV6FrrConfig()
+			err := normalNode.GenerateOspfV3FrrConfig()
 			if err != nil {
 				return fmt.Errorf("generate ospfv3 frr configuration files failed, %s", err)
 			}
@@ -274,13 +274,13 @@ func (t *Topology) GenerateFrrConfigurationFiles() error {
 	for _, consensusNode := range t.ConsensusNodes {
 		if selectedOspfVersion == "ospfv2" {
 			// 生成 ospfv2 配置
-			err := consensusNode.GenerateOspfV4FrrConfig()
+			err := consensusNode.GenerateOspfV2FrrConfig()
 			if err != nil {
 				return fmt.Errorf("generate ospfv2 frr configuration files failed, %s", err)
 			}
 		} else if selectedOspfVersion == "ospfv3" {
 			// 生成 ospfv3 配置
-			err := consensusNode.GenerateOspfV6FrrConfig()
+			err := consensusNode.GenerateOspfV3FrrConfig()
 			if err != nil {
 				return fmt.Errorf("generate ospfv3 frr configuration files failed, %s", err)
 			}
@@ -292,13 +292,13 @@ func (t *Topology) GenerateFrrConfigurationFiles() error {
 	for _, maliciousNode := range t.MaliciousNodes {
 		if selectedOspfVersion == "ospfv2" {
 			// 生成 ospfv2 配置
-			err := maliciousNode.GenerateOspfV4FrrConfig()
+			err := maliciousNode.GenerateOspfV2FrrConfig()
 			if err != nil {
 				return fmt.Errorf("generate ospfv2 frr configuration files failed, %s", err)
 			}
 		} else if selectedOspfVersion == "ospfv3" {
 			// 生成 ospfv3 配置
-			err := maliciousNode.GenerateOspfV6FrrConfig()
+			err := maliciousNode.GenerateOspfV3FrrConfig()
 			if err != nil {
 				return fmt.Errorf("generate ospfv3 frr configuration files failed, %s", err)
 			}

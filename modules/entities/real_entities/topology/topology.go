@@ -5,6 +5,7 @@ import (
 	"github.com/coreos/etcd/clientv3"
 	docker "github.com/docker/docker/client"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
+	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/nodes"
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/logger"
@@ -16,17 +17,18 @@ var (
 )
 
 type Topology struct {
-	client         *docker.Client
-	etcdClient     *clientv3.Client
-	topologyParams *params.TopologyParams
-	Ipv4SubNets    []iplib.Net4
-	Ipv6SubNets    []iplib.Net6
-	Routers        []*nodes.Router
-	NormalNodes    []*normal_node.NormalNode
-	ConsensusNodes []*nodes.ConsensusNode
-	MaliciousNodes []*nodes.MaliciousNode
-	Links          []*link.AbstractLink
-	LinksMap       map[string]map[string]*link.AbstractLink // map[sourceContainerName][targetContainerName]*link.AbstractLink
+	client           *docker.Client
+	etcdClient       *clientv3.Client
+	topologyParams   *params.TopologyParams
+	Ipv4SubNets      []iplib.Net4
+	Ipv6SubNets      []iplib.Net6
+	Routers          []*nodes.Router
+	NormalNodes      []*normal_node.NormalNode
+	ConsensusNodes   []*nodes.ConsensusNode
+	MaliciousNodes   []*nodes.MaliciousNode
+	Links            []*link.AbstractLink
+	LinksMap         map[string]map[string]*link.AbstractLink // map[sourceContainerName][targetContainerName]*link.AbstractLink
+	AllAbstractNodes []*node.AbstractNode                     // 所有的抽象节点
 
 	topologyInitSteps  map[string]struct{} // 拓扑初始化步骤
 	topologyStartSteps map[string]struct{} // 拓扑启动步骤

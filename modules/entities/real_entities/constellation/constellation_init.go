@@ -388,12 +388,21 @@ func (c *Constellation) GenerateFrrConfigurationFiles() error {
 		if err != nil {
 			return fmt.Errorf("cannot convert abstract node to normal node")
 		}
-		// 生成 ospfv4 配置
-		//err := sat.GenerateOspfV4FrrConfig()
-		// 生成 ospfv6 配置
-		err = normalNode.GenerateOspfV6FrrConfig()
-		if err != nil {
-			return fmt.Errorf("generate frr configuration files failed: %w", err)
+		ospfVersion := configs.TopConfiguration.NetworkConfig.OspfVersion
+		if ospfVersion == "ospfv2" {
+			// 生成 ospfv6 配置
+			err = normalNode.GenerateOspfV2FrrConfig()
+			if err != nil {
+				return fmt.Errorf("generate ospfv2 frr configuration files failed: %w", err)
+			}
+		} else if ospfVersion == "ospfv3" {
+			// 生成 ospfv6 配置
+			err = normalNode.GenerateOspfV3FrrConfig()
+			if err != nil {
+				return fmt.Errorf("generate ospfv3 frr configuration files failed: %w", err)
+			}
+		} else {
+			return fmt.Errorf("unsupported ospf version %s", ospfVersion)
 		}
 	}
 

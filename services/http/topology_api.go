@@ -38,7 +38,14 @@ func StartTopology(c *gin.Context) {
 	}
 
 	// 核心处理逻辑
-	startTopologyInner(topologyParams)
+	err = startTopologyInner(topologyParams)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "down",
+			"message": fmt.Sprintf("start topology err: %v", err),
+		})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "up",
@@ -47,18 +54,18 @@ func StartTopology(c *gin.Context) {
 }
 
 // startTopologyInner 实际的拓扑启动逻辑
-func startTopologyInner(topologyParams *params.TopologyParams) {
+func startTopologyInner(topologyParams *params.TopologyParams) error {
 	var err error
 	var dockerClient *docker.Client
 	// 初始化本地配置
 	err = configs.InitLocalConfig()
 	if err != nil {
-		HttpServiceLogger.Errorf("init local configuration failed: %v", err)
+		return fmt.Errorf("init local config err: %v", err)
 	}
 	// 初始化 dockerClient
 	dockerClient, err = client.NewDockerClient()
 	if err != nil {
-		HttpServiceLogger.Errorf("create docker client failed: %v", err)
+		return fmt.Errorf("create docker client err: %v", err)
 	}
 	// 初始化 etcdClient
 	listenAddr := configs.TopConfiguration.NetworkConfig.LocalNetworkAddress
@@ -67,7 +74,14 @@ func startTopologyInner(topologyParams *params.TopologyParams) {
 	// 创建拓扑实例
 	topologyInstance = topology.NewTopology(dockerClient, etcdClient, topologyParams)
 
+	// 进行 init
+	err = topologyInstance.Init()
+	if err != nil {
+		return fmt.Errorf("init topology err: %v", err)
+	}
+
 	pretty.Println(*topologyParams)
+	return nil
 }
 
 // StopTopology 进行拓扑的删除
@@ -79,7 +93,14 @@ func StopTopology(c *gin.Context) {
 		})
 	}
 
-	stopTopologyInner()
+	err := stopTopologyInner()
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "down",
+			"message": fmt.Sprintf("stop topology err: %v", err),
+		})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "down",
@@ -88,6 +109,7 @@ func StopTopology(c *gin.Context) {
 }
 
 // stopTopologyInner 实际的拓扑销毁逻辑
-func stopTopologyInner() {
+func stopTopologyInner() error {
 	topologyInstance = nil
+	return nil
 }
