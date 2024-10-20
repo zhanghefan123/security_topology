@@ -1,4 +1,4 @@
-package node
+package basic_node
 
 import (
 	"fmt"
@@ -11,9 +11,9 @@ import (
 )
 
 // GeneratePeerIdAndPrivateKey 进行密钥的生成
-func (abstractNode *AbstractNode) GeneratePeerIdAndPrivateKey() (err error) {
+func (normalNode *NormalNode) GeneratePeerIdAndPrivateKey() (err error) {
 	var peerIdPath, privateKeyPath string
-	err, peerIdPath, privateKeyPath = abstractNode.GetPeerIdAndPrivateKeyPath()
+	err, peerIdPath, privateKeyPath = normalNode.GetPeerIdAndPrivateKeyPath()
 	if err != nil {
 		return fmt.Errorf("GetPeerIdAndPrivateKeyPath err: %w", err)
 	}
@@ -71,16 +71,12 @@ func (abstractNode *AbstractNode) GeneratePeerIdAndPrivateKey() (err error) {
 }
 
 // GetPeerIdAndPrivateKeyPath 获取 peerid 和 privatekey
-func (abstractNode *AbstractNode) GetPeerIdAndPrivateKeyPath() (error, string, string) {
-	normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
-	if err != nil {
-		return fmt.Errorf("get peer id and private key path error: %w", err), "", ""
-	}
+func (normalNode *NormalNode) GetPeerIdAndPrivateKeyPath() (error, string, string) {
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	outputDir := filepath.Join(simulationDir, normalNode.ContainerName, "security")
 
 	// 创建目录
-	err = dir.Generate(outputDir)
+	err := dir.Generate(outputDir)
 	if err != nil {
 		return fmt.Errorf("get peer id and private key path failed: %w", err), "", ""
 	}

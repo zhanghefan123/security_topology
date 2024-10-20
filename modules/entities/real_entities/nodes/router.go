@@ -1,4 +1,4 @@
-package satellite
+package router
 
 import (
 	"fmt"
@@ -11,10 +11,17 @@ type Router struct {
 }
 
 // NewRouter 创建新的路由器
-func NewRouter(nodeId int) *Router {
+func NewRouter(nodeId, X, Y int) *Router {
 	routerType := types.NetworkNodeType_Router
+	normalNode := normal_node.NewNormalNode(
+		types.NetworkNodeStatus_Logic,
+		nodeId,
+		1,
+		fmt.Sprintf("%s-%d", routerType.String(), nodeId),
+	)
+	normalNode.X = X
+	normalNode.Y = Y
 	return &Router{
-		NormalNode: normal_node.NewNormalNode(types.NetworkNodeStatus_Logic, nodeId, 1,
-			fmt.Sprintf("%s-%d", routerType.String(), nodeId)),
+		NormalNode: normalNode,
 	}
 }

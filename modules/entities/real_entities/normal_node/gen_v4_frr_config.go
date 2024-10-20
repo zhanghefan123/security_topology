@@ -1,4 +1,4 @@
-package node
+package basic_node
 
 import (
 	"fmt"
@@ -33,13 +33,8 @@ line vty
 )
 
 // GenerateOspfV4FrrConfig 进行 frr 配置文件的生成
-func (abstractNode *AbstractNode) GenerateOspfV4FrrConfig() error {
+func (normalNode *NormalNode) GenerateOspfV4FrrConfig() error {
 	finalConfigStr := ""
-
-	normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
-	if err != nil {
-		return fmt.Errorf("generate ospfv4 frr config error: %w", err)
-	}
 
 	frrStartInfo := fmt.Sprintf(FrrV4StartInfo, normalNode.ContainerName)
 
@@ -66,7 +61,7 @@ func (abstractNode *AbstractNode) GenerateOspfV4FrrConfig() error {
 	outputDir := filepath.Join(simulationDir, normalNode.ContainerName, "route")
 
 	// 进行路径的创建
-	err = dir.Generate(outputDir)
+	err := dir.Generate(outputDir)
 	if err != nil {
 		return fmt.Errorf("GenerateOspfV4FrrConfig err: %s", err)
 	}

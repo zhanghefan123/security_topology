@@ -1,16 +1,20 @@
-package normal_node
+package basic_node
 
 import (
 	"fmt"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
+	"gonum.org/v1/gonum/graph"
 	"runtime"
+	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/intf"
 	"zhanghefan123/security_topology/modules/entities/types"
 )
 
 // NormalNode 基础的网络节点
 type NormalNode struct {
+	graph.Node                                                // 图节点
+	Type                    types.NetworkNodeType             // 节点的类型
 	Status                  types.NetworkNodeStatus           // 节点状态
 	Id                      int                               // 节点编号
 	Pid                     int                               // 对应的进程编号
@@ -25,11 +29,17 @@ type NormalNode struct {
 }
 
 // NewNormalNode 创建普通系欸但
-func NewNormalNode(status types.NetworkNodeStatus, id, ifIdx int, containerName string) *NormalNode {
+func NewNormalNode(typ types.NetworkNodeType, id int, containerName string) *NormalNode {
+	// 进行图节点的创建
+	graphNode := configs.ConstellationGraph.NewNode()
+	// 进行图节点的添加
+	configs.ConstellationGraph.AddNode(graphNode)
 	return &NormalNode{
-		Status:                  status,
+		Node:                    graphNode,
+		Type:                    typ,
+		Status:                  types.NetworkNodeStatus_Logic,
 		Id:                      id,
-		Ifidx:                   ifIdx,
+		Ifidx:                   1,
 		IfNameToInterfaceMap:    make(map[string]*intf.NetworkInterface),
 		ConnectedIpv4SubnetList: make([]string, 0),
 		ContainerName:           containerName,
