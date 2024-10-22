@@ -39,7 +39,7 @@ path_config:
   frr_path:
     frr_host_path: ../simulation/frr
     frr_container_path: /configuration/frr
-  real_time_position_dir: srv6_position
+  real_time_position_dir: satellites_position
 
 services_config:
   etcd_config:

@@ -112,6 +112,12 @@ func buildImage(userSelectedImage string) error {
 
 // removeImage 进行镜像的删除
 func removeImage(userSelectedImage string) error {
+	// 判断是否存在
+	if _, ok := variables.ExistedImages[variables.UserSelectedImage]; !ok {
+		cmdImagesLogger.Infof("image %s is not built", variables.UserSelectedImage)
+		return nil
+	}
+
 	// 1. 创建命令
 	commandStr := fmt.Sprintf("rmi %s", userSelectedImage)
 	cmd := exec.Command("docker", strings.Split(commandStr, " ")...)
