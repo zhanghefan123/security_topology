@@ -1,0 +1,1 @@
+wget https://go.dev/dl/go1.18.10.linux-amd64.tar.gz
