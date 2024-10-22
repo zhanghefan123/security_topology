@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option go_package = "./link";
+
+enum LinkType {
+  LINK_TYPE_INTER_SATELLITE_LINK = 0;
+  LINK_TYPE_GROUND_SATELLITE_LINK = 1;
+}
+
+message Link {
+  LinkType type = 1;
+  int32 id = 2;
+  int32 source_node_id = 3;
+  int32 target_node_id = 4;
+  string source_iface_name = 5;
+  string target_iface_name = 6;
+  float bandwidth = 7;
+  float delay = 8;
+}

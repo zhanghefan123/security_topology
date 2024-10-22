@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option go_package = "./node";
+
+enum NodeType {
+    NODE_TYPE_SATELLITE = 0;
+    NODE_TYPE_GROUND_STATION = 1;
+}
+
+message Node {
+    NodeType type = 1;
+    int32 id = 2;
+    string container_name = 3;
+    int32 pid = 4;
+    repeated string tle = 5;
+    repeated string interface_delay = 6;
+    float latitude = 7;
+    float longitude = 8;
+    float altitude = 9;
+}
