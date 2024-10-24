@@ -6,6 +6,8 @@ import (
 )
 
 var postRoutes = map[string]gin.HandlerFunc{
+	"/createContract": apis.CreateContract,
+
 	"/getConstellationState": apis.GetConstellationState, // (constellation 相关)
 	"/getInstancePositions":  apis.GetInstancePositions,  // (constellation 相关)
 	"/startConstellation":    apis.StartConstellation,    // (constellation 相关)

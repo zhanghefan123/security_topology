@@ -185,11 +185,13 @@ func (t *Topology) RemoveChainMakerFiles() error {
 
 	chainMakerGoProjectPath := configs.TopConfiguration.ChainMakerConfig.ChainMakerGoProjectPath
 	multiNodePath := path.Join(chainMakerGoProjectPath, "scripts/docker/multi_node")
+	testDataPath := path.Join(chainMakerGoProjectPath, "tools/cmc/testdata")
 	configPath := path.Join(multiNodePath, "config")
 	dataPath := path.Join(multiNodePath, "data")
 	logPath := path.Join(multiNodePath, "log")
+	cmdTestCryptoConfigData := path.Join("../cmd", "testdata/crypto-config")
 
-	deleteDirs := []string{"./build/", "./crypto-config/", configPath, dataPath, logPath}
+	deleteDirs := []string{"./build/", "./crypto-config/", testDataPath, configPath, dataPath, logPath, cmdTestCryptoConfigData}
 
 	for _, deleteDir := range deleteDirs {
 		err := os.RemoveAll(deleteDir)

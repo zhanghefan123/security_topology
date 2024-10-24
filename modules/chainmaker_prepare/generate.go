@@ -47,6 +47,7 @@ const (
 	PKCS11NewFileName       = "PKCS11NewFileName"
 	FrontPartOfBCFile       = "FrontPartOfBCFile"
 	BackPartOfBCFile        = "BackPartOfBCFile"
+	CmdTestData             = "CmdTestData"
 )
 
 type GenerateFunction func() error
@@ -96,6 +97,7 @@ func (p *ChainMakerPrepare) InitializePathMapping() error {
 	p.pathMapping[PKCS11NewFileName] = "./pkcs11_keys.yml"
 	p.pathMapping[FrontPartOfBCFile] = filepath.Join(resources, "bc_template_part/front_part_of_bc_file.txt")
 	p.pathMapping[BackPartOfBCFile] = filepath.Join(resources, "bc_template_part/back_part_of_bc_file.txt")
+	p.pathMapping[CmdTestData] = filepath.Join("../cmd", "testdata/")
 	prepareWorkLogger.Infof("successfully initialize path mapping")
 	p.generateSteps[InitializePathMap] = struct{}{}
 	return nil
@@ -481,8 +483,10 @@ func (p *ChainMakerPrepare) CopyPrepareFiles() error {
 
 	copyMap := map[string]string{
 		p.pathMapping[BuildCryptoConfig]: p.pathMapping[TestData],
+		p.pathMapping[BuildCryptoConfig]: p.pathMapping[CmdTestData],
 		p.pathMapping[BuildConfig]:       p.pathMapping[MultiNode],
 	}
+
 	for source, target := range copyMap {
 		cmd := exec.Command("cp", "-r", source, target)
 		err := cmd.Run()

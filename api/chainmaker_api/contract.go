@@ -1,0 +1,128 @@
+package chainmaker_api
+
+import (
+	"chainmaker.org/chainmaker/pb-go/v2/common"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"zhanghefan123/security_topology/api/chainmaker_api/types"
+)
+
+type createUpgradeContractOp int
+
+const (
+	CreateContractOp createUpgradeContractOp = iota + 1
+	UpgradeContractOp
+)
+
+// 示例创建合约代码
+// ./cmc client contract user create \
+//--contract-name=fact \
+//--runtime-type=WASMER \
+//--byte-code-path=./testdata/claim-wasm-demo/rust-fact-2.0.0.wasm \
+//--version=1.0 \
+//--sdk-conf-path=./testdata/sdk_config.yml \
+//--admin-key-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.sign.key,./testdata/crypto-config/wx-org2.chainmaker.org/user/admin1/admin1.sign.key,./testdata/crypto-config/wx-org3.chainmaker.org/user/admin1/admin1.sign.key \
+//--admin-crt-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.sign.crt,./testdata/crypto-config/wx-org2.chainmaker.org/user/admin1/admin1.sign.crt,./testdata/crypto-config/wx-org3.chainmaker.org/user/admin1/admin1.sign.crt \
+//--sync-result=true \
+//--params="{}"
+
+func CreateUpgradeUserContract(op createUpgradeContractOp, contractName string) error {
+	clientConfiguration := NewClientConfiguration(contractName)
+	client, err := CreateChainMakerClient(clientConfiguration)
+	if err != nil {
+		return fmt.Errorf("cannot create chainmaker client: %w", err)
+	}
+	adminKeys, adminCrets, adminOrgs, err := MakeAdminInfo(client,
+		clientConfiguration.AdminKeyFilePaths,
+		clientConfiguration.AdminCertFilePaths,
+		clientConfiguration.AdminOrgIds)
+	if err != nil {
+		return fmt.Errorf("cannot create admin info: %w", err)
+	}
+
+	rt, ok := common.RuntimeType_value[clientConfiguration.RuntimeType]
+	if !ok {
+		return fmt.Errorf("unknown runtime type: %s", clientConfiguration.RuntimeType)
+	}
+
+	var kvs []*common.KeyValuePair
+
+	if clientConfiguration.RuntimeType != "EVM" {
+		if clientConfiguration.Params != "" {
+			kvsMap := make(map[string]interface{})
+			err = json.Unmarshal([]byte(clientConfiguration.Params), &kvsMap)
+			if err != nil {
+				return err
+			}
+			kvs = ConvertParameters(kvsMap)
+		}
+	}
+
+	var payload *common.Payload
+	switch op {
+	case CreateContractOp:
+		payload, err = client.CreateContractCreatePayload(clientConfiguration.ContractName, clientConfiguration.Version,
+			clientConfiguration.ByteCodePath, common.RuntimeType(rt), kvs)
+		if err != nil {
+			return err
+		}
+	default:
+		return errors.New("unknown operation")
+	}
+
+	if clientConfiguration.GasLimit > 0 {
+		var limit = &common.Limit{GasLimit: clientConfiguration.GasLimit}
+		payload = client.AttachGasLimit(payload, limit)
+	}
+
+	endorsementEntrys, err := MakeEndorsement(adminKeys, adminCrets, adminOrgs, client, payload)
+	if err != nil {
+		return err
+	}
+
+	var payer []*common.EndorsementEntry
+	if len(clientConfiguration.PayerKeyFilePath) > 0 {
+		payer, err = MakeEndorsement([]string{clientConfiguration.PayerKeyFilePath}, []string{clientConfiguration.PayerCrtFilePath}, []string{clientConfiguration.PayerOrgId},
+			client, payload)
+		if err != nil {
+			fmt.Printf("MakePayerEndorsement failed, %s", err)
+			return err
+		}
+	}
+
+	var resp *common.TxResponse
+	if len(payer) == 0 {
+		resp, err = client.SendContractManageRequest(payload, endorsementEntrys, clientConfiguration.Timeout, clientConfiguration.SyncResult)
+	} else {
+		resp, err = client.SendContractManageRequestWithPayer(payload, endorsementEntrys, payer[0], clientConfiguration.Timeout, clientConfiguration.SyncResult)
+	}
+	if err != nil {
+		return err
+	}
+	err = CheckProposalRequestResp(resp, false)
+	if err != nil {
+		return err
+	}
+	return createUpgradeUserContractOutput(resp)
+}
+
+func createUpgradeUserContractOutput(resp *common.TxResponse) error {
+	if resp.ContractResult != nil && resp.ContractResult.Result != nil {
+		var contract common.Contract
+		err := contract.Unmarshal(resp.ContractResult.Result)
+		if err != nil {
+			return err
+		}
+		PrintPrettyJson(types.CreateUpgradeContractTxResponse{
+			TxResponse: resp,
+			ContractResult: &types.CreateUpgradeContractContractResult{
+				ContractResult: resp.ContractResult,
+				Result:         &contract,
+			},
+		})
+	} else {
+		PrintPrettyJson(resp)
+	}
+	return nil
+}
