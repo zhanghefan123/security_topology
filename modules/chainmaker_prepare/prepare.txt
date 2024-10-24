@@ -1,0 +1,205 @@
+package chainmaker_prepare
+
+import (
+	"fmt"
+	"github.com/docker/docker/pkg/fileutils"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"zhanghefan123/security_topology/modules/utils/file"
+)
+
+const (
+	monitorPort         = 14321
+	pprofPort           = 24321
+	trustedPort         = 13301
+	containerNamePrefix = "chainmaker-vm-go-container"
+)
+
+type ChainMakerPrepare struct {
+	nodeCount       int
+	chainCount      int
+	p2pStartPort    int
+	rpcStartPort    int
+	vmGoRuntimePort int
+	vmGoEnginePort  int
+	logLevel        string
+	consensusType   int
+	enableVmGo      bool
+	vmGoTransport   string
+	vmGoLogLevel    string
+
+	currentPath   string
+	projectPath   string
+	buildPath     string
+	configTplPath string
+
+	buildCryptoPath     string
+	buildConfigPath     string
+	cryptoGenBinPath    string
+	cryptoGenConfigPath string
+	cryptoGenPKCS11Path string
+}
+
+func NewChainMakerPrepare(nodeCount, p2pStartPort, rpcStartPort, consensusType int, logLevel,
+	projectPath, cryptoGenPath string) *ChainMakerPrepare {
+
+	buildPath, _ := os.Getwd()
+
+	CryptoGenBinPath := filepath.Join(cryptoGenPath, "/bin/chainmaker-cryptogen")
+	CryptoGenConfigFilePath := filepath.Join(cryptoGenPath, "/config/crypto_config_template.yml")
+	CryptoGenPKCS11FilePath := filepath.Join(cryptoGenPath, "/config/pkcs11_keys.yml")
+
+	return &ChainMakerPrepare{
+		chainCount:      1,
+		nodeCount:       nodeCount,
+		p2pStartPort:    p2pStartPort,
+		rpcStartPort:    rpcStartPort,
+		vmGoRuntimePort: 32351,
+		vmGoEnginePort:  22351,
+		logLevel:        logLevel,
+		consensusType:   consensusType,
+		enableVmGo:      false,
+		vmGoTransport:   "tcp",
+		vmGoLogLevel:    "info",
+
+		projectPath: projectPath,
+		buildPath:   buildPath,
+		//configTplPath:   configTplPath,
+		//buildCryptoPath: buildCryptoPath,
+		//buildConfigPath: buildConfigPath,
+
+		cryptoGenBinPath:    CryptoGenBinPath,
+		cryptoGenConfigPath: CryptoGenConfigFilePath,
+		cryptoGenPKCS11Path: CryptoGenPKCS11FilePath,
+	}
+}
+
+func (cmp *ChainMakerPrepare) StartGenerate() {
+	cmp.checkParams()
+	cmp.generateCerts()
+	cmp.generateConfig()
+}
+
+func (cmp *ChainMakerPrepare) checkParams() {
+	fmt.Println("Begin checking parameters...")
+	if cmp.nodeCount < 1 {
+		fmt.Println("Node count is invalid.")
+		os.Exit(1)
+	}
+	if cmp.chainCount < 1 || cmp.chainCount > 4 {
+		fmt.Println("Chain count should be between 1 and 4.")
+		os.Exit(1)
+	}
+
+	// Validate and adjust ports if necessary
+	if cmp.p2pStartPort < 10000 || cmp.p2pStartPort > 60000 {
+		cmp.p2pStartPort = 11301
+	}
+	if cmp.rpcStartPort < 10000 || cmp.rpcStartPort > 60000 {
+		cmp.rpcStartPort = 12301
+	}
+	if cmp.vmGoRuntimePort < 10000 || cmp.vmGoRuntimePort > 60000 {
+		cmp.vmGoRuntimePort = 32351
+	}
+	if cmp.vmGoEnginePort < 10000 || cmp.vmGoEnginePort > 60000 {
+		cmp.vmGoEnginePort = 22351
+	}
+
+	fmt.Printf("Params: Node count=%d, Chain count=%d, P2P port=%d, RPC port=%d\n",
+		cmp.nodeCount, cmp.chainCount, cmp.p2pStartPort, cmp.rpcStartPort)
+}
+
+func (cmp *ChainMakerPrepare) generateCerts() {
+	fmt.Println("Generating certificates...")
+
+	// Create build directory if it doesn't exist
+	err := os.MkdirAll(cmp.buildPath, os.ModePerm)
+	if err != nil {
+		fmt.Println("Failed to create build directory:", err)
+		os.Exit(1)
+	}
+
+	// 进行配置文件的拷贝
+	_, err = fileutils.CopyFile(cmp.cryptoGenConfigPath, "./crypto_config.yml")
+	if err != nil {
+		fmt.Printf("Failed to copy crypto configuration file: %v", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("file", cmp.cryptoGenConfigPath)
+
+	_, err = fileutils.CopyFile(cmp.cryptoGenPKCS11Path, "./pkcs11_keys.yml")
+	if err != nil {
+		fmt.Println("Failed to copy crypto PKCS11 configuration file")
+		os.Exit(1)
+	}
+
+	// 进行 count: 4 的替换
+	err = file.CopyAndReplaceTemplate("./crypto_config.yml", "./crypto_config.yml", map[string]string{
+		"count: 4": fmt.Sprintf("count: %d", cmp.nodeCount),
+	})
+	if err != nil {
+		fmt.Println("Failed to copy and replace crypto config.yml")
+		os.Exit(1)
+	}
+
+	// Generate crypto materials
+	cmd := exec.Command(cmp.cryptoGenBinPath, "generate", "-c", "./crypto_config.yml", "-p", "./pkcs11_keys.yml")
+	err = cmd.Run()
+	if err != nil {
+		fmt.Println("Failed to generate certificates:", err)
+		os.Exit(1)
+	}
+	fmt.Println("Certificates generated successfully.")
+}
+
+func (cmp *ChainMakerPrepare) generateConfig() {
+	fmt.Println("Generating config files...")
+
+	// Create config directory
+	err := os.MkdirAll(cmp.buildConfigPath, os.ModePerm)
+	if err != nil {
+		fmt.Println("Failed to create config directory:", err)
+		os.Exit(1)
+	}
+
+	for i := 1; i <= cmp.nodeCount; i++ {
+		nodeDir := filepath.Join(cmp.buildConfigPath, fmt.Sprintf("node%d", i))
+		err = os.MkdirAll(nodeDir, os.ModePerm)
+		if err != nil {
+			fmt.Printf("Failed to create directory for node %d: %v\n", i, err)
+			os.Exit(1)
+		}
+
+		// Copy and configure template files
+		logFile := filepath.Join(nodeDir, "log.yml")
+		err = file.CopyAndReplaceTemplate(filepath.Join(cmp.configTplPath, "log.tpl"), logFile, map[string]string{
+			"{log_level}": cmp.logLevel,
+		})
+		if err != nil {
+			fmt.Printf("Failed to generate log config for node %d: %v\n", i, err)
+			os.Exit(1)
+		}
+
+		chainmakerFile := filepath.Join(nodeDir, "chainmaker.yml")
+		err = file.CopyAndReplaceTemplate(filepath.Join(cmp.configTplPath, "chainmaker.tpl"), chainmakerFile, map[string]string{
+			"{net_port}":                 fmt.Sprintf("%d", cmp.p2pStartPort+i-1),
+			"{rpc_port}":                 fmt.Sprintf("%d", cmp.rpcStartPort+i-1),
+			"{monitor_port}":             fmt.Sprintf("%d", monitorPort+i-1),
+			"{pprof_port}":               fmt.Sprintf("%d", pprofPort+i-1),
+			"{trusted_port}":             fmt.Sprintf("%d", trustedPort+i-1),
+			"{enable_vm_go}":             "",
+			"{docker_vm_container_name}": fmt.Sprintf("%s%d", containerNamePrefix, i),
+			"{vm_go_runtime_port}":       fmt.Sprintf("%d", cmp.vmGoRuntimePort+i-1),
+			"{vm_go_engine_port}":        fmt.Sprintf("%d", cmp.vmGoEnginePort+i-1),
+			"{vm_go_log_level}":          cmp.vmGoLogLevel,
+			"{vm_go_protocol}":           cmp.vmGoTransport,
+		})
+		if err != nil {
+			fmt.Printf("Failed to generate chainmaker config for node %d: %v\n", i, err)
+			os.Exit(1)
+		}
+	}
+	fmt.Println("Config generation completed.")
+}

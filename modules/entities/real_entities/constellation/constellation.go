@@ -3,8 +3,8 @@ package constellation
 import (
 	"context"
 	"github.com/c-robinson/iplib/v2"
-	"github.com/coreos/etcd/clientv3"
 	docker "github.com/docker/docker/client"
+	"go.etcd.io/etcd/client/v3"
 	"time"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"

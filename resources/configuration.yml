@@ -23,12 +23,32 @@ constellation_config:
     p2p_port: 11300
     rpc_port: 12300
 
+chain_maker_config:
+  enabled: true
+  p2p_start_port: 11301
+  rpc_start_port: 12301
+  consensus_type: 1
+  log_level: DEBUG
+  vm_go_runtime_port: 32351
+  vm_go_engine_port: 22351
+  enable_ddos_defence: false
+  direct_remove_attacked_node: false
+  speed_check: false
+  blocks_per_proposer: 1
+  ddos_warning_rate: 7 # Mbps
+  chainmaker_go_project_path: /home/zhf/Projects/srv6/chainmaker/chainmaker_go
+  chainmaker_build: ./build
+  crypto_gen_path: /home/zhf/Projects/srv6/chainmaker/chainmaker_go/tools/chainmaker-cryptogen
+  templates_file_path: ../resources/templates
+
+
 images_config:
   normal_satellite_image_name: "normal_satellite"
   consensus_satellite_image_name: "consensus_satellite"
   router_image_name: "router"
   normal_node_image_name: "normal_node"
   consensus_node_image_name: "consensus_node"
+  chain_maker_node_image_name: "chainmaker:v2.3.2"
   malicious_node_image_name: "malicious_node"
   etcd_service_image_name: "etcd_service"
   position_service_image_name: "position_service"

@@ -229,7 +229,9 @@ func (c *Constellation) generateLinksForConsensusSatellites() {
 			sourceIntf := intf.NewNetworkInterface(sourceSat.Ifidx, sourceIfName, sourceIpv4Addr, sourceIpv6Addr) // 创建第一个接口
 			targetIntf := intf.NewNetworkInterface(targetSat.Ifidx, targetIfName, targetIpv4Addr, targetIpv6Addr) // 创建第二个接口
 			sourceSat.IfNameToInterfaceMap[sourceIfName] = sourceIntf                                             // 设置源卫星地址
+			sourceSat.Interfaces = append(sourceSat.Interfaces, sourceIntf)                                       // 添加接口
 			targetSat.IfNameToInterfaceMap[targetIfName] = targetIntf                                             // 设置目的卫星地址
+			targetSat.Interfaces = append(targetSat.Interfaces, targetIntf)                                       // 添加接口
 			intraOrbitLink := link.NewAbstractLink(linkType, linkId,
 				nodeType, nodeType,
 				sourceSat.Id, targetSat.Id,
@@ -270,7 +272,9 @@ func (c *Constellation) generateLinksForConsensusSatellites() {
 			sourceIntf := intf.NewNetworkInterface(sourceSat.Ifidx, sourceIfName, sourceIpv4Addr, sourceIpv6Addr) // 创建第一个接口
 			targetIntf := intf.NewNetworkInterface(targetSat.Ifidx, targetIfName, targetIpv4Addr, targetIpv6Addr) // 创建第二个接口
 			sourceSat.IfNameToInterfaceMap[sourceIfName] = sourceIntf                                             // 设置源卫星地址
+			sourceSat.Interfaces = append(sourceSat.Interfaces, sourceIntf)                                       // 添加接口
 			targetSat.IfNameToInterfaceMap[targetIfName] = targetIntf                                             // 设置目的卫星地址
+			targetSat.Interfaces = append(targetSat.Interfaces, targetIntf)                                       // 添加接口
 			interOrbitLink := link.NewAbstractLink(linkType, linkId,
 				nodeType, nodeType,
 				sourceSat.Id, targetSat.Id,
@@ -323,7 +327,9 @@ func (c *Constellation) generateLinksForNormalSatellite() {
 			sourceIntf := intf.NewNetworkInterface(sourceSat.Ifidx, sourceIfName, sourceIpv4Addr, sourceIpv6Addr) // 创建第一个接口
 			targetIntf := intf.NewNetworkInterface(targetSat.Ifidx, targetIfName, targetIpv4Addr, targetIpv6Addr) // 创建第二个接口
 			sourceSat.IfNameToInterfaceMap[sourceIfName] = sourceIntf                                             // 设置源卫星地址
+			sourceSat.Interfaces = append(sourceSat.Interfaces, sourceIntf)                                       // 添加接口
 			targetSat.IfNameToInterfaceMap[targetIfName] = targetIntf                                             // 设置目的卫星地址
+			targetSat.Interfaces = append(targetSat.Interfaces, targetIntf)                                       // 添加接口
 			intraOrbitLink := link.NewAbstractLink(linkType, linkId,
 				nodeType, nodeType,
 				sourceSat.Id, targetSat.Id,
@@ -364,7 +370,9 @@ func (c *Constellation) generateLinksForNormalSatellite() {
 			sourceIntf := intf.NewNetworkInterface(sourceSat.Ifidx, sourceIfName, sourceIpv4Addr, sourceIpv6Addr) // 创建第一个接口
 			targetIntf := intf.NewNetworkInterface(targetSat.Ifidx, targetIfName, targetIpv4Addr, targetIpv6Addr) // 创建第二个接口
 			sourceSat.IfNameToInterfaceMap[sourceIfName] = sourceIntf                                             // 设置源卫星地址
+			sourceSat.Interfaces = append(sourceSat.Interfaces, sourceIntf)                                       // 添加接口
 			targetSat.IfNameToInterfaceMap[targetIfName] = targetIntf                                             // 设置目的卫星地址
+			targetSat.Interfaces = append(targetSat.Interfaces, targetIntf)                                       // 添加接口
 			interOrbitLink := link.NewAbstractLink(linkType, linkId,
 				nodeType, nodeType,
 				sourceSat.Id, targetSat.Id,

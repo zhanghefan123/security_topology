@@ -11,11 +11,11 @@ type ConsensusNode struct {
 }
 
 func NewConsensusNode(nodeId int, X, Y float64) *ConsensusNode {
-	routerType := types.NetworkNodeType_ConsensusNode
+	consensusNodeType := types.NetworkNodeType_ConsensusNode
 	normalNode := normal_node.NewNormalNode(
 		types.NetworkNodeType_ConsensusNode,
 		nodeId,
-		fmt.Sprintf("%s-%d", routerType.String(), nodeId),
+		fmt.Sprintf("%s-%d", consensusNodeType.String(), nodeId),
 	)
 	normalNode.X = X
 	normalNode.Y = Y

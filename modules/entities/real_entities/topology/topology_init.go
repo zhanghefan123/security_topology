@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/c-robinson/iplib/v2"
 	"zhanghefan123/security_topology/configs"
+	"zhanghefan123/security_topology/modules/chainmaker_prepare"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/intf"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
@@ -16,7 +17,13 @@ import (
 
 type InitFunction func() error
 
+type InitModule struct {
+	init         bool
+	initFunction InitFunction
+}
+
 const (
+	GenerateChainMakerConfig      = "GenerateChainMakerConfig"
 	GenerateNodes                 = "GenerateNodes"                 // 生成卫星
 	GenerateSubnets               = "GenerateSubnets"               // 创建子网
 	GenerateLinks                 = "GenerateLinks"                 // 生成链路
@@ -25,11 +32,14 @@ const (
 
 // Init 进行初始化
 func (t *Topology) Init() error {
-	initSteps := []map[string]InitFunction{
-		{GenerateNodes: t.GenerateNodes},
-		{GenerateSubnets: t.GenerateSubnets},
-		{GenerateLinks: t.GenerateLinks},
-		{GenerateFrrConfigurationFiles: t.GenerateFrrConfigurationFiles},
+	enabledChainMaker := configs.TopConfiguration.ChainMakerConfig.Enabled
+
+	initSteps := []map[string]InitModule{
+		{GenerateNodes: InitModule{true, t.GenerateNodes}},
+		{GenerateSubnets: InitModule{true, t.GenerateSubnets}},
+		{GenerateLinks: InitModule{true, t.GenerateLinks}},
+		{GenerateFrrConfigurationFiles: InitModule{true, t.GenerateFrrConfigurationFiles}},
+		{GenerateChainMakerConfig: InitModule{enabledChainMaker, t.GenerateChainMakerConfig}},
 	}
 	err := t.initializeSteps(initSteps)
 	if err != nil {
@@ -39,16 +49,30 @@ func (t *Topology) Init() error {
 	return nil
 }
 
-// InitializeSteps 按步骤进行初始化
-func (t *Topology) initializeSteps(initSteps []map[string]InitFunction) (err error) {
-	fmt.Println()
-	moduleNum := len(initSteps)
-	for idx, initStep := range initSteps {
-		for name, initFunc := range initStep {
-			if err = initFunc(); err != nil {
-				return fmt.Errorf("init step [%s] failed, %s", name, err)
+func (t *Topology) initStepsNum(initSteps []map[string]InitModule) int {
+	result := 0
+	for _, initStep := range initSteps {
+		for _, initModule := range initStep {
+			if initModule.init {
+				result += 1
 			}
-			topologyLogger.Infof("BASE INIT STEP (%d/%d) => init step [%s] success)", idx+1, moduleNum, name)
+		}
+	}
+	return result
+}
+
+// InitializeSteps 按步骤进行初始化
+func (t *Topology) initializeSteps(initSteps []map[string]InitModule) (err error) {
+	fmt.Println()
+	moduleNum := t.initStepsNum(initSteps)
+	for idx, initStep := range initSteps {
+		for name, initModule := range initStep {
+			if initModule.init {
+				if err = initModule.initFunction(); err != nil {
+					return fmt.Errorf("init step [%s] failed, %s", name, err)
+				}
+				topologyLogger.Infof("BASE INIT STEP (%d/%d) => init step [%s] success)", idx+1, moduleNum, name)
+			}
 		}
 	}
 	fmt.Println()
@@ -90,6 +114,13 @@ func (t *Topology) GenerateNodes() error {
 			abstractConsensusNode := node.NewAbstractNode(types.NetworkNodeType_ConsensusNode, consensusNodeTmp)
 			t.ConsensusAbstractNodes = append(t.ConsensusAbstractNodes, abstractConsensusNode)
 			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractConsensusNode)
+		case types.NetworkNodeType_ChainMakerNode:
+			chainmakerNodeTmp := nodes.NewChainmakerNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
+			t.ChainmakerNodes = append(t.ChainmakerNodes, chainmakerNodeTmp)
+			// 注意只能唯一创建一次
+			abstractChainmakerNode := node.NewAbstractNode(types.NetworkNodeType_ChainMakerNode, chainmakerNodeTmp)
+			t.ChainMakerAbstractNodes = append(t.ChainMakerAbstractNodes, abstractChainmakerNode)
+			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractChainmakerNode)
 		case types.NetworkNodeType_MaliciousNode:
 			maliciousNodeTmp := nodes.NewMaliciousNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
 			t.MaliciousNodes = append(t.MaliciousNodes, maliciousNodeTmp)
@@ -177,8 +208,10 @@ func (t *Topology) GenerateLinks() error {
 		targetIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(targetNodeType), targetNormalNode.Id, targetNormalNode.Ifidx) // 目的接口名
 		sourceIntf := intf.NewNetworkInterface(sourceNormalNode.Ifidx, sourceIfName, sourceIpv4Addr, sourceIpv6Addr)            // 创建第一个接口
 		targetIntf := intf.NewNetworkInterface(targetNormalNode.Ifidx, targetIfName, targetIpv4Addr, targetIpv6Addr)            // 创建第二个接口
-		sourceNormalNode.IfNameToInterfaceMap[sourceIfName] = sourceIntf                                                        // 设置源卫星地址
-		targetNormalNode.IfNameToInterfaceMap[targetIfName] = targetIntf                                                        // 设置目的卫星地址
+		sourceNormalNode.IfNameToInterfaceMap[sourceIfName] = sourceIntf                                                        // 设置源节点地址
+		targetNormalNode.IfNameToInterfaceMap[targetIfName] = targetIntf                                                        // 设置目的节点地址
+		sourceNormalNode.Interfaces = append(sourceNormalNode.Interfaces, sourceIntf)                                           // 源接口
+		targetNormalNode.Interfaces = append(targetNormalNode.Interfaces, targetIntf)                                           // 目的接口
 		abstractLink := link.NewAbstractLink(linkType,
 			linkId,
 			sourceNodeType, targetNodeType,
@@ -220,6 +253,8 @@ func (t *Topology) getSourceNodeAndTargetNode(sourceNodeParam, targetNodeParam p
 		sourceNode = t.NormalAbstractNodes[sourceNodeParam.Index-1]
 	case types.NetworkNodeType_ConsensusNode:
 		sourceNode = t.ConsensusAbstractNodes[sourceNodeParam.Index-1]
+	case types.NetworkNodeType_ChainMakerNode:
+		sourceNode = t.ChainMakerAbstractNodes[sourceNodeParam.Index-1]
 	case types.NetworkNodeType_MaliciousNode:
 		sourceNode = t.MaliciousAbstractNodes[sourceNodeParam.Index-1]
 	default:
@@ -234,6 +269,8 @@ func (t *Topology) getSourceNodeAndTargetNode(sourceNodeParam, targetNodeParam p
 		targetNode = t.NormalAbstractNodes[targetNodeParam.Index-1]
 	case types.NetworkNodeType_ConsensusNode:
 		targetNode = t.ConsensusAbstractNodes[targetNodeParam.Index-1]
+	case types.NetworkNodeType_ChainMakerNode:
+		targetNode = t.ChainMakerAbstractNodes[targetNodeParam.Index-1]
 	case types.NetworkNodeType_MaliciousNode:
 		targetNode = t.MaliciousAbstractNodes[targetNodeParam.Index-1]
 	default:
@@ -251,71 +288,20 @@ func (t *Topology) GenerateFrrConfigurationFiles() error {
 	}
 
 	selectedOspfVersion := configs.TopConfiguration.NetworkConfig.OspfVersion
-	for _, router := range t.Routers {
-		if selectedOspfVersion == "ospfv2" {
-			// 生成 ospfv2 配置
-			err := router.GenerateOspfV2FrrConfig()
-			if err != nil {
-				return fmt.Errorf("generate ospfv2 frr configuration files failed, %s", err)
-			}
-		} else if selectedOspfVersion == "ospfv3" {
-			// 生成 ospfv3 配置
-			err := router.GenerateOspfV3FrrConfig()
-			if err != nil {
-				return fmt.Errorf("generate ospfv3 frr configuration files failed, %s", err)
-			}
-		} else {
-			return fmt.Errorf("unsupported ospf version: %s", selectedOspfVersion)
+
+	for _, abstractNode := range t.AllAbstractNodes {
+		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
+		if err != nil {
+			return fmt.Errorf("unsupported ")
 		}
-
-	}
-
-	for _, normalNode := range t.NormalNodes {
 		if selectedOspfVersion == "ospfv2" {
-			// 生成 ospfv2 配置
-			err := normalNode.GenerateOspfV2FrrConfig()
+			err = normalNode.GenerateOspfV2FrrConfig()
 			if err != nil {
 				return fmt.Errorf("generate ospfv2 frr configuration files failed, %s", err)
 			}
 		} else if selectedOspfVersion == "ospfv3" {
 			// 生成 ospfv3 配置
-			err := normalNode.GenerateOspfV3FrrConfig()
-			if err != nil {
-				return fmt.Errorf("generate ospfv3 frr configuration files failed, %s", err)
-			}
-		} else {
-			return fmt.Errorf("unsupported ospf version: %s", selectedOspfVersion)
-		}
-	}
-
-	for _, consensusNode := range t.ConsensusNodes {
-		if selectedOspfVersion == "ospfv2" {
-			// 生成 ospfv2 配置
-			err := consensusNode.GenerateOspfV2FrrConfig()
-			if err != nil {
-				return fmt.Errorf("generate ospfv2 frr configuration files failed, %s", err)
-			}
-		} else if selectedOspfVersion == "ospfv3" {
-			// 生成 ospfv3 配置
-			err := consensusNode.GenerateOspfV3FrrConfig()
-			if err != nil {
-				return fmt.Errorf("generate ospfv3 frr configuration files failed, %s", err)
-			}
-		} else {
-			return fmt.Errorf("unsupported ospf version: %s", selectedOspfVersion)
-		}
-	}
-
-	for _, maliciousNode := range t.MaliciousNodes {
-		if selectedOspfVersion == "ospfv2" {
-			// 生成 ospfv2 配置
-			err := maliciousNode.GenerateOspfV2FrrConfig()
-			if err != nil {
-				return fmt.Errorf("generate ospfv2 frr configuration files failed, %s", err)
-			}
-		} else if selectedOspfVersion == "ospfv3" {
-			// 生成 ospfv3 配置
-			err := maliciousNode.GenerateOspfV3FrrConfig()
+			err = normalNode.GenerateOspfV3FrrConfig()
 			if err != nil {
 				return fmt.Errorf("generate ospfv3 frr configuration files failed, %s", err)
 			}
@@ -326,5 +312,30 @@ func (t *Topology) GenerateFrrConfigurationFiles() error {
 
 	t.topologyInitSteps[GenerateFrrConfigurationFiles] = struct{}{}
 	topologyLogger.Infof("generate frr configuration files")
+	return nil
+}
+
+// GenerateChainMakerConfig 进行 ChainMaker 配置文件的生成
+func (t *Topology) GenerateChainMakerConfig() error {
+	if _, ok := t.topologyInitSteps[GenerateChainMakerConfig]; ok {
+		topologyLogger.Infof("already generate chain maker config")
+		return nil
+	}
+
+	chainMakerNodeCount := len(t.ChainmakerNodes)
+	if chainMakerNodeCount == 0 {
+		topologyLogger.Infof("no chainmaker nodes -> not generate")
+		return nil
+	}
+
+	ipv4Addresses := t.GetChainMakerNodeListenAddresses()
+	chainMakerPrepare := chainmaker_prepare.NewChainMakerPrepare(chainMakerNodeCount, ipv4Addresses)
+	err := chainMakerPrepare.Generate()
+	if err != nil {
+		return fmt.Errorf("generate chain maker config files failed, %s", err)
+	}
+
+	t.topologyInitSteps[GenerateChainMakerConfig] = struct{}{}
+	topologyLogger.Infof("generate chain maker config")
 	return nil
 }

@@ -63,6 +63,10 @@ func (abstractNode *AbstractNode) GetNormalNodeFromAbstractNode() (*normal_node.
 		if consensusNode, ok := abstractNode.ActualNode.(*nodes.ConsensusNode); ok {
 			return consensusNode.NormalNode, nil
 		}
+	case types.NetworkNodeType_ChainMakerNode:
+		if chainMakerNode, ok := abstractNode.ActualNode.(*nodes.ChainmakerNode); ok {
+			return chainMakerNode.NormalNode, nil
+		}
 	case types.NetworkNodeType_MaliciousNode:
 		if maliciousNode, ok := abstractNode.ActualNode.(*nodes.MaliciousNode); ok {
 			return maliciousNode.NormalNode, nil

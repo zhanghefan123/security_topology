@@ -2,7 +2,7 @@ package etcd_api
 
 import (
 	"fmt"
-	"github.com/coreos/etcd/clientv3"
+	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
 // NewEtcdClient 创建新的 etcd client

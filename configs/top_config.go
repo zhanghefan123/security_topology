@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 	"zhanghefan123/security_topology/configs/apps"
+	"zhanghefan123/security_topology/configs/chainmaker"
 	"zhanghefan123/security_topology/configs/consensus"
 	"zhanghefan123/security_topology/configs/constellation"
 	"zhanghefan123/security_topology/configs/images"
@@ -30,6 +31,7 @@ type TopConfig struct {
 	NetworkConfig       network.NetworkConfig             `mapstructure:"network_config"`
 	ConsensusConfig     consensus.ConsensusConfig         `mapstructure:"consensus_config"`
 	ConstellationConfig constellation.ConstellationConfig `mapstructure:"constellation_config"`
+	ChainMakerConfig    chainmaker.ChainMakerConfig       `mapstructure:"chain_maker_config"`
 	ImagesConfig        images.ImagesConfig               `mapstructure:"images_config"`
 	PathConfig          path.PathConfig                   `mapstructure:"path_config"`
 	ServicesConfig      services.ServicesConfig           `mapstructure:"services_config"`
@@ -75,6 +77,7 @@ func InitLocalConfig() error {
 	if _, ok := availableOspfVersions[TopConfiguration.NetworkConfig.OspfVersion]; !ok {
 		return fmt.Errorf("unsupported OSPF version: %s", TopConfiguration.NetworkConfig.OspfVersion)
 	}
+	// 进行 chainmaker 路径的更新
 	PrintLocalConfig()
 	return nil
 }

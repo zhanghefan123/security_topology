@@ -17,7 +17,8 @@ enum NetworkNodeType {
   Router = 4;
   NormalNode = 5;
   ConsensusNode = 6;
-  MaliciousNode = 7;
+  ChainMakerNode = 7;
+  MaliciousNode = 8;
 }
 
 enum NetworkLinkType {

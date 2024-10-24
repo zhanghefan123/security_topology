@@ -13,7 +13,6 @@ func FunctionReturnError() (err error) {
 
 func TestError(t *testing.T) {
 	if err := FunctionReturnError(); err != nil {
-		fmt.Println("HELLO")
 		fmt.Println(err)
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/vishvananda/netlink"
 	"os"
+	"path"
 	"path/filepath"
 	"zhanghefan123/security_topology/api/container_api"
 	"zhanghefan123/security_topology/api/multithread"
@@ -17,6 +18,7 @@ const (
 	RemoveNodeContainers     = "RemoveNodeContainers"
 	RemoveLinks              = "RemoveLinks"
 	RemoveConfigurationFiles = "RemoveConfigurationFiles"
+	RemoveChainMakerFiles    = "RemoveChainMakerFiles"
 )
 
 // RemoveFunction 删除函数
@@ -30,11 +32,15 @@ type RemoveModule struct {
 
 // Remove 删除整个星座
 func (t *Topology) Remove() error {
+
+	removeChainMaker := configs.TopConfiguration.ChainMakerConfig.Enabled
+
 	removeSteps := []map[string]RemoveModule{
 		{StopNodeContainers: RemoveModule{true, t.StopNodeContainers}},
 		{RemoveNodeContainers: RemoveModule{true, t.RemoveNodeContainers}},
 		{RemoveLinks: RemoveModule{true, t.RemoveLinks}},
 		{RemoveConfigurationFiles: RemoveModule{true, t.RemoveConfigurationFiles}},
+		{RemoveChainMakerFiles: RemoveModule{removeChainMaker, t.RemoveChainMakerFiles}},
 	}
 	err := t.removeSteps(removeSteps)
 	if err != nil {
@@ -167,5 +173,32 @@ func (t *Topology) RemoveConfigurationFiles() error {
 	t.topologyStopSteps[RemoveConfigurationFiles] = struct{}{}
 	topologyLogger.Infof("execute remove configuration files")
 
+	return nil
+}
+
+// RemoveChainMakerFiles 进行长安链相关文件的删除
+func (t *Topology) RemoveChainMakerFiles() error {
+	if _, ok := t.topologyStopSteps[RemoveChainMakerFiles]; ok {
+		topologyLogger.Infof("already execute remove chainmaker files")
+		return nil
+	}
+
+	chainMakerGoProjectPath := configs.TopConfiguration.ChainMakerConfig.ChainMakerGoProjectPath
+	multiNodePath := path.Join(chainMakerGoProjectPath, "scripts/docker/multi_node")
+	configPath := path.Join(multiNodePath, "config")
+	dataPath := path.Join(multiNodePath, "data")
+	logPath := path.Join(multiNodePath, "log")
+
+	deleteDirs := []string{"./build/", "./crypto-config/", configPath, dataPath, logPath}
+
+	for _, deleteDir := range deleteDirs {
+		err := os.RemoveAll(deleteDir)
+		if err != nil {
+			return fmt.Errorf("execute remove chainmaker files failed")
+		}
+	}
+
+	t.topologyStopSteps[RemoveChainMakerFiles] = struct{}{}
+	topologyLogger.Infof("execute remove chainmaker files")
 	return nil
 }

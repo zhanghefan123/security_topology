@@ -18,6 +18,8 @@ func GetPrefix(typ NetworkNodeType) string {
 		return "nn"
 	} else if typ == NetworkNodeType_ConsensusNode {
 		return "cn"
+	} else if typ == NetworkNodeType_ChainMakerNode {
+		return "cm"
 	} else if typ == NetworkNodeType_MaliciousNode {
 		return "mn"
 	}

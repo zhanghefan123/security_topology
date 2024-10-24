@@ -74,12 +74,12 @@ func startTopologyInner(topologyParams *params.TopologyParams) error {
 	// 初始化本地配置
 	err = configs.InitLocalConfig()
 	if err != nil {
-		return fmt.Errorf("init local config err: %v", err)
+		return fmt.Errorf("init local config err: %w", err)
 	}
 	// 初始化 dockerClient
 	dockerClient, err = client.NewDockerClient()
 	if err != nil {
-		return fmt.Errorf("create docker client err: %v", err)
+		return fmt.Errorf("create docker client err: %w", err)
 	}
 	// 初始化 etcdClient
 	listenAddr := configs.TopConfiguration.NetworkConfig.LocalNetworkAddress
@@ -91,11 +91,11 @@ func startTopologyInner(topologyParams *params.TopologyParams) error {
 	// 进行 init
 	err = topologyInstance.Init()
 	if err != nil {
-		return fmt.Errorf("init topology err: %v", err)
+		return fmt.Errorf("init topology err: %w", err)
 	}
 	err = topologyInstance.Start()
 	if err != nil {
-		return fmt.Errorf("start topology err: %v", err)
+		return fmt.Errorf("start topology err: %w", err)
 	}
 	pretty.Println(*topologyParams)
 	return nil

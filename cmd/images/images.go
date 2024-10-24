@@ -64,12 +64,7 @@ func correctnessCheck() error {
 		return fmt.Errorf("image %s is already built", variables.UserSelectedImage)
 	}
 
-	// 如果是删除镜像，但是镜像已经被删除，那么返回错误
-	if (variables.UserSelectedOperation == variables.OperationRemove) && (!(variables.ExistedImages[variables.UserSelectedImage])) {
-		return fmt.Errorf("image %s is already removed", variables.UserSelectedImage)
-	}
-
-	// 如果是所有镜像, 那么只能是删除
+	// 如果是所有镜像, 只能是重建
 	if (variables.UserSelectedImage == variables.AllImages) && (variables.UserSelectedOperation != variables.OperationRebuild) {
 		return fmt.Errorf("only could rebuild all images")
 	}
@@ -113,7 +108,7 @@ func buildImage(userSelectedImage string) error {
 // removeImage 进行镜像的删除
 func removeImage(userSelectedImage string) error {
 	// 判断是否存在
-	if _, ok := variables.ExistedImages[variables.UserSelectedImage]; !ok {
+	if ok := variables.ExistedImages[variables.UserSelectedImage]; !ok {
 		cmdImagesLogger.Infof("image %s is not built", variables.UserSelectedImage)
 		return nil
 	}

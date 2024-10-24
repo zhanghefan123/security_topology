@@ -59,6 +59,12 @@ func CreateContainer(client *docker.Client, node *node.AbstractNode) error {
 		if err != nil {
 			return fmt.Errorf("CreateConsensusNode err: %w", err)
 		}
+	case types.NetworkNodeType_ChainMakerNode:
+		chainMakerNode, _ := node.ActualNode.(*nodes.ChainmakerNode)
+		err = create_apis.CreateChainMakerNode(client, chainMakerNode)
+		if err != nil {
+			return fmt.Errorf("CreateChainMakerNode err: %w", err)
+		}
 	case types.NetworkNodeType_MaliciousNode:
 		maliciousNode, _ := node.ActualNode.(*nodes.MaliciousNode)
 		err = create_apis.CreateMaliciousNode(client, maliciousNode)
