@@ -10,6 +10,7 @@ type PathConfig struct {
 	ConfigGeneratePath  string  `mapstructure:"config_generate_path"`
 	FrrPath             FrrPath `mapstructure:"frr_path"`
 	RealTimePositionDir string  `mapstructure:"real_time_position_dir"`
+	GottyPath           string  `mapstructure:"gotty_path"`
 }
 
 // ConvertToAbsPath 将可能的相对路径全部转换为绝对路径

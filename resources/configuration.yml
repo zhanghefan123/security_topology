@@ -60,6 +60,7 @@ path_config:
     frr_host_path: ../simulation/frr
     frr_container_path: /configuration/frr
   real_time_position_dir: satellites_position
+  gotty_path: ./gotty
 
 services_config:
   etcd_config:

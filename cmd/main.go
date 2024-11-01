@@ -9,13 +9,13 @@ import (
 	"zhanghefan123/security_topology/cmd/root"
 	"zhanghefan123/security_topology/cmd/test"
 	"zhanghefan123/security_topology/configs"
+	"zhanghefan123/security_topology/modules/utils/permission"
 )
 
 func main() {
-	// 首先进行配置的加载
-	err := configs.InitLocalConfig()
+	err := PrepareWorks()
 	if err != nil {
-		fmt.Printf("init local config failed, err:%v\n", err)
+		fmt.Printf("error executing prepare Works %v", err)
 		return
 	}
 	rootCmd := root.CreateRootCmd()
@@ -31,4 +31,20 @@ func main() {
 	if err != nil {
 		os.Exit(1)
 	}
+}
+
+// PrepareWorks 准备工作
+func PrepareWorks() error {
+	// 首先进行配置的加载
+	err := configs.InitLocalConfig()
+	if err != nil {
+		return fmt.Errorf("init local config failed, err:%w", err)
+	}
+	// 然后为 gotty 文件分配可执行权限
+	gottyFilePath := configs.TopConfiguration.PathConfig.GottyPath
+	err = permission.AddExecutePermission(gottyFilePath)
+	if err != nil {
+		return fmt.Errorf("add execute permission failed, err:%w", err)
+	}
+	return nil
 }
