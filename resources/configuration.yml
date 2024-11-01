@@ -36,9 +36,9 @@ chain_maker_config:
   speed_check: false
   blocks_per_proposer: 1
   ddos_warning_rate: 7 # Mbps
-  chainmaker_go_project_path: /home/zhf/Projects/srv6/chainmaker/chainmaker_go
+  chainmaker_go_project_path: /home/zhf/Projects/chainmaker_go
   chainmaker_build: ./build
-  crypto_gen_path: /home/zhf/Projects/srv6/chainmaker/chainmaker_go/tools/chainmaker-cryptogen
+  crypto_gen_path: /home/zhf/Projects/chainmaker_go/tools/chainmaker-cryptogen
   templates_file_path: ../resources/templates
 
 

@@ -16,6 +16,9 @@ var postRoutes = map[string]gin.HandlerFunc{
 	"/getTopologyState": apis.GetTopologyState, // (topology 相关)
 	"/startTopology":    apis.StartTopology,    // (topology 相关)
 	"/stopTopology":     apis.StopTopology,     // (topology 相关)
+
+	"/startWebShell": apis.StartWebShell, // webshell 相关
+	"/stopWebShell":  apis.StopWebShell,  // webshell 相关
 }
 
 // CORSMiddleware 中间件处理跨域问题
