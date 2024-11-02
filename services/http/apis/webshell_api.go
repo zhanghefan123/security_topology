@@ -21,7 +21,6 @@ func StartWebShell(c *gin.Context) {
 	// 如果已经不存在实例了
 	if topologyInstance == nil {
 		c.JSON(http.StatusOK, gin.H{
-			"status":  "up",
 			"message": "instance not created",
 		})
 		return
@@ -32,7 +31,6 @@ func StartWebShell(c *gin.Context) {
 	err := c.BindJSON(startWebShellRequest)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "up",
 			"message": "could not bind start web shell params",
 		})
 	}
@@ -47,7 +45,6 @@ func StartWebShell(c *gin.Context) {
 	availablePort, err := network.GetAvailablePort()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "up",
 			"message": fmt.Sprintf("get available port failed: %s", err.Error()),
 		})
 		return
@@ -61,7 +58,6 @@ func StartWebShell(c *gin.Context) {
 	webShellInfo, err = webshell.StartWebShell(hostAddr, availablePort, true, initCommand, initCommandArgs, 5)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "up",
 			"message": fmt.Sprintf("start web shell failed: %s", err.Error()),
 		})
 		return
@@ -80,7 +76,6 @@ func StopWebShell(c *gin.Context) {
 	// 如果已经不存在实例了
 	if topologyInstance == nil {
 		c.JSON(http.StatusOK, gin.H{
-			"status":  "up",
 			"message": "instance not created",
 		})
 		return
@@ -91,7 +86,6 @@ func StopWebShell(c *gin.Context) {
 	err := c.BindJSON(stopWebShellRequest)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "up",
 			"message": "could not bind stop web shell params",
 		})
 	}
@@ -100,7 +94,6 @@ func StopWebShell(c *gin.Context) {
 	err = webshell.StopWebShell(stopWebShellRequest.Pid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "up",
 			"message": fmt.Sprintf("stop web shell failed: %s", err.Error()),
 		})
 		return

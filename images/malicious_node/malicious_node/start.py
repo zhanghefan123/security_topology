@@ -1,17 +1,15 @@
-import time
-from signal_decorator import exit_signal_listener as eslm
+from modules.http_service import http_service as hsm
 from modules.frr import frr_manager as fmm
+from signal_decorator import exit_signal_listener
+
+flask_process = None
 
 
 class Starter:
     def __init__(self):
         pass
 
-    @eslm.signal_decorator
-    def never_stop_until_signal(self):
-        while True:
-            time.sleep(1)
-
+    @exit_signal_listener.signal_decorator
     def main_logic(self):
         """
         主逻辑
@@ -20,10 +18,9 @@ class Starter:
         :return:
         """
         fmm.start_frr()
-        self.never_stop_until_signal()
+        hsm.start_flask_http_service()
 
 
 if __name__ == "__main__":
     starter = Starter()
     starter.main_logic()
-

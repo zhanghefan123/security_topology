@@ -35,7 +35,6 @@ func GetTopologyState(c *gin.Context) {
 func StartTopology(c *gin.Context) {
 	if topologyInstance != nil {
 		c.JSON(http.StatusOK, gin.H{
-			"status":  "up",
 			"message": "topology already created",
 		})
 	}
@@ -45,24 +44,22 @@ func StartTopology(c *gin.Context) {
 	err := c.BindJSON(topologyParams)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "down",
 			"message": fmt.Sprintf("bindjson err: %v", err),
 		})
 		return
 	}
+	fmt.Println(topologyParams) // 打印拓扑
 
 	// 核心处理逻辑
 	err = startTopologyInner(topologyParams)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "down",
 			"message": fmt.Sprintf("start topology err: %v", err),
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status":  "up",
 		"message": "successfully start the topology",
 	})
 }

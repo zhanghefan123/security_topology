@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/api/types/container"
 	docker "github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
 	"path/filepath"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/real_entities/nodes"
@@ -37,6 +38,23 @@ func CreateMaliciousNode(client *docker.Client, maliciousNode *nodes.MaliciousNo
 		"net.ipv6.seg6_flowlabel":                "1",
 	}
 
+	// 创建端口映射
+	httpPortInteger := 8080 + maliciousNode.Id
+	httpPort := nat.Port(fmt.Sprintf("%d/tcp", 8080+maliciousNode.Id))
+
+	exposedPorts := nat.PortSet{
+		httpPort: {},
+	}
+
+	portBindings := nat.PortMap{
+		httpPort: []nat.PortBinding{
+			{
+				HostIP:   "0.0.0.0",
+				HostPort: string(httpPort),
+			},
+		},
+	}
+
 	// 3. 获取配置
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	nodeDir := filepath.Join(simulationDir, maliciousNode.ContainerName)
@@ -50,24 +68,27 @@ func CreateMaliciousNode(client *docker.Client, maliciousNode *nodes.MaliciousNo
 	// 5. 配置环境变量
 	envs := []string{
 		fmt.Sprintf("%s=%d", "NODE_ID", maliciousNode.Id),
+		fmt.Sprintf("%s=%d", "LISTEN_PORT", httpPortInteger),
 		fmt.Sprintf("%s=%s", "CONTAINER_NAME", maliciousNode.ContainerName),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
 	}
 
 	// 6. containerConfig
 	containerConfig := &container.Config{
-		Image: configs.TopConfiguration.ImagesConfig.MaliciousNodeImageName,
-		Tty:   true,
-		Env:   envs,
+		Image:        configs.TopConfiguration.ImagesConfig.MaliciousNodeImageName,
+		Tty:          true,
+		Env:          envs,
+		ExposedPorts: exposedPorts,
 	}
 
 	// 7. hostConfig
 	hostConfig := &container.HostConfig{
 		// 容器数据卷映射
-		Binds:      volumes,
-		CapAdd:     []string{"NET_ADMIN"},
-		Privileged: true,
-		Sysctls:    sysctls,
+		Binds:        volumes,
+		CapAdd:       []string{"NET_ADMIN"},
+		Privileged:   true,
+		Sysctls:      sysctls,
+		PortBindings: portBindings,
 	}
 
 	// 8. 进行容器的创建

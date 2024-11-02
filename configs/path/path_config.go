@@ -9,6 +9,7 @@ type PathConfig struct {
 	ResourcesPath       string  `mapstructure:"resources_path"`
 	ConfigGeneratePath  string  `mapstructure:"config_generate_path"`
 	FrrPath             FrrPath `mapstructure:"frr_path"`
+	AddressMappingPath  string  `mapstructure:"address_mapping_path"`
 	RealTimePositionDir string  `mapstructure:"real_time_position_dir"`
 	GottyPath           string  `mapstructure:"gotty_path"`
 }

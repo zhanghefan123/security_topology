@@ -10,9 +10,16 @@ type NodeParam struct {
 type LinkParam struct {
 	SourceNode NodeParam `json:"source_node"`
 	TargetNode NodeParam `json:"target_node"`
+	LinkType   string    `json:"link_type"` // 链路的类型 - 可能是接入 access, 也可能是骨干 backbone
 }
 
 type TopologyParams struct {
-	Nodes []NodeParam `json:"nodes"`
-	Links []LinkParam `json:"links"`
+	NetworkEnv          string      `json:"network_env"`
+	BlockChainType      string      `json:"blockchain_type"`
+	ConsensusType       string      `json:"consensus_type"`
+	AccessLinkBandwidth int         `json:"access_link_bandwidth"`
+	ConsensusNodeCpu    float64     `json:"consensus_node_cpu"`
+	ConsensusNodeMemory float64     `json:"consensus_node_memory"`
+	Nodes               []NodeParam `json:"nodes"` // 所有的节点
+	Links               []LinkParam `json:"links"` // 所有的链路
 }

@@ -3,6 +3,8 @@ package topology
 import (
 	"fmt"
 	"github.com/c-robinson/iplib/v2"
+	"os"
+	"path/filepath"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/chainmaker_prepare"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/intf"
@@ -28,6 +30,7 @@ const (
 	GenerateSubnets               = "GenerateSubnets"               // 创建子网
 	GenerateLinks                 = "GenerateLinks"                 // 生成链路
 	GenerateFrrConfigurationFiles = "GenerateFrrConfigurationFiles" // 生成 frr 配置
+	GenerateAddressMapping        = "GenerateAddressMapping"
 )
 
 // Init 进行初始化
@@ -40,6 +43,7 @@ func (t *Topology) Init() error {
 		{GenerateLinks: InitModule{true, t.GenerateLinks}},
 		{GenerateFrrConfigurationFiles: InitModule{true, t.GenerateFrrConfigurationFiles}},
 		{GenerateChainMakerConfig: InitModule{enabledChainMaker, t.GenerateChainMakerConfig}},
+		{GenerateAddressMapping: InitModule{true, t.GenerateAddressMapping}},
 	}
 	err := t.initializeSteps(initSteps)
 	if err != nil {
@@ -337,5 +341,52 @@ func (t *Topology) GenerateChainMakerConfig() error {
 
 	t.topologyInitSteps[GenerateChainMakerConfig] = struct{}{}
 	topologyLogger.Infof("generate chain maker config")
+	return nil
+}
+
+// GenerateAddressMapping 生成地址映射
+func (t *Topology) GenerateAddressMapping() error {
+	if _, ok := t.topologyInitSteps[GenerateAddressMapping]; ok {
+		topologyLogger.Infof("already generate address mapping")
+		return nil
+	}
+
+	addressMapping, err := t.GetContainerNameToAddressMapping()
+	if err != nil {
+		return fmt.Errorf("generate address mapping files failed, %w", err)
+	}
+
+	finalString := ""
+	for key, value := range addressMapping {
+		finalString += fmt.Sprintf("%s->%s\n", key, value)
+	}
+
+	// 进行所有节点的遍历
+	for _, abstractNode := range t.AllAbstractNodes {
+		var f *os.File
+		var normalNode *normal_node.NormalNode
+		var outputDir string
+		var outputFilePath string
+		normalNode, err = abstractNode.GetNormalNodeFromAbstractNode()
+		if err != nil {
+			return fmt.Errorf("generate address mapping files failed, %s", err)
+		}
+		containerName := normalNode.ContainerName
+		outputDir = filepath.Join(configs.TopConfiguration.PathConfig.ConfigGeneratePath, containerName)
+		outputFilePath = filepath.Join(outputDir, "address_mapping.conf")
+		// 创建一个文件
+		// /simulation/containerName/address_mapping.conf
+		f, err = os.Create(outputFilePath)
+		if err != nil {
+			return fmt.Errorf("error create file %v", err)
+		}
+		_, err = f.WriteString(finalString)
+		if err != nil {
+			return fmt.Errorf("error write file %w", err)
+		}
+	}
+
+	t.topologyInitSteps[GenerateAddressMapping] = struct{}{}
+	topologyLogger.Infof("generate address mapping")
 	return nil
 }

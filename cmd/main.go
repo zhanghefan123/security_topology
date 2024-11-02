@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"zhanghefan123/security_topology/cmd/constellation"
 	"zhanghefan123/security_topology/cmd/http_service"
 	"zhanghefan123/security_topology/cmd/images"
@@ -40,11 +41,18 @@ func PrepareWorks() error {
 	if err != nil {
 		return fmt.Errorf("init local config failed, err:%w", err)
 	}
-	// 然后为 gotty 文件分配可执行权限
+	// 1. 然后为 gotty 文件分配可执行权限
 	gottyFilePath := configs.TopConfiguration.PathConfig.GottyPath
 	err = permission.AddExecutePermission(gottyFilePath)
 	if err != nil {
-		return fmt.Errorf("add execute permission failed, err:%w", err)
+		return fmt.Errorf("add execute permission to %s failed, err:%w", gottyFilePath, err)
+	}
+	// 2. 然后为 chainmakerCryptoGen 分配可执行权限
+	cryptoGenProjectPath := configs.TopConfiguration.ChainMakerConfig.CryptoGenProjectPath
+	cryptoGenBinPath := filepath.Join(cryptoGenProjectPath, "bin/chainmaker-cryptogen")
+	err = permission.AddExecutePermission(cryptoGenBinPath)
+	if err != nil {
+		return fmt.Errorf("add execute permission to %s failed, err:%w", cryptoGenBinPath, err)
 	}
 	return nil
 }
