@@ -1,5 +1,10 @@
+import multiprocessing
+import os
 from modules.attacks import icmp_flood_attack as ifam
 from modules.attacks import udp_flood_attack as ufam
+from modules.config import env_loader as elm
+from modules.config.env_loader import env_loader
+from modules.utils import address_resolver as arm
 
 
 class AttackManager:
@@ -15,21 +20,29 @@ class AttackManager:
         self.attack_type = attack_type
         self.attacked_node = attacked_node
         self.attack_duration = attack_duration
+        self.attack_node_ip: str = ""
+        self.attacked_node_ip: str = ""
+        self.resolve_attacked_node_address()
+
+    def resolve_attacked_node_address(self):
+        address_mapping_file = f"/configuration/{elm.env_loader.container_name}/address_mapping.conf"
+        address_mapping = arm.resolve_address_mapping(address_mapping_file=address_mapping_file)
+        self.attack_node_ip = address_mapping[env_loader.container_name]
+        self.attacked_node_ip = address_mapping[self.attacked_node]
 
     def start_attack(self):
         """
         开启攻击
         :return:
         """
-        if self.attack_type.upper() == "ICMP_FLOOD_ATTACK":
-            icmp_flood_attacker = ifam.icmp_flood_attack(attack_thread_count=self.attack_thread_count,
-                                                         attacked_node=self.attacked_node,
-                                                         attack_duration=self.attack_duration)
-            icmp_flood_attacker.start()
-        elif self.attack_type.upper() == "UDP_FLOOD_ATTACK":
-            udp_flood_attacker = ufam.udp_flood_attack(attack_thread_count=self.attack_thread_count,
-                                                       attacked_node=self.attacked_node,
-                                                       attack_duration=self.attack_duration)
-            udp_flood_attacker.start()
+        if self.attack_type.upper() == "ICMP FLOOD ATTACK":
+            process = multiprocessing.Process(target=ifam.icmp_flood_attack, args=(self.attack_thread_count,
+                                                                                   self.attack_node_ip,
+                                                                                   self.attacked_node_ip,
+                                                                                   self.attack_duration))
+            process.start()
+        elif self.attack_type.upper() == "UDP FLOOD ATTACK":
+            process = multiprocessing.Process(target=ufam.udp_flood_attack, args=(self.attack_thread_count, self.attacked_node_ip, self.attack_duration))
+            process.start()
         else:
             raise ValueError("unsupported attacked type")

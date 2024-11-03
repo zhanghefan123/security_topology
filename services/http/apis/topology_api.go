@@ -14,26 +14,26 @@ import (
 )
 
 var (
-	topologyInstance *topology.Topology
+	TopologyInstance *topology.Topology
 )
 
 // GetTopologyState 进行拓扑状态的获取
 func GetTopologyState(c *gin.Context) {
-	if topologyInstance == nil {
+	if TopologyInstance == nil {
 		c.JSON(http.StatusOK, gin.H{
 			"state": "down",
 		})
 	} else {
 		c.JSON(http.StatusOK, gin.H{
 			"state":           "up",
-			"topology_params": topologyInstance.TopologyParams, // 如果已经创建完成了, 还需要进行创建的参数的返回
+			"topology_params": TopologyInstance.TopologyParams, // 如果已经创建完成了, 还需要进行创建的参数的返回
 		})
 	}
 }
 
 // StartTopology 进行拓扑的启动
 func StartTopology(c *gin.Context) {
-	if topologyInstance != nil {
+	if TopologyInstance != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "topology already created",
 		})
@@ -83,14 +83,14 @@ func startTopologyInner(topologyParams *params.TopologyParams) error {
 	listenPort := configs.TopConfiguration.ServicesConfig.EtcdConfig.ClientPort
 	etcdClient, err := etcd_api.NewEtcdClient(listenAddr, listenPort)
 	// 创建拓扑实例
-	topologyInstance = topology.NewTopology(dockerClient, etcdClient, topologyParams)
+	TopologyInstance = topology.NewTopology(dockerClient, etcdClient, topologyParams)
 
 	// 进行 init
-	err = topologyInstance.Init()
+	err = TopologyInstance.Init()
 	if err != nil {
 		return fmt.Errorf("init topology err: %w", err)
 	}
-	err = topologyInstance.Start()
+	err = TopologyInstance.Start()
 	if err != nil {
 		return fmt.Errorf("start topology err: %w", err)
 	}
@@ -100,7 +100,7 @@ func startTopologyInner(topologyParams *params.TopologyParams) error {
 
 // StopTopology 进行拓扑的删除
 func StopTopology(c *gin.Context) {
-	if topologyInstance == nil {
+	if TopologyInstance == nil {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "down",
 			"message": "images already stopped",
@@ -125,9 +125,9 @@ func StopTopology(c *gin.Context) {
 
 // stopTopologyInner 实际的拓扑销毁逻辑
 func stopTopologyInner() error {
-	err := topologyInstance.Remove()
+	err := TopologyInstance.Remove()
 	defer func() {
-		topologyInstance = nil
+		TopologyInstance = nil
 	}()
 	if err != nil {
 		return fmt.Errorf("remove topology err: %v", err)

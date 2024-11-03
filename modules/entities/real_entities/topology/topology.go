@@ -35,6 +35,7 @@ type Topology struct {
 	ChainMakerAbstractNodes []*node.AbstractNode
 	MaliciousAbstractNodes  []*node.AbstractNode
 	AllAbstractNodes        []*node.AbstractNode
+	AbstractNodesMap        map[string]*node.AbstractNode
 
 	Links    []*link.AbstractLink
 	LinksMap map[string]map[string]*link.AbstractLink // map[sourceContainerName][targetContainerName]*link.AbstractLink
@@ -65,6 +66,7 @@ func NewTopology(client *docker.Client, etcdClient *clientv3.Client, params *par
 		ChainMakerAbstractNodes: make([]*node.AbstractNode, 0),
 		MaliciousAbstractNodes:  make([]*node.AbstractNode, 0),
 		AllAbstractNodes:        make([]*node.AbstractNode, 0),
+		AbstractNodesMap:        make(map[string]*node.AbstractNode),
 
 		Links:              make([]*link.AbstractLink, 0),
 		LinksMap:           make(map[string]map[string]*link.AbstractLink),

@@ -18,9 +18,9 @@ type StopWebShellRequest struct {
 }
 
 func StartWebShell(c *gin.Context) {
-	// 如果已经不存在实例了
-	if topologyInstance == nil {
-		c.JSON(http.StatusOK, gin.H{
+	// 如果已经不存在实例了则返回错误
+	if TopologyInstance == nil {
+		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "instance not created",
 		})
 		return
@@ -30,7 +30,7 @@ func StartWebShell(c *gin.Context) {
 	startWebShellRequest := &StartWebShellRequest{}
 	err := c.BindJSON(startWebShellRequest)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "could not bind start web shell params",
 		})
 	}
@@ -63,7 +63,7 @@ func StartWebShell(c *gin.Context) {
 		return
 	}
 
-	topologyInstance.WebShellMap[webShellInfo.Pid] = struct{}{}
+	TopologyInstance.WebShellMap[webShellInfo.Pid] = struct{}{}
 
 	c.JSON(http.StatusOK, gin.H{
 		"address": webShellInfo.Address,
@@ -74,7 +74,7 @@ func StartWebShell(c *gin.Context) {
 
 func StopWebShell(c *gin.Context) {
 	// 如果已经不存在实例了
-	if topologyInstance == nil {
+	if TopologyInstance == nil {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "instance not created",
 		})
