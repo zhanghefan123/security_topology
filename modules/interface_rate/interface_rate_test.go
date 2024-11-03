@@ -23,5 +23,4 @@ func TestBreak(t *testing.T) {
 			break
 		}
 	}
-
 }

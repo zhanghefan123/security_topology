@@ -107,12 +107,12 @@ func (ir *InterfaceRateMonitor) GetNetworkInterfaceData(normalNode *normal_node.
 				for _, networkInterfaceLine := range networkInterfaceLines {
 					if strings.Contains(networkInterfaceLine, firstInterfaceName) {
 						fmt.Println(networkInterfaceLine)
-						interfaceData := ir.ResolveNetworkInterfaceLine(networkInterfaceLines[1]) // 第一个是 loop back
+						interfaceData := ir.ResolveNetworkInterfaceLine(networkInterfaceLine) // 第一个是 loop back
 						currentReceivedBytes := interfaceData.rxBytes
-						fmt.Println("currentReceivedBytes:", currentReceivedBytes)
 						delta := float64(currentReceivedBytes - ir.lastReceivedBytes)
-						fmt.Println("delta:", delta)
 						dataRate := delta / float64(1024) / float64(1024)
+						fmt.Println(delta)
+						fmt.Println(dataRate)
 						ir.lastReceivedBytes = currentReceivedBytes
 						if ir.rateList.Len() == ir.fixedLength {
 							rateFront := ir.rateList.Front()
@@ -127,12 +127,10 @@ func (ir *InterfaceRateMonitor) GetNetworkInterfaceData(normalNode *normal_node.
 						}
 						count += 1
 						time.Sleep(time.Second)
-						Printlist(&ir.rateList)
 					}
 				}
 			}
 		}
-		fmt.Println("exit listen")
 	}()
 	return stopChannel
 }
@@ -153,18 +151,9 @@ func ReadFile(pid int) string {
 	return stringContent
 }
 
-func Printlist(list *list.List) {
-	finalStr := ""
-	for e := list.Front(); e != nil; e = e.Next() {
-		finalStr += fmt.Sprintf("%f ", e.Value)
-	}
-	fmt.Println(finalStr)
-}
-
 func (ir *InterfaceRateMonitor) ResolveNetworkInterfaceLine(networkInterfaceLine string) *InterfaceData {
-	r := regexp.MustCompile("\\s+")
+	r := regexp.MustCompile("[^\\s]+")
 	res := r.FindAllString(networkInterfaceLine, -1)
-	fmt.Println("length: ", len(res))
 	rxBytes, _ := strconv.Atoi(res[1])
 	rxPackets, _ := strconv.Atoi(res[2])
 	rxErrs, _ := strconv.Atoi(res[3])
@@ -180,7 +169,7 @@ func (ir *InterfaceRateMonitor) ResolveNetworkInterfaceLine(networkInterfaceLine
 	txFifo, _ := strconv.Atoi(res[13])
 	txFrame, _ := strconv.Atoi(res[14])
 	txCompressed, _ := strconv.Atoi(res[15])
-	//txMulticast, _ := strconv.Atoi(res[16])
+	txMulticast, _ := strconv.Atoi(res[16])
 	interfaceData := &InterfaceData{
 		interfaceName: res[0],
 		rxBytes:       rxBytes,
@@ -198,6 +187,7 @@ func (ir *InterfaceRateMonitor) ResolveNetworkInterfaceLine(networkInterfaceLine
 		txFifo:        txFifo,
 		txFrame:       txFrame,
 		txCompressed:  txCompressed,
+		txMulticast:   txMulticast,
 	}
 	return interfaceData
 }
