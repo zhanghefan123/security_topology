@@ -26,7 +26,7 @@ type InitModule struct {
 
 const (
 	GenerateChainMakerConfig      = "GenerateChainMakerConfig"
-	GenerateNodes                 = "GenerateNodes"                 // 生成卫星
+	GenerateNodes                 = "GenerateNodes"                 // 生成节点
 	GenerateSubnets               = "GenerateSubnets"               // 创建子网
 	GenerateLinks                 = "GenerateLinks"                 // 生成链路
 	GenerateFrrConfigurationFiles = "GenerateFrrConfigurationFiles" // 生成 frr 配置

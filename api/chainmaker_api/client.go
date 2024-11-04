@@ -16,6 +16,9 @@ func CreateChainMakerClient(clientConfiguration *ClientConfiguration) (*sdk.Chai
 		sdk.WithUserKeyFilePath(""),
 		sdk.WithUserSignCrtFilePath(""),
 		sdk.WithUserSignKeyFilePath(""),
+		sdk.WithEnableTxResultDispatcher(true),
+		sdk.WithRetryLimit(20),
+		sdk.WithRetryInterval(2000),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("create chain maker client error: %w", err)

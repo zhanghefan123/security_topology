@@ -14,12 +14,13 @@ type LinkParam struct {
 }
 
 type TopologyParams struct {
-	NetworkEnv          string      `json:"network_env"`
-	BlockChainType      string      `json:"blockchain_type"`
-	ConsensusType       string      `json:"consensus_type"`
-	AccessLinkBandwidth int         `json:"access_link_bandwidth"`
-	ConsensusNodeCpu    float64     `json:"consensus_node_cpu"`
-	ConsensusNodeMemory float64     `json:"consensus_node_memory"`
-	Nodes               []NodeParam `json:"nodes"` // 所有的节点
-	Links               []LinkParam `json:"links"` // 所有的链路
+	NetworkEnv           string      `json:"network_env"`
+	BlockChainType       string      `json:"blockchain_type"`
+	ConsensusType        string      `json:"consensus_type"`
+	AccessLinkBandwidth  int         `json:"access_link_bandwidth"`
+	ConsensusNodeCpu     float64     `json:"consensus_node_cpu"`
+	ConsensusNodeMemory  float64     `json:"consensus_node_memory"`
+	ConsensusThreadCount int         `json:"consensus_thread_count"`
+	Nodes                []NodeParam `json:"nodes"` // 所有的节点
+	Links                []LinkParam `json:"links"` // 所有的链路
 }
