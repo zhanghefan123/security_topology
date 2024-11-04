@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/vishvananda/netlink"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"zhanghefan123/security_topology/api/container_api"
@@ -11,14 +12,18 @@ import (
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
+	"zhanghefan123/security_topology/modules/interface_rate"
+	"zhanghefan123/security_topology/modules/webshell"
 )
 
 const (
-	StopNodeContainers       = "StopNodeContainers"
-	RemoveNodeContainers     = "RemoveNodeContainers"
-	RemoveLinks              = "RemoveLinks"
-	RemoveConfigurationFiles = "RemoveConfigurationFiles"
-	RemoveChainMakerFiles    = "RemoveChainMakerFiles"
+	DeleteWebShells             = "DeleteWebShells"
+	RemoveInterfaceRateMonitors = "RemoveInterfaceRateMonitors"
+	StopNodeContainers          = "StopNodeContainers"
+	RemoveNodeContainers        = "RemoveNodeContainers"
+	RemoveLinks                 = "RemoveLinks"
+	RemoveConfigurationFiles    = "RemoveConfigurationFiles"
+	RemoveChainMakerFiles       = "RemoveChainMakerFiles"
 )
 
 // RemoveFunction 删除函数
@@ -30,12 +35,14 @@ type RemoveModule struct {
 	removeFunction RemoveFunction // 相应的删除函数
 }
 
-// Remove 删除整个星座
+// Remove 删除整个拓扑
 func (t *Topology) Remove() error {
 
 	removeChainMaker := configs.TopConfiguration.ChainMakerConfig.Enabled
 
 	removeSteps := []map[string]RemoveModule{
+		{DeleteWebShells: RemoveModule{true, t.DeleteWebShells}},
+		{RemoveInterfaceRateMonitors: RemoveModule{true, t.RemoveInterfaceRateMonitor}},
 		{StopNodeContainers: RemoveModule{true, t.StopNodeContainers}},
 		{RemoveNodeContainers: RemoveModule{true, t.RemoveNodeContainers}},
 		{RemoveLinks: RemoveModule{true, t.RemoveLinks}},
@@ -78,6 +85,42 @@ func (t *Topology) removeSteps(removeSteps []map[string]RemoveModule) (err error
 		}
 	}
 	return
+}
+
+// DeleteWebShells 进行所有的 web shell 的删除
+func (t *Topology) DeleteWebShells() error {
+	if _, ok := t.topologyStopSteps[DeleteWebShells]; ok {
+		topologyLogger.Infof("already delete web shells")
+		return nil
+	}
+
+	for pid, _ := range webshell.WebShellPids {
+		killCmd := exec.Command("kill", "-9", fmt.Sprintf("%d", pid))
+		err := killCmd.Start()
+		if err != nil {
+			return fmt.Errorf("webshell kill failed: %w", err)
+		}
+	}
+
+	t.topologyStopSteps[DeleteWebShells] = struct{}{}
+	topologyLogger.Infof("delete web shells")
+	return nil
+}
+
+// RemoveInterfaceRateMonitor 进行所有的容器速率监听器的删除
+func (t *Topology) RemoveInterfaceRateMonitor() error {
+	if _, ok := t.topologyStopSteps[RemoveInterfaceRateMonitors]; ok {
+		topologyLogger.Infof("already remove interface rate monitors")
+		return nil
+	}
+
+	for _, interfaceRateMonitor := range interface_rate.InterfaceRateMonitorMapping {
+		interfaceRateMonitor.StopChannel <- struct{}{}
+	}
+
+	t.topologyStopSteps[RemoveInterfaceRateMonitors] = struct{}{}
+	topologyLogger.Infof("remove interface rate monitors")
+	return nil
 }
 
 // StopNodeContainers 进行容器的停止

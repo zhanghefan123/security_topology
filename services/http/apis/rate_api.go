@@ -13,8 +13,11 @@ type CaptureRateRequest struct {
 	ContainerName string `json:"container_name"`
 }
 
+// StartCaptureInterfaceRate 开启接口速率监听
 func StartCaptureInterfaceRate(c *gin.Context) {
-	// 1. 进行参数绑定
+	// 1. 进行参数绑定 -> 从而进行容器名的获取
+	var interfaceRateMonitor *interface_rate.InterfaceRateMonitor
+	var ok bool
 	captureRateRequest := CaptureRateRequest{}
 	err := c.ShouldBindJSON(&captureRateRequest)
 	if err != nil {
@@ -23,34 +26,42 @@ func StartCaptureInterfaceRate(c *gin.Context) {
 		})
 		return
 	}
-	// 2. 判断是否已经存在了相应的监听实例, 如果已经存在直接返回即可
-	if _, ok := interface_rate.InterfaceRateMonitorMapping[captureRateRequest.ContainerName]; ok {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"state": "down",
+	// 2. 判断是否已经存在了相应的监听实例, 如果已经存在就进行数据的返回
+	if interfaceRateMonitor, ok = interface_rate.InterfaceRateMonitorMapping[captureRateRequest.ContainerName]; ok {
+		// 2.1 如果已经存在，则进行数据的返回
+		c.JSON(http.StatusOK, gin.H{
+			"time_list": interfaceRateMonitor.TimeList,
+			"rate_list": interfaceRateMonitor.RateList,
+		})
+		return
+	} else {
+		// 2.2 如果不存在，则创建新的并返回空的数据
+		abstractNode := TopologyInstance.AbstractNodesMap[captureRateRequest.ContainerName]
+		interfaceRateMonitor, err = interface_rate.NewInterfaceRateMonitor(abstractNode)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": "could not create interface_rate monitor",
+			})
+			return
+		}
+		err = interfaceRateMonitor.CaptureInterfaceRate(abstractNode)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": fmt.Sprintf("could not capture interface rate: %s", err.Error()),
+			})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"message":   "successfully captured interface rate",
+			"time_list": make([]int, 0),
+			"rate_list": make([]float64, 0),
 		})
 		return
 	}
-	// 3. 拿到对应的抽象节点
-	abstractNode := TopologyInstance.AbstractNodesMap[captureRateRequest.ContainerName]
-	interfaceRateMonitor, err := interface_rate.NewInterfaceRateMonitor(abstractNode)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "could not create interface_rate monitor",
-		})
-		return
-	}
-	err = interfaceRateMonitor.CaptureInterfaceRate(abstractNode)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": fmt.Sprintf("could not capture interface rate: %s", err.Error()),
-		})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{
-		"message": "successfully captured interface rate",
-	})
+
 }
 
+// StopCaptureInterfaceRate 停止接口速率监听
 func StopCaptureInterfaceRate(c *gin.Context) {
 	// 1. 如果已经不存在了就返回错误
 	if TopologyInstance == nil {

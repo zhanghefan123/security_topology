@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/utils/network"
-	"zhanghefan123/security_topology/modules/utils/webshell"
+	"zhanghefan123/security_topology/modules/webshell"
 )
 
 type StartWebShellRequest struct {
@@ -62,8 +62,6 @@ func StartWebShell(c *gin.Context) {
 		})
 		return
 	}
-
-	TopologyInstance.WebShellMap[webShellInfo.Pid] = struct{}{}
 
 	c.JSON(http.StatusOK, gin.H{
 		"address": webShellInfo.Address,

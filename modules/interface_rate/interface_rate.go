@@ -1,7 +1,6 @@
 package interface_rate
 
 import (
-	"container/list"
 	"fmt"
 	"io"
 	"os"
@@ -20,21 +19,22 @@ var (
 
 type InterfaceRateMonitor struct {
 	abstractNode      *node.AbstractNode
-	timeList          list.List
-	rateList          list.List
+	TimeList          []int
+	RateList          []float64
 	fixedLength       int
 	lastReceivedBytes int
-	stopChannel       chan struct{}
+	StopChannel       chan struct{}
 }
 
+// NewInterfaceRateMonitor 创建新的接口监听器
 func NewInterfaceRateMonitor(abstractNode *node.AbstractNode) (*InterfaceRateMonitor, error) {
 	interfaceRateMonitor := &InterfaceRateMonitor{
 		abstractNode:      abstractNode,
-		timeList:          list.List{},
-		rateList:          list.List{},
+		TimeList:          make([]int, 0),
+		RateList:          make([]float64, 0),
 		fixedLength:       10,
 		lastReceivedBytes: 0,
-		stopChannel:       nil, // 在启动之后会进行赋值
+		StopChannel:       nil, // 在启动之后会进行赋值
 	}
 	normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
 	if err != nil {
@@ -44,12 +44,13 @@ func NewInterfaceRateMonitor(abstractNode *node.AbstractNode) (*InterfaceRateMon
 	return interfaceRateMonitor, nil
 }
 
+// RemoveInterfaceRateMonitor 移除接口监听器
 func RemoveInterfaceRateMonitor(abstractNode *node.AbstractNode) error {
 	normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
 	if err != nil {
 		return fmt.Errorf("GetNormalNodeFromAbstractNode failed: %w", err)
 	}
-	InterfaceRateMonitorMapping[normalNode.ContainerName].stopChannel <- struct{}{}
+	InterfaceRateMonitorMapping[normalNode.ContainerName].StopChannel <- struct{}{}
 	delete(InterfaceRateMonitorMapping, normalNode.ContainerName)
 	return nil
 }
@@ -75,12 +76,13 @@ type InterfaceData struct {
 	txMulticast  int
 }
 
+// CaptureInterfaceRate 进行接口速率的捕获
 func (ir *InterfaceRateMonitor) CaptureInterfaceRate(abstractNode *node.AbstractNode) (err error) {
 	normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
 	if err != nil {
 		return fmt.Errorf("GetNormalNodeFromAbstractNode: %w", err)
 	}
-	ir.stopChannel = ir.GetNetworkInterfaceData(normalNode)
+	ir.StopChannel = ir.GetNetworkInterfaceData(normalNode)
 	return nil
 }
 
@@ -101,29 +103,24 @@ func (ir *InterfaceRateMonitor) GetNetworkInterfaceData(normalNode *normal_node.
 			case <-stopChannel:
 				break InternalLoop
 			default:
-				content := ReadFile(normalNode.Pid)
+				content := ReadNetworkInterfaceFile(normalNode.Pid)
 				networkInterfaceLines := strings.Split(content, "\n")
 				firstInterfaceName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(normalNode.Type), normalNode.Id, 1)
 				for _, networkInterfaceLine := range networkInterfaceLines {
 					if strings.Contains(networkInterfaceLine, firstInterfaceName) {
-						fmt.Println(networkInterfaceLine)
 						interfaceData := ir.ResolveNetworkInterfaceLine(networkInterfaceLine) // 第一个是 loop back
 						currentReceivedBytes := interfaceData.rxBytes
 						delta := float64(currentReceivedBytes - ir.lastReceivedBytes)
 						dataRate := delta / float64(1024) / float64(1024)
-						fmt.Println(delta)
-						fmt.Println(dataRate)
 						ir.lastReceivedBytes = currentReceivedBytes
-						if ir.rateList.Len() == ir.fixedLength {
-							rateFront := ir.rateList.Front()
-							ir.rateList.Remove(rateFront)
-							ir.rateList.PushBack(dataRate)
-							timeFront := ir.timeList.Front()
-							ir.timeList.Remove(timeFront)
-							ir.timeList.PushBack(count)
+						if len(ir.RateList) == ir.fixedLength {
+							ir.RateList = ir.RateList[1:]
+							ir.RateList = append(ir.RateList, dataRate)
+							ir.TimeList = ir.TimeList[1:]
+							ir.TimeList = append(ir.TimeList, count)
 						} else {
-							ir.rateList.PushBack(dataRate)
-							ir.timeList.PushBack(count)
+							ir.RateList = append(ir.RateList, dataRate)
+							ir.TimeList = append(ir.TimeList, count)
 						}
 						count += 1
 						time.Sleep(time.Second)
@@ -135,7 +132,8 @@ func (ir *InterfaceRateMonitor) GetNetworkInterfaceData(normalNode *normal_node.
 	return stopChannel
 }
 
-func ReadFile(pid int) string {
+// ReadNetworkInterfaceFile 进行网络接口文件的读取
+func ReadNetworkInterfaceFile(pid int) string {
 	var bytesContent []byte
 	networkInterfaceDataFile := fmt.Sprintf("/proc/%d/net/dev", pid)
 	file, err := os.Open(networkInterfaceDataFile)
@@ -151,6 +149,7 @@ func ReadFile(pid int) string {
 	return stringContent
 }
 
+// ResolveNetworkInterfaceLine 进行网络接口某一行信息的解析
 func (ir *InterfaceRateMonitor) ResolveNetworkInterfaceLine(networkInterfaceLine string) *InterfaceData {
 	r := regexp.MustCompile("[^\\s]+")
 	res := r.FindAllString(networkInterfaceLine, -1)
