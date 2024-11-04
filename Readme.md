@@ -8,9 +8,42 @@
 - [1] go 1.23.0 ｜ go 1.23.1
 - [2] sudo apt-get install build-essential
 
-# 3. 构建镜像的详细步骤
+# 3. 各个文件夹的功能
+- [1] api
+  - [1] chainmaker_api 长安链相应的 api
+  - [2] container_api 容器创建/启动/删除相关的 api
+  - [3] etcd_api etcd 设置键值对相关的 api
+  - [4] linux_tc_api linux tc 设置带宽, 延迟相关的 api
+  - [5] multithread 多线程执行相关的 api
+  - [6] route 计算最短路相关的 api
+- [2] cmd
+  - [1] constellation cobra 星座命令
+  - [2] http_service cobra http 服务命令
+  - [3] images cobra 镜像处理命令
+  - [4] root cobra 主命令
+  - [5] test 测试命令 - cobra 测试代码可以放到里面
+  - [6] testdata - cobra 长安链相关的测试数据
+  - [7] variables - cobra 可供构建的镜像
+- [3] configs 配置读取文件夹
+- [4] images 存放各个镜像的 Dockerfile 以及相应的依赖
+- [5] modules
+  -  [1] chainmaker_prepare 长安链 prepare.sh 脚本的 go 语言实现
+  -  [2] docker docker 容器客户端创建 api
+  -  [3] entities 拓扑之中的各种实体
+  -  [4] interface_rate 监控接口速率
+  -  [5] logger 日志
+  -  [6] utils 相关工具
+  -  [7] webshell 前端 shell 创建 api
+- [6] resources 存放资源 / 包含配置文件, 长安链依赖
+- [7] scripts 脚本文件存放目录，现在仅有删除所有容器和链路的 delete.sh
+- [8] services
+  - [1] http 代表 http 服务
+  - [2] position 代表卫星位置服务
+- [9] test 测试目录
 
-- [1] 调整 cmd/build.sh 之中的内容
+# 4. 构建镜像的详细步骤
+
+- [1] 调整 cmd/build.sh 之中的内容, 利用本机的 go 路径进行 build
 - [2] bash build.sh 进行构建
 - [3 (较慢)] ./cmd images -i ubuntu_with_software -o build
 - [4 (较慢)] ./cmd images -i python_env -o build
@@ -23,3 +56,7 @@
 - [11] ./cmd images -i normal_node -o build
 - [12] ./cmd images -i malicious_node -o build
 - [13] ./cmd images -i consensus_node -o build
+
+# 5. 启动的详细步骤
+
+- [1] sudo ./cmd http_service 就可以完成 http 服务的启动
