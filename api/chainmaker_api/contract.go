@@ -31,12 +31,8 @@ const (
 //--sync-result=true \
 //--params="{}"
 
+// CreateUpgradeUserContract 创建或升级合约
 func CreateUpgradeUserContract(client *sdk.ChainClient, clientConfiguration *ClientConfiguration, op createUpgradeContractOp) error {
-	//clientConfiguration := NewClientConfiguration(contractName)
-	//client, err := CreateChainMakerClient(clientConfiguration)
-	//if err != nil {
-	//	return fmt.Errorf("cannot create chainmaker client: %w", err)
-	//}
 	adminKeys, adminCerts, adminOrgs, err := MakeAdminInfo(client,
 		clientConfiguration.AdminKeyFilePaths,
 		clientConfiguration.AdminCertFilePaths,
@@ -111,6 +107,7 @@ func CreateUpgradeUserContract(client *sdk.ChainClient, clientConfiguration *Cli
 	return createUpgradeUserContractOutput(resp)
 }
 
+// createUpgradeUserContractOutput 用来进行合约的升级
 func createUpgradeUserContractOutput(resp *common.TxResponse) error {
 	if resp.ContractResult != nil && resp.ContractResult.Result != nil {
 		var contract common.Contract
@@ -131,35 +128,8 @@ func createUpgradeUserContractOutput(resp *common.TxResponse) error {
 	return nil
 }
 
-//func testUserContractClaimCreate(client *sdk.ChainClient, withSyncResult bool, usernames ...string) {
-//
-//	resp, err := createUserContract(client, claimContractName, claimVersion, claimByteCodePath,
-//		common.RuntimeType_WASMER, []*common.KeyValuePair{}, withSyncResult, usernames...)
-//	if err != nil {
-//		log.Fatalln(err)
-//	}
-//
-//	fmt.Printf("CREATE claim contract resp: %+v\n", resp)
-//}
-
-//func createUserContract(client *sdk.ChainClient, contractName, version, byteCodePath string, runtime common.RuntimeType,
-//	kvs []*common.KeyValuePair, withSyncResult bool, usernames ...string) (*common.TxResponse, error) {
-//
-//	payload, err := client.CreateContractCreatePayload(contractName, version, byteCodePath, runtime, kvs)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	endorsers, err := GetEndorsersWithAuthType(client.GetHashType(),
-//		client.GetAuthType(), payload, usernames...)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return client.SendContractManageRequest(payload, endorsers, 20, withSyncResult)
-//}
-
-func testUserContractClaimInvoke(contractName string, client *sdk.ChainClient, method string, withSyncResult bool) (*common.TxResponse, error) {
+// invokeContract 是用来进行合约的调用
+func invokeContract(contractName string, client *sdk.ChainClient, method string, withSyncResult bool) (*common.TxResponse, error) {
 	curTime := strconv.FormatInt(time.Now().Unix(), 10)
 	fileHash := uuid.GetUUID()
 	kvs := []*common.KeyValuePair{

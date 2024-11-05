@@ -21,6 +21,7 @@ type TxRateRecorder struct {
 	waitGroup   *sync.WaitGroup
 }
 
+// NewTxRateRecorder 创建新的 TxRateRecorder
 func NewTxRateRecorder() *TxRateRecorder {
 	return &TxRateRecorder{
 		TimeList:    make([]int, 0),
@@ -33,13 +34,15 @@ func NewTxRateRecorder() *TxRateRecorder {
 
 // StartTxRateTest 进行 tx 速率的测试
 func (trr *TxRateRecorder) StartTxRateTest(threadCount int) error {
+	// 合约的名称
 	contractName := fmt.Sprintf("fact%d", currentContractId)
+	// 创建配置
 	clientConfiguration := NewClientConfiguration(contractName)
+	// 创建长安链的客户端
 	chainMakerClient, err := CreateChainMakerClient(clientConfiguration)
 	if err != nil {
 		return fmt.Errorf("cannot create chainmaker client: %w", err)
 	}
-
 	// 进行合约的创建
 	err = CreateUpgradeUserContract(chainMakerClient, clientConfiguration, CreateContractOp)
 	if err != nil {
@@ -48,14 +51,13 @@ func (trr *TxRateRecorder) StartTxRateTest(threadCount int) error {
 	} else {
 		currentContractId = currentContractId + 1
 	}
-
 	// 进行合约的调用
-	count := 1
-	var txCount int64
-	var calcTpsDuration = time.Second * 1
-	var resp *common.TxResponse
-	for i := 0; i < threadCount; i++ {
-		trr.waitGroup.Add(1)
+	count := 1                            // 序号
+	var txCount int64                     // 当前的合约执行次数
+	var calcTpsDuration = time.Second * 1 // 计算的时间间隔
+	var resp *common.TxResponse           // 合约执行的响应结果
+	for i := 0; i < threadCount; i++ {    // 线程数量
+		trr.waitGroup.Add(1) // 正在执行的任务数 + 1
 		go func(stopQueue chan struct{}) {
 			defer trr.waitGroup.Done()
 		forLoop:
@@ -64,7 +66,7 @@ func (trr *TxRateRecorder) StartTxRateTest(threadCount int) error {
 				case <-stopQueue:
 					break forLoop
 				default:
-					resp, err = testUserContractClaimInvoke(contractName, chainMakerClient, "save", true)
+					resp, err = invokeContract(contractName, chainMakerClient, "save", true)
 					if err != nil {
 						fmt.Printf("%s\ninvoke contract resp: %+v\n", err, resp)
 					} else {

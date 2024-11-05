@@ -14,7 +14,7 @@
   - [2] container_api 容器创建/启动/删除相关的 api
   - [3] etcd_api etcd 设置键值对相关的 api
   - [4] linux_tc_api linux tc 设置带宽, 延迟相关的 api
-  - [5] multithread 多线程执行相关的 api
+  - [5] multithreading 多线程执行相关的 api
   - [6] route 计算最短路相关的 api
 - [2] cmd
   - [1] constellation cobra 星座命令
@@ -30,6 +30,18 @@
   -  [1] chainmaker_prepare 长安链 prepare.sh 脚本的 go 语言实现
   -  [2] docker docker 容器客户端创建 api
   -  [3] entities 拓扑之中的各种实体
+    - [1] abstract_entities 抽象实体
+      - [1] intf 抽象接口
+      - [2] link 抽象链路
+      - [3] node 抽象节点
+    - [2] real_entities 实际实体
+      - [1] constellation 星座
+      - [2] nodes 各种节点
+      - [3] normal_node 各种节点的基础版
+      - [4] position_info 卫星位置信息
+      - [5] satellites 卫星
+      - [6] services 服务
+      - [7] topology 拓扑
   -  [4] interface_rate 监控接口速率
   -  [5] logger 日志
   -  [6] utils 相关工具
@@ -44,18 +56,19 @@
 # 4. 构建镜像的详细步骤
 
 - [1] 调整 cmd/build.sh 之中的内容, 利用本机的 go 路径进行 build
-- [2] bash build.sh 进行构建
-- [3 (较慢)] ./cmd images -i ubuntu_with_software -o build
-- [4 (较慢)] ./cmd images -i python_env -o build
-- [5] ./cmd images -i go_env -o build
-- [6] ./cmd images -i etcd_service -o build
-- [7] 将 resources/configuration.yml 之中的 real_time_position_dir 设置为实际的卫星网络项目文件夹的路径
-- [8] ./cmd images -i position_service -o build
-- [9] ./cmd images -i normal_satellite -o build
-- [10] ./cmd images -i router -o build
-- [11] ./cmd images -i normal_node -o build
-- [12] ./cmd images -i malicious_node -o build
-- [13] ./cmd images -i consensus_node -o build
+- [2] 调整 resources/configuration.yml 之中的 chainmaker_go_project_path 以及 crypto_gen_path
+- [3] bash build.sh 进行构建
+- [4 (较慢)] ./cmd images -i ubuntu_with_software -o build
+- [5 (较慢)] ./cmd images -i python_env -o build
+- [6] ./cmd images -i go_env -o build
+- [7] ./cmd images -i etcd_service -o build
+- [8] 将 resources/configuration.yml 之中的 real_time_position_dir 设置为实际的卫星网络项目文件夹的路径
+- [9] ./cmd images -i position_service -o build
+- [10] ./cmd images -i normal_satellite -o build
+- [11] ./cmd images -i router -o build
+- [12] ./cmd images -i normal_node -o build
+- [13] ./cmd images -i malicious_node -o build
+- [14] ./cmd images -i consensus_node -o build
 
 # 5. 启动的详细步骤
 
