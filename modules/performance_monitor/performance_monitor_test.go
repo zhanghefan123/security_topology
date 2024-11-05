@@ -1,4 +1,4 @@
-package interface_rate
+package performance_monitor
 
 import (
 	"fmt"

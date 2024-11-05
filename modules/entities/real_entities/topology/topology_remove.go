@@ -12,7 +12,7 @@ import (
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
-	"zhanghefan123/security_topology/modules/interface_rate"
+	"zhanghefan123/security_topology/modules/performance_monitor"
 	"zhanghefan123/security_topology/modules/webshell"
 )
 
@@ -114,7 +114,7 @@ func (t *Topology) RemoveInterfaceRateMonitor() error {
 		return nil
 	}
 
-	for _, interfaceRateMonitor := range interface_rate.InterfaceRateMonitorMapping {
+	for _, interfaceRateMonitor := range performance_monitor.PerformanceMonitorMapping {
 		interfaceRateMonitor.StopChannel <- struct{}{}
 	}
 

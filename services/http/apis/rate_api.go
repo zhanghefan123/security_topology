@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"net/http"
-	"zhanghefan123/security_topology/modules/interface_rate"
+	"zhanghefan123/security_topology/modules/performance_monitor"
 )
 
 type CaptureRateRequest struct {
@@ -16,7 +16,7 @@ type CaptureRateRequest struct {
 // StartCaptureInterfaceRate 开启接口速率监听
 func StartCaptureInterfaceRate(c *gin.Context) {
 	// 1. 进行参数绑定 -> 从而进行容器名的获取
-	var interfaceRateMonitor *interface_rate.InterfaceRateMonitor
+	var interfaceRateMonitor *performance_monitor.PerformanceMonitor
 	var ok bool
 	captureRateRequest := CaptureRateRequest{}
 	err := c.ShouldBindJSON(&captureRateRequest)
@@ -27,20 +27,21 @@ func StartCaptureInterfaceRate(c *gin.Context) {
 		return
 	}
 	// 2. 判断是否已经存在了相应的监听实例, 如果已经存在就进行数据的返回
-	if interfaceRateMonitor, ok = interface_rate.InterfaceRateMonitorMapping[captureRateRequest.ContainerName]; ok {
+	if interfaceRateMonitor, ok = performance_monitor.PerformanceMonitorMapping[captureRateRequest.ContainerName]; ok {
 		// 2.1 如果已经存在，则进行数据的返回
 		c.JSON(http.StatusOK, gin.H{
-			"time_list": interfaceRateMonitor.TimeList,
-			"rate_list": interfaceRateMonitor.RateList,
+			"time_list":           interfaceRateMonitor.TimeList,
+			"interface_rate_list": interfaceRateMonitor.InterfaceRateList,
+			"cpu_ratio_list":      interfaceRateMonitor.CpuRatioList,
 		})
 		return
 	} else {
 		// 2.2 如果不存在，则创建新的并返回空的数据
 		abstractNode := TopologyInstance.AbstractNodesMap[captureRateRequest.ContainerName]
-		interfaceRateMonitor, err = interface_rate.NewInterfaceRateMonitor(abstractNode)
+		interfaceRateMonitor, err = performance_monitor.NewInterfaceRateMonitor(abstractNode)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"message": "could not create interface_rate monitor",
+				"message": "could not create performance_monitor monitor",
 			})
 			return
 		}
@@ -52,9 +53,10 @@ func StartCaptureInterfaceRate(c *gin.Context) {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{
-			"message":   "successfully captured interface rate",
-			"time_list": make([]int, 0),
-			"rate_list": make([]float64, 0),
+			"message":             "successfully captured interface rate",
+			"time_list":           make([]int, 0),
+			"interface_rate_list": make([]float64, 0),
+			"cpu_ratio_list":      make([]float64, 0),
 		})
 		return
 	}
@@ -83,10 +85,10 @@ func StopCaptureInterfaceRate(c *gin.Context) {
 	}
 	// 3. 拿到对应的抽象节点并调用 Remove 逻辑
 	abstractNode := TopologyInstance.AbstractNodesMap[captureRateRequest.ContainerName]
-	err = interface_rate.RemoveInterfaceRateMonitor(abstractNode)
+	err = performance_monitor.RemovePerformanceMonitor(abstractNode)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "could not remove interface_rate monitor",
+			"message": "could not remove performance_monitor monitor",
 		})
 		return
 	}
