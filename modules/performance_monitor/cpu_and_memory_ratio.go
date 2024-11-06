@@ -11,7 +11,8 @@ import (
 
 // UpdateInstanceCpuAndMemoryRatio 更新实例的 Cpu 和 内存信息
 func (pm *PerformanceMonitor) UpdateInstanceCpuAndMemoryRatio() (err error) {
-	// cgroupFile 的内容 --> 0::/system.slice/docker-9700fc09f052961f4d6ee4a505f325e2f2f81ee1f215f9bfe331f66dc42783c6.scope
+	// 打开 cgroupFile
+	// ---------------------------------------------------------------------------------------------
 	processCgroupFile, err := os.Open(fmt.Sprintf("/proc/%d/cgroup", pm.normalNode.Pid))
 	if err != nil {
 		return fmt.Errorf("cannot open process cgroup file: %v", err)
@@ -22,14 +23,23 @@ func (pm *PerformanceMonitor) UpdateInstanceCpuAndMemoryRatio() (err error) {
 			err = errClose
 		}
 	}()
+	// ---------------------------------------------------------------------------------------------
+	// 读取 cgroupFile 的内容 -> 样例 0::/system.slice/docker-9700fc09f052961f4d6ee4a505f325e2f2f81ee1f215f9bfe331f66dc42783c6.scope
+	// ---------------------------------------------------------------------------------------------
 	processCgroupFileBytes, err := io.ReadAll(processCgroupFile)
 	splitParts := strings.Split(string(processCgroupFileBytes), "::")
 	if len(splitParts) != 2 {
 		return fmt.Errorf("cannot parse process cgroup file")
 	}
+	// ---------------------------------------------------------------------------------------------
+	// 获取容器相应的资源文件存放目录
+	// ---------------------------------------------------------------------------------------------
 	resourcesDirBase := fmt.Sprintf("/sys/fs/cgroup/%s/", strings.TrimSpace(splitParts[1]))
 	cpuPath := filepath.Join(resourcesDirBase, "cpu.stat")
 	memoryPath := filepath.Join(resourcesDirBase, "memory.current")
+	// ---------------------------------------------------------------------------------------------
+	// 读取相应的文件
+	// ---------------------------------------------------------------------------------------------
 	usageUsec, err := ReadCpuUsage(cpuPath)
 	if err != nil {
 		return fmt.Errorf("cannot read CPU usage: %w", err)
@@ -39,12 +49,12 @@ func (pm *PerformanceMonitor) UpdateInstanceCpuAndMemoryRatio() (err error) {
 		return fmt.Errorf("cannot read memory usage: %w", err)
 	}
 	memoryMBytes := memoryBytes / 1024 / 1024
-	// 接着进行主机的资源的获取
-	//hostResources, err := host_resources.GetHostResources()
+	// ---------------------------------------------------------------------------------------------
 	if err != nil {
 		return fmt.Errorf("cannot get host resources: %w", err)
 	}
-	// 容器的 cpu 繁忙时间 (单位为 ms)
+	// 更新 CPU 和 内存
+	// ---------------------------------------------------------------------------------------------
 	containerCpuBusy := usageUsec / 1000
 	cpuRatio := (containerCpuBusy - pm.LastCpuBusy) / 1000
 	memoryMBytes = (memoryMBytes + pm.LastMemoryMBytes) / 2
@@ -59,6 +69,7 @@ func (pm *PerformanceMonitor) UpdateInstanceCpuAndMemoryRatio() (err error) {
 		pm.CpuRatioList = append(pm.CpuRatioList, cpuRatio)
 		pm.MemoryMBList = append(pm.MemoryMBList, memoryMBytes)
 	}
+	// ---------------------------------------------------------------------------------------------
 	return nil
 }
 

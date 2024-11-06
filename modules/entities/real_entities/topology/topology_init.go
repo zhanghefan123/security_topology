@@ -5,6 +5,7 @@ import (
 	"github.com/c-robinson/iplib/v2"
 	"os"
 	"path/filepath"
+	"zhanghefan123/security_topology/api/linux_tc_api"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/chainmaker_prepare"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/intf"
@@ -182,7 +183,7 @@ func (t *Topology) GenerateLinks() error {
 
 	// ----------------实际逻辑--------------------
 	for _, linkTmp := range t.TopologyParams.Links {
-		// 拿到源节点和目的节点的参数
+		// 拿到从前端传递过来的 (源节点 目的节点的参数)
 		sourceNodeParam := linkTmp.SourceNode
 		targetNodeParam := linkTmp.TargetNode
 		// 找到节点对应的类型
@@ -204,7 +205,15 @@ func (t *Topology) GenerateLinks() error {
 		targetNodeType := targetAbstractNode.Type
 		currentLinkNums := len(t.Links)
 		linkId := currentLinkNums + 1
-		linkType := types.NetworkLinkType_NormalLink
+		var linkType types.NetworkLinkType
+		var bandWidth int
+		if linkTmp.LinkType == "access" {
+			linkType = types.NetworkLinkType_AccessLink
+			bandWidth = t.TopologyParams.AccessLinkBandwidth * 1e6
+		} else {
+			linkType = types.NetworkLinkType_BackboneLink
+			bandWidth = linux_tc_api.LargeBandwidth // 没有限制
+		}
 		ipv4SubNet := t.Ipv4SubNets[currentLinkNums]                                                                            // 获取当前ipv4 子网
 		ipv6SubNet := t.Ipv6SubNets[currentLinkNums]                                                                            // 获取当前 ipv6 子网
 		sourceNormalNode.ConnectedIpv4SubnetList = append(sourceNormalNode.ConnectedIpv4SubnetList, ipv4SubNet.String())        // 卫星添加ipv4子网
@@ -227,7 +236,8 @@ func (t *Topology) GenerateLinks() error {
 			sourceNormalNode.Id, targetNormalNode.Id,
 			sourceNormalNode.ContainerName, targetNormalNode.ContainerName,
 			sourceIntf, targetIntf,
-			sourceAbstractNode, targetAbstractNode)
+			sourceAbstractNode, targetAbstractNode,
+			bandWidth)
 		sourceNormalNode.Ifidx++
 		targetNormalNode.Ifidx++
 		t.Links = append(t.Links, abstractLink)

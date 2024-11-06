@@ -22,6 +22,7 @@ constellation_config:
     type: 0
     p2p_port: 11300
     rpc_port: 12300
+  isl_bandwidth: 10 # mbps 为单位
 
 chain_maker_config:
   enabled: true

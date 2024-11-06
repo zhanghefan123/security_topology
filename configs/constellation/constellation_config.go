@@ -14,4 +14,5 @@ type ConstellationConfig struct {
 	StartTime         string          `mapstructure:"start_time"`
 	GoStartTime       time.Time       // 转换为了 time.Time 的值
 	SatelliteConfig   SatelliteConfig `mapstructure:"satellite_config"`
+	ISLBandwidth      int             `mapstructure:"isl_bandwidth"`
 }

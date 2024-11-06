@@ -79,6 +79,8 @@ func InitLocalConfig() error {
 	if _, ok := availableOspfVersions[TopConfiguration.NetworkConfig.OspfVersion]; !ok {
 		return fmt.Errorf("unsupported OSPF version: %s", TopConfiguration.NetworkConfig.OspfVersion)
 	}
+	// 进行 constellation bandwidth 的更新
+	TopConfiguration.ConstellationConfig.ISLBandwidth = TopConfiguration.ConstellationConfig.ISLBandwidth * 1e6
 	// 进行 chainmaker 路径的更新
 	PrintLocalConfig()
 	return nil

@@ -12,6 +12,7 @@ const (
 	GenerateNodesVethPairs = "GenerateNodesVethPairs"
 	StartNodeContainers    = "StartNodeContainers"
 	SetVethNameSpaces      = "SetVethNameSpaces"
+	SetLinkParameters      = "SetLinkParameters"
 )
 
 type StartFunction func() error
@@ -27,6 +28,7 @@ func (t *Topology) Start() error {
 		{GenerateNodesVethPairs: StartModule{true, t.GenerateNodesVethPairs}}, // step1 先创建 veth pair 然后改变链路的命名空间
 		{StartNodeContainers: StartModule{true, t.StartNodeContainers}},       // step2 一定要在 step1 之后，因为创建了容器后才有命名空间
 		{SetVethNameSpaces: StartModule{true, t.SetVethNamespaces}},           // step3 一定要在 step2 之后，因为创建了容器才能设置 veth 的 namespace
+		{SetLinkParameters: StartModule{true, t.SetLinkParameters}},           // step4 进行链路属性的设置
 	}
 	err := t.startSteps(startSteps)
 	if err != nil {
@@ -118,7 +120,9 @@ func (t *Topology) SetVethNamespaces() error {
 		topologyLogger.Infof("SetVethNameSpaces is already running")
 		return nil
 	}
+	// 描述
 	description := fmt.Sprintf("%20s", "set veth namespaces")
+	// 每个节点执行的函数
 	var taskFunc multithread.TaskFunc[*node.AbstractNode] = func(node *node.AbstractNode) error {
 		normalNode, err := node.GetNormalNodeFromAbstractNode()
 		if err != nil {
@@ -136,4 +140,25 @@ func (t *Topology) SetVethNamespaces() error {
 	topologyLogger.Infof("execute set veth namespaces")
 
 	return multithread.RunInMultiThread(description, taskFunc, t.AllAbstractNodes)
+}
+
+// SetLinkParameters 进行链路属性的设置
+func (t *Topology) SetLinkParameters() error {
+	if _, ok := t.topologyStartSteps[SetLinkParameters]; ok {
+		topologyLogger.Infof("SetLinkParameters is already running")
+		return nil
+	}
+	// 描述
+	description := fmt.Sprintf("%20s", "set link parameters")
+	var taskFunc multithread.TaskFunc[*link.AbstractLink] = func(absLink *link.AbstractLink) error {
+		err := absLink.SetLinkParams()
+		if err != nil {
+			return fmt.Errorf("set link params failed: %w", err)
+		}
+		return nil
+	}
+
+	t.topologyStartSteps[SetLinkParameters] = struct{}{}
+	topologyLogger.Infof("execute set link parameters")
+	return multithread.RunInMultiThread(description, taskFunc, t.Links)
 }

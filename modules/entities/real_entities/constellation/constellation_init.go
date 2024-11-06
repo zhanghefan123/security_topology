@@ -237,7 +237,7 @@ func (c *Constellation) generateLinksForConsensusSatellites() {
 				sourceSat.Id, targetSat.Id,
 				sourceSat.ContainerName, targetSat.ContainerName,
 				sourceIntf, targetIntf,
-				sourceAbstract, targetAbstract)
+				sourceAbstract, targetAbstract, configs.TopConfiguration.ConstellationConfig.ISLBandwidth)
 			sourceSat.Ifidx++                                                 // 接口索引变化
 			targetSat.Ifidx++                                                 // 接口索引变化
 			c.AllSatelliteLinks = append(c.AllSatelliteLinks, intraOrbitLink) // 添加到所有链路集合
@@ -280,7 +280,7 @@ func (c *Constellation) generateLinksForConsensusSatellites() {
 				sourceSat.Id, targetSat.Id,
 				sourceSat.ContainerName, targetSat.ContainerName,
 				sourceIntf, targetIntf,
-				sourceAbstract, targetAbstract)
+				sourceAbstract, targetAbstract, configs.TopConfiguration.ConstellationConfig.ISLBandwidth)
 			sourceSat.Ifidx++                                                 // 接口索引变化
 			targetSat.Ifidx++                                                 // 接口索引变化
 			c.AllSatelliteLinks = append(c.AllSatelliteLinks, interOrbitLink) // 添加到所有链路集合
@@ -335,7 +335,7 @@ func (c *Constellation) generateLinksForNormalSatellite() {
 				sourceSat.Id, targetSat.Id,
 				sourceSat.ContainerName, targetSat.ContainerName,
 				sourceIntf, targetIntf,
-				sourceAbstract, targetAbstract)
+				sourceAbstract, targetAbstract, configs.TopConfiguration.ConstellationConfig.ISLBandwidth)
 			sourceSat.Ifidx++                                                 // 接口索引变化
 			targetSat.Ifidx++                                                 // 接口索引变化
 			c.AllSatelliteLinks = append(c.AllSatelliteLinks, intraOrbitLink) // 添加到所有链路集合
@@ -378,7 +378,7 @@ func (c *Constellation) generateLinksForNormalSatellite() {
 				sourceSat.Id, targetSat.Id,
 				sourceSat.ContainerName, targetSat.ContainerName,
 				sourceIntf, targetIntf,
-				sourceAbstract, targetAbstract)
+				sourceAbstract, targetAbstract, configs.TopConfiguration.ConstellationConfig.ISLBandwidth)
 			sourceSat.Ifidx++                                                 // 接口索引变化
 			targetSat.Ifidx++                                                 // 接口索引变化
 			c.AllSatelliteLinks = append(c.AllSatelliteLinks, interOrbitLink) // 添加到所有链路集合

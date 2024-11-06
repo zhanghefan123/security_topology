@@ -24,5 +24,6 @@ enum NetworkNodeType {
 enum NetworkLinkType {
   IntraOrbitSatelliteLink = 0;
   InterOrbitSatelliteLink = 1;
-  NormalLink = 2;
+  AccessLink = 2;
+  BackboneLink = 3;
 }
