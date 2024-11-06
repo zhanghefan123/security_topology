@@ -15,6 +15,7 @@ import (
 	"zhanghefan123/security_topology/configs/images"
 	"zhanghefan123/security_topology/configs/network"
 	"zhanghefan123/security_topology/configs/path"
+	"zhanghefan123/security_topology/configs/resources"
 	"zhanghefan123/security_topology/configs/services"
 	"zhanghefan123/security_topology/modules/logger"
 	networkUtils "zhanghefan123/security_topology/modules/utils/network"
@@ -36,6 +37,7 @@ type TopConfig struct {
 	PathConfig          path.PathConfig                   `mapstructure:"path_config"`
 	ServicesConfig      services.ServicesConfig           `mapstructure:"services_config"`
 	AppsConfig          apps.AppsConfig                   `mapstructure:"apps_config"`
+	ResourcesConfig     resources.ResourcesConfig         `mapstructure:"resources_config"`
 }
 
 var availableOspfVersions = map[string]struct{}{

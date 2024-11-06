@@ -22,8 +22,8 @@ var postRoutes = map[string]gin.HandlerFunc{
 	"/startWebShell": apis.StartWebShell, // webshell 相关
 	"/stopWebShell":  apis.StopWebShell,  // webshell 相关
 
-	"/startCaptureInterfaceRate": apis.StartCaptureInterfaceRate, // rate 相关
-	"/stopCaptureInterfaceRate":  apis.StopCaptureInterfaceRate,  // rate 相关
+	"/startCaptureInterfaceRate": apis.StartCaptureInstancePerformance, // rate 相关
+	"/stopCaptureInterfaceRate":  apis.StopCaptureInstancePerformance,  // rate 相关
 }
 
 // CORSMiddleware 中间件处理跨域问题

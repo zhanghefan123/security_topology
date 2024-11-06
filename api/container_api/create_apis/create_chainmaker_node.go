@@ -13,6 +13,7 @@ import (
 	"zhanghefan123/security_topology/modules/entities/types"
 )
 
+// CreateChainMakerNode 创建长安链容器
 func CreateChainMakerNode(client *docker.Client, chainMakerNode *nodes.ChainmakerNode) error {
 	// 1. 检查状态
 	if chainMakerNode.Status != types.NetworkNodeStatus_Logic {
@@ -40,11 +41,15 @@ func CreateChainMakerNode(client *docker.Client, chainMakerNode *nodes.Chainmake
 	}
 
 	// 3. 获取配置
+	var cpuLimit float64
+	var memoryLimit float64
 	chainMakerConfig := configs.TopConfiguration.ChainMakerConfig
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	nodeDir := filepath.Join(simulationDir, chainMakerNode.ContainerName)
 	enableFrr := configs.TopConfiguration.NetworkConfig.EnableFrr
 	absOfMultiNode := path.Join(chainMakerConfig.ChainMakerGoProjectPath, "scripts/docker/multi_node")
+	cpuLimit = configs.TopConfiguration.ResourcesConfig.CpuLimit
+	memoryLimit = configs.TopConfiguration.ResourcesConfig.MemoryLimit
 
 	// 4. 创建容器卷映射
 	volumes := []string{
@@ -76,7 +81,13 @@ func CreateChainMakerNode(client *docker.Client, chainMakerNode *nodes.Chainmake
 		fmt.Sprintf("%s=%d", "BLOCKS_PER_PROPOSER", chainMakerConfig.BlocksPerProposer),
 	}
 
-	// 创建端口映射
+	// 6. 资源限制
+	resourcesLimit := container.Resources{
+		NanoCPUs: int64(cpuLimit * 1e9),
+		Memory:   int64(memoryLimit * 1024 * 1024), // memoryLimit 的单位是 MB
+	}
+
+	// 7. 创建端口映射
 	rpcPort := nat.Port(fmt.Sprintf("%d/tcp", chainMakerConfig.RpcStartPort+chainMakerNode.Id-1))
 
 	exposedPorts := nat.PortSet{
@@ -92,7 +103,7 @@ func CreateChainMakerNode(client *docker.Client, chainMakerNode *nodes.Chainmake
 		},
 	}
 
-	// 6. containerConfig
+	// 8. 创建容器配置
 	containerConfig := &container.Config{
 		Image:        configs.TopConfiguration.ImagesConfig.ChainMakerNodeImageName,
 		Tty:          true,
@@ -106,7 +117,7 @@ func CreateChainMakerNode(client *docker.Client, chainMakerNode *nodes.Chainmake
 		},
 	}
 
-	// 7. hostConfig
+	// 8. hostConfig
 	hostConfig := &container.HostConfig{
 		// 容器数据卷映射
 		Binds:        volumes,
@@ -114,9 +125,10 @@ func CreateChainMakerNode(client *docker.Client, chainMakerNode *nodes.Chainmake
 		Privileged:   true,
 		Sysctls:      sysctls,
 		PortBindings: portBindings,
+		Resources:    resourcesLimit,
 	}
 
-	// 8. 进行容器的创建
+	// 9. 进行容器的创建
 	response, err := client.ContainerCreate(
 		context.Background(),
 		containerConfig,
@@ -131,7 +143,7 @@ func CreateChainMakerNode(client *docker.Client, chainMakerNode *nodes.Chainmake
 
 	chainMakerNode.ContainerId = response.ID
 
-	// 9. 状态转换
+	// 10. 状态转换
 	chainMakerNode.Status = types.NetworkNodeStatus_Created
 
 	return nil

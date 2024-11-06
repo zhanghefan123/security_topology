@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"zhanghefan123/security_topology/modules/entities/real_entities/host_resources"
 )
 
+// UpdateInstanceCpuAndMemoryRatio 更新实例的 Cpu 和 内存信息
 func (pm *PerformanceMonitor) UpdateInstanceCpuAndMemoryRatio() (err error) {
 	// cgroupFile 的内容 --> 0::/system.slice/docker-9700fc09f052961f4d6ee4a505f325e2f2f81ee1f215f9bfe331f66dc42783c6.scope
 	processCgroupFile, err := os.Open(fmt.Sprintf("/proc/%d/cgroup", pm.normalNode.Pid))
@@ -38,31 +38,31 @@ func (pm *PerformanceMonitor) UpdateInstanceCpuAndMemoryRatio() (err error) {
 	if err != nil {
 		return fmt.Errorf("cannot read memory usage: %w", err)
 	}
+	memoryMBytes := memoryBytes / 1024 / 1024
 	// 接着进行主机的资源的获取
-	hostResources, err := host_resources.GetHostResources()
+	//hostResources, err := host_resources.GetHostResources()
 	if err != nil {
 		return fmt.Errorf("cannot get host resources: %w", err)
 	}
 	// 容器的 cpu 繁忙时间 (单位为 ms)
 	containerCpuBusy := usageUsec / 1000
-	fmt.Println("cpu total", hostResources.CpuTotal)
 	cpuRatio := (containerCpuBusy - pm.LastCpuBusy) / 1000
-	memoryBytes = (memoryBytes + pm.LastMemoryBytes) / 2
+	memoryMBytes = (memoryMBytes + pm.LastMemoryMBytes) / 2
 	pm.LastCpuBusy = containerCpuBusy
-	pm.LastMemoryBytes = memoryBytes
+	pm.LastMemoryMBytes = memoryMBytes
 	if len(pm.TimeList) == pm.fixedLength {
 		pm.CpuRatioList = pm.CpuRatioList[1:]
 		pm.CpuRatioList = append(pm.CpuRatioList, cpuRatio)
-		pm.MemoryBytesList = pm.MemoryBytesList[1:]
-		pm.MemoryBytesList = append(pm.MemoryBytesList, memoryBytes)
+		pm.MemoryMBList = pm.MemoryMBList[1:]
+		pm.MemoryMBList = append(pm.MemoryMBList, memoryMBytes)
 	} else {
 		pm.CpuRatioList = append(pm.CpuRatioList, cpuRatio)
-		pm.MemoryBytesList = append(pm.MemoryBytesList, memoryBytes)
+		pm.MemoryMBList = append(pm.MemoryMBList, memoryMBytes)
 	}
 	return nil
 }
 
-// ReadCpuUsage
+// ReadCpuUsage 读取 Cpu 利用率
 /*
 cpuUsageFilePath 的文件格式, 注意 usage_usec 代表的是 cpu 使用的微秒数
 usage_usec 2341374
@@ -95,6 +95,7 @@ func ReadCpuUsage(cpuUsageFilePath string) (float64, error) {
 	return float64(resultInteger), nil
 }
 
+// ReadMemoryUsage 读取内存使用
 func ReadMemoryUsage(memoryUsageFilePath string) (float64, error) {
 	memoryUsageFile, err := os.Open(memoryUsageFilePath)
 	if err != nil {

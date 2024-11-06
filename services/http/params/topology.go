@@ -18,8 +18,8 @@ type TopologyParams struct {
 	BlockChainType       string      `json:"blockchain_type"`
 	ConsensusType        string      `json:"consensus_type"`
 	AccessLinkBandwidth  int         `json:"access_link_bandwidth"`
-	ConsensusNodeCpu     float64     `json:"consensus_node_cpu"`
-	ConsensusNodeMemory  float64     `json:"consensus_node_memory"`
+	ConsensusNodeCpu     float64     `json:"consensus_node_cpu"`    // 单位为个
+	ConsensusNodeMemory  float64     `json:"consensus_node_memory"` // 单位为 MB
 	ConsensusThreadCount int         `json:"consensus_thread_count"`
 	Nodes                []NodeParam `json:"nodes"` // 所有的节点
 	Links                []LinkParam `json:"links"` // 所有的链路

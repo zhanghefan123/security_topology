@@ -2,7 +2,6 @@ package apis
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"net/http"
@@ -13,47 +12,42 @@ type CaptureRateRequest struct {
 	ContainerName string `json:"container_name"`
 }
 
-// StartCaptureInterfaceRate 开启接口速率监听
-func StartCaptureInterfaceRate(c *gin.Context) {
+// StartCaptureInstancePerformance 开启接口速率监听
+func StartCaptureInstancePerformance(c *gin.Context) {
 	// 1. 进行参数绑定 -> 从而进行容器名的获取
-	var interfaceRateMonitor *performance_monitor.PerformanceMonitor
+	var performanceMonitor *performance_monitor.PerformanceMonitor
 	var ok bool
 	captureRateRequest := CaptureRateRequest{}
 	err := c.ShouldBindJSON(&captureRateRequest)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "could not bind capture rate params",
+			"message": "could not capture instance performance",
 		})
 		return
 	}
 	// 2. 判断是否已经存在了相应的监听实例, 如果已经存在就进行数据的返回
-	if interfaceRateMonitor, ok = performance_monitor.PerformanceMonitorMapping[captureRateRequest.ContainerName]; ok {
+	if performanceMonitor, ok = performance_monitor.PerformanceMonitorMapping[captureRateRequest.ContainerName]; ok {
 		// 2.1 如果已经存在，则进行数据的返回
 		c.JSON(http.StatusOK, gin.H{
-			"time_list":           interfaceRateMonitor.TimeList,
-			"interface_rate_list": interfaceRateMonitor.InterfaceRateList,
-			"cpu_ratio_list":      interfaceRateMonitor.CpuRatioList,
+			"time_list":           performanceMonitor.TimeList,
+			"interface_rate_list": performanceMonitor.InterfaceRateList,
+			"cpu_ratio_list":      performanceMonitor.CpuRatioList,
+			"memory_list":         performanceMonitor.MemoryMBList,
 		})
 		return
 	} else {
 		// 2.2 如果不存在，则创建新的并返回空的数据
 		abstractNode := TopologyInstance.AbstractNodesMap[captureRateRequest.ContainerName]
-		interfaceRateMonitor, err = performance_monitor.NewInterfaceRateMonitor(abstractNode)
+		performanceMonitor, err = performance_monitor.NewInstancePerformanceMonitor(abstractNode)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"message": "could not create performance_monitor monitor",
 			})
 			return
 		}
-		err = interfaceRateMonitor.CaptureInterfaceRate(abstractNode)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message": fmt.Sprintf("could not capture interface rate: %s", err.Error()),
-			})
-			return
-		}
+		performanceMonitor.KeepGettingPerformance()
 		c.JSON(http.StatusOK, gin.H{
-			"message":             "successfully captured interface rate",
+			"message":             "successfully captured instance performance",
 			"time_list":           make([]int, 0),
 			"interface_rate_list": make([]float64, 0),
 			"cpu_ratio_list":      make([]float64, 0),
@@ -63,8 +57,8 @@ func StartCaptureInterfaceRate(c *gin.Context) {
 
 }
 
-// StopCaptureInterfaceRate 停止接口速率监听
-func StopCaptureInterfaceRate(c *gin.Context) {
+// StopCaptureInstancePerformance 停止接口速率监听
+func StopCaptureInstancePerformance(c *gin.Context) {
 	// 1. 如果已经不存在了就返回错误
 	if TopologyInstance == nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -94,6 +88,6 @@ func StopCaptureInterfaceRate(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "successfully stop captured interface rate",
+		"message": "successfully stop captured instance performance",
 	})
 }

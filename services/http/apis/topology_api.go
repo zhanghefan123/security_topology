@@ -33,13 +33,15 @@ func GetTopologyState(c *gin.Context) {
 
 // StartTopology 进行拓扑的启动
 func StartTopology(c *gin.Context) {
+	// 1. 如果拓扑还没有启动, 那么直接返回
 	if TopologyInstance != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "topology already created",
 		})
+		return
 	}
 
-	// 反序列化
+	// 2. 进行拓扑参数的绑定
 	topologyParams := &params.TopologyParams{}
 	err := c.BindJSON(topologyParams)
 	if err != nil {
@@ -50,7 +52,7 @@ func StartTopology(c *gin.Context) {
 	}
 	fmt.Println(topologyParams) // 打印拓扑
 
-	// 核心处理逻辑
+	// 3. 核心处理逻辑
 	err = startTopologyInner(topologyParams)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -59,6 +61,7 @@ func StartTopology(c *gin.Context) {
 		return
 	}
 
+	// 4. 当一切正常的时候进行结果的返回
 	c.JSON(http.StatusOK, gin.H{
 		"message": "successfully start the topology",
 	})
@@ -68,33 +71,41 @@ func StartTopology(c *gin.Context) {
 func startTopologyInner(topologyParams *params.TopologyParams) error {
 	var err error
 	var dockerClient *docker.Client
-	// 初始化本地配置
+	// 1. 初始化本地配置
 	err = configs.InitLocalConfig()
 	if err != nil {
 		return fmt.Errorf("init local config err: %w", err)
 	}
-	// 初始化 dockerClient
+	// 2. 进行资源限制的加载
+	configs.TopConfiguration.ResourcesConfig.CpuLimit = topologyParams.ConsensusNodeCpu
+	configs.TopConfiguration.ResourcesConfig.MemoryLimit = topologyParams.ConsensusNodeMemory
+	fmt.Println("consensus node memory", configs.TopConfiguration.ResourcesConfig.MemoryLimit)
+	// 3. 初始化 dockerClient
 	dockerClient, err = client.NewDockerClient()
 	if err != nil {
 		return fmt.Errorf("create docker client err: %w", err)
 	}
-	// 初始化 etcdClient
+	// 4. 初始化 etcdClient
 	listenAddr := configs.TopConfiguration.NetworkConfig.LocalNetworkAddress
 	listenPort := configs.TopConfiguration.ServicesConfig.EtcdConfig.ClientPort
 	etcdClient, err := etcd_api.NewEtcdClient(listenAddr, listenPort)
-	// 创建拓扑实例
+	// 5. 创建拓扑实例
 	TopologyInstance = topology.NewTopology(dockerClient, etcdClient, topologyParams)
-
-	// 进行 init
+	// 6. 进行 init
 	err = TopologyInstance.Init()
 	if err != nil {
 		return fmt.Errorf("init topology err: %w", err)
 	}
+	// 7. 进行start
 	err = TopologyInstance.Start()
 	if err != nil {
 		return fmt.Errorf("start topology err: %w", err)
 	}
-	pretty.Println(*topologyParams)
+	// 8. 打印拓扑参数信息
+	_, err = pretty.Println(*topologyParams)
+	if err != nil {
+		return fmt.Errorf("pretty.Println(topologyParams) err: %w", err)
+	}
 	return nil
 }
 
