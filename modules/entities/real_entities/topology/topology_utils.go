@@ -3,7 +3,13 @@ package topology
 import (
 	"fmt"
 	"net"
+	"zhanghefan123/security_topology/configs"
 )
+
+type ChainmakerPorts struct {
+	p2pPort int
+	rpcPort int
+}
 
 // GetChainMakerNodeListenAddresses 获取长安链节点的监听地址
 func (t *Topology) GetChainMakerNodeListenAddresses() []string {
@@ -27,4 +33,17 @@ func (t *Topology) GetContainerNameToAddressMapping() (map[string]string, error)
 		addressMapping[normalNode.ContainerName] = ip.String()
 	}
 	return addressMapping, nil
+}
+
+// GetContainerNameToPortMapping 获取所有共识节点从容器名到
+func (t *Topology) GetContainerNameToPortMapping() (map[string]*ChainmakerPorts, error) {
+	portMapping := make(map[string]*ChainmakerPorts)
+	p2pStartPort := configs.TopConfiguration.ChainMakerConfig.P2pStartPort
+	rpcStartPort := configs.TopConfiguration.ChainMakerConfig.RpcStartPort
+	for _, chainMakerNode := range t.ChainmakerNodes {
+		p2pPort := chainMakerNode.Id + p2pStartPort - 1
+		rpcPort := chainMakerNode.Id + rpcStartPort - 1
+		portMapping[chainMakerNode.ContainerName] = &ChainmakerPorts{p2pPort, rpcPort}
+	}
+	return portMapping, nil
 }
