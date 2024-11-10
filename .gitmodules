@@ -1,3 +1,3 @@
-[submodule "connection_exhausted_attack"]
+[submodule "images/malicious_node/malicious_node/modules/attacks/connection_exhausted_attack"]
     url =  https://github.com/zhanghefan123/connection_exhausted_attack.git
     active = true
