@@ -71,6 +71,7 @@ func CreateMaliciousNode(client *docker.Client, maliciousNode *nodes.MaliciousNo
 		fmt.Sprintf("%s=%d", "LISTEN_PORT", httpPortInteger),
 		fmt.Sprintf("%s=%s", "CONTAINER_NAME", maliciousNode.ContainerName),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
+		fmt.Sprintf("%s=%s", "INTERFACE_NAME", fmt.Sprintf("%s%d_idx%d", types.GetPrefix(maliciousNode.Type), maliciousNode.Id, 1)),
 	}
 
 	// 6. containerConfig

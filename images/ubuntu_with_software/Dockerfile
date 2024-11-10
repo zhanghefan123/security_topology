@@ -30,7 +30,22 @@ RUN apt-get update \
     libsm6 \
     libxext6 \
     libxrender-dev \
-    xauth
+    xauth \
+    libpcap-dev \
+    libssl-dev
+
+# libpcap-dev 和 libssl-dev 是为 libtins 安装的
+
+COPY ./libtins /libtins
+
+# 克隆并安装 libtins
+RUN cd /libtins \
+    && mkdir build \
+    && cd build \
+    && cmake ../ -DLIBTINS_ENABLE_CXX11=1 \
+    && make \
+    && make install
+
 
 RUN curl -s https://deb.frrouting.org/frr/keys.gpg | tee /usr/share/keyrings/frrouting.gpg > /dev/null
 ENV FRRVER="frr-9.1"

@@ -24,3 +24,4 @@ class Starter:
 if __name__ == "__main__":
     starter = Starter()
     starter.main_logic()
+

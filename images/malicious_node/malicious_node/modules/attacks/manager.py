@@ -2,6 +2,7 @@ import multiprocessing
 from modules.attacks import icmp_flood_attack as ifam
 from modules.attacks import udp_flood_attack as ufam
 from modules.attacks import syn_flood_attack as sfam
+from modules.attacks import connection_exhausted_attack as ceam
 from modules.config import env_loader as elm
 from modules.config.env_loader import env_loader
 from modules.utils import address_resolver as arm
@@ -60,6 +61,13 @@ class AttackManager:
                                                                                   self.attacked_node_ip,
                                                                                   self.rpcPort,
                                                                                   self.attack_duration))
+            process.start()
+        elif self.attack_type.upper() == "CONNECTION EXHAUSTED ATTACK":
+            process = multiprocessing.Process(target=ceam.connection_exhausted_attack, args=(self.attack_thread_count,
+                                                                                             self.attack_node_ip,
+                                                                                             self.attacked_node_ip,
+                                                                                             self.p2pPort,
+                                                                                             self.attack_duration))
             process.start()
         else:
             raise ValueError("unsupported attacked type")
