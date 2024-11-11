@@ -2,3 +2,6 @@
 	url = https://github.com/zhanghefan123/connection_exhausted_attack.git
     active = true
 	path = images/malicious_node/malicious_node/modules/attacks/connection_exhausted_attack
+[submodule "images/ubuntu_with_software/libtins"]
+	path = images/ubuntu_with_software/libtins
+	url = https://github.com/mfontanini/libtins.git
