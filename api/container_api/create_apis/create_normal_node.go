@@ -52,6 +52,7 @@ func CreateNormalNode(client *docker.Client, normalNode *normal_node.NormalNode)
 		fmt.Sprintf("%s=%d", "NODE_ID", normalNode.Id),
 		fmt.Sprintf("%s=%s", "CONTAINER_NAME", normalNode.ContainerName),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
+		fmt.Sprintf("%s=%s", "INTERFACE_NAME", fmt.Sprintf("%s%d_idx%d", types.GetPrefix(normalNode.Type), normalNode.Id, 1)),
 	}
 
 	// 6. containerConfig

@@ -13,10 +13,10 @@ import (
 )
 
 // CreateConsensusSatellite 创建共识卫星容器
-func CreateConsensusSatellite(client *docker.Client, satellite *satellites.ConsensusSatellite) error {
+func CreateConsensusSatellite(client *docker.Client, consensusSatellite *satellites.ConsensusSatellite) error {
 	// 1. 检查状态
-	if satellite.Status != types.NetworkNodeStatus_Logic {
-		return fmt.Errorf("consensus satellite not in logic status cannot create")
+	if consensusSatellite.Status != types.NetworkNodeStatus_Logic {
+		return fmt.Errorf("consensus consensusSatellite not in logic status cannot create")
 	}
 
 	// 2. 创建 sysctls
@@ -42,23 +42,24 @@ func CreateConsensusSatellite(client *docker.Client, satellite *satellites.Conse
 	// 3. 创建容器
 	// 容器数据卷映射
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
-	nodeDir := filepath.Join(simulationDir, satellite.ContainerName)
+	nodeDir := filepath.Join(simulationDir, consensusSatellite.ContainerName)
 	enableFrr := configs.TopConfiguration.NetworkConfig.EnableFrr
 
 	volumes := []string{
-		fmt.Sprintf("%s:%s", nodeDir, fmt.Sprintf("/configuration/%s", satellite.ContainerName)),
+		fmt.Sprintf("%s:%s", nodeDir, fmt.Sprintf("/configuration/%s", consensusSatellite.ContainerName)),
 	}
 
 	// 4. 环境变量
 	envs := []string{
-		fmt.Sprintf("%s=%d", "NODE_ID", satellite.Id),
-		fmt.Sprintf("%s=%s", "CONTAINER_NAME", satellite.ContainerName),
+		fmt.Sprintf("%s=%d", "NODE_ID", consensusSatellite.Id),
+		fmt.Sprintf("%s=%s", "CONTAINER_NAME", consensusSatellite.ContainerName),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
+		fmt.Sprintf("%s=%s", "INTERFACE_NAME", fmt.Sprintf("%s%d_idx%d", types.GetPrefix(consensusSatellite.Type), consensusSatellite.Id, 1)),
 	}
 
 	// 暴露的端口
-	rpcPort := nat.Port(fmt.Sprintf("%d/tcp", satellite.StartRpcPort+satellite.Id))
-	p2pPort := nat.Port(fmt.Sprintf("%d/tcp", satellite.StartP2PPort+satellite.Id))
+	rpcPort := nat.Port(fmt.Sprintf("%d/tcp", consensusSatellite.StartRpcPort+consensusSatellite.Id-1)) // 起始的端口为 11301 那么第一个共识卫星应该监听的端口为 11301
+	p2pPort := nat.Port(fmt.Sprintf("%d/tcp", consensusSatellite.StartP2PPort+consensusSatellite.Id-1))
 
 	// containerConfig
 	containerConfig := &container.Config{
@@ -104,16 +105,16 @@ func CreateConsensusSatellite(client *docker.Client, satellite *satellites.Conse
 		hostConfig,
 		nil,
 		nil,
-		satellite.ContainerName,
+		consensusSatellite.ContainerName,
 	)
 	if err != nil {
-		return fmt.Errorf("create consensus satellite container failed %v", err)
+		return fmt.Errorf("create consensus consensusSatellite container failed %v", err)
 	}
 
-	satellite.ContainerId = response.ID
+	consensusSatellite.ContainerId = response.ID
 
 	// 3. 状态转换
-	satellite.Status = types.NetworkNodeStatus_Created
+	consensusSatellite.Status = types.NetworkNodeStatus_Created
 
 	return nil
 }

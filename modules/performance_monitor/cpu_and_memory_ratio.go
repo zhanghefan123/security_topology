@@ -24,6 +24,7 @@ func (pm *PerformanceMonitor) UpdateInstanceCpuAndMemoryRatio() (err error) {
 		}
 	}()
 	// ---------------------------------------------------------------------------------------------
+
 	// 读取 cgroupFile 的内容 -> 样例 0::/system.slice/docker-9700fc09f052961f4d6ee4a505f325e2f2f81ee1f215f9bfe331f66dc42783c6.scope
 	// ---------------------------------------------------------------------------------------------
 	processCgroupFileBytes, err := io.ReadAll(processCgroupFile)
@@ -32,12 +33,14 @@ func (pm *PerformanceMonitor) UpdateInstanceCpuAndMemoryRatio() (err error) {
 		return fmt.Errorf("cannot parse process cgroup file")
 	}
 	// ---------------------------------------------------------------------------------------------
+
 	// 获取容器相应的资源文件存放目录
 	// ---------------------------------------------------------------------------------------------
 	resourcesDirBase := fmt.Sprintf("/sys/fs/cgroup/%s/", strings.TrimSpace(splitParts[1]))
 	cpuPath := filepath.Join(resourcesDirBase, "cpu.stat")
 	memoryPath := filepath.Join(resourcesDirBase, "memory.current")
 	// ---------------------------------------------------------------------------------------------
+
 	// 读取相应的文件
 	// ---------------------------------------------------------------------------------------------
 	usageUsec, err := ReadCpuUsage(cpuPath)
@@ -53,13 +56,12 @@ func (pm *PerformanceMonitor) UpdateInstanceCpuAndMemoryRatio() (err error) {
 	if err != nil {
 		return fmt.Errorf("cannot get host resources: %w", err)
 	}
+
 	// 更新 CPU 和 内存
 	// ---------------------------------------------------------------------------------------------
 	containerCpuBusy := usageUsec / 1000
 	cpuRatio := (containerCpuBusy - pm.LastCpuBusy) / 1000
-	memoryMBytes = (memoryMBytes + pm.LastMemoryMBytes) / 2
 	pm.LastCpuBusy = containerCpuBusy
-	pm.LastMemoryMBytes = memoryMBytes
 	if len(pm.TimeList) == pm.fixedLength {
 		pm.CpuRatioList = pm.CpuRatioList[1:]
 		pm.CpuRatioList = append(pm.CpuRatioList, cpuRatio)

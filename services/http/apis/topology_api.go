@@ -10,6 +10,7 @@ import (
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/docker/client"
 	"zhanghefan123/security_topology/modules/entities/real_entities/topology"
+	"zhanghefan123/security_topology/modules/performance_monitor"
 	"zhanghefan123/security_topology/services/http/params"
 )
 
@@ -139,6 +140,7 @@ func stopTopologyInner() error {
 	err := TopologyInstance.Remove()
 	defer func() {
 		TopologyInstance = nil
+		performance_monitor.PerformanceMonitorMapping = make(map[string]*performance_monitor.PerformanceMonitor)
 	}()
 	if err != nil {
 		return fmt.Errorf("remove topology err: %v", err)

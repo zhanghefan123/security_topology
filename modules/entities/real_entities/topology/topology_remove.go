@@ -114,9 +114,11 @@ func (t *Topology) RemoveInterfaceRateMonitor() error {
 		return nil
 	}
 
+	// 向所有的 interfaceRateMonitor 发送信号
 	for _, interfaceRateMonitor := range performance_monitor.PerformanceMonitorMapping {
 		interfaceRateMonitor.StopChannel <- struct{}{}
 	}
+	performance_monitor.PerformanceMonitorMapping = make(map[string]*performance_monitor.PerformanceMonitor)
 
 	t.topologyStopSteps[RemoveInterfaceRateMonitors] = struct{}{}
 	topologyLogger.Infof("remove interface rate monitors")

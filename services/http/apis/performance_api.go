@@ -14,6 +14,12 @@ type CaptureRateRequest struct {
 
 // StartCaptureInstancePerformance 开启接口速率监听
 func StartCaptureInstancePerformance(c *gin.Context) {
+	if TopologyInstance == nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "already shutdown",
+		})
+		return
+	}
 	// 1. 进行参数绑定 -> 从而进行容器名的获取
 	var performanceMonitor *performance_monitor.PerformanceMonitor
 	var ok bool

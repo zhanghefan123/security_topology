@@ -29,6 +29,11 @@ func (pm *PerformanceMonitor) UpdateInterfaceRate() error {
 			} else {
 				pm.InterfaceRateList = append(pm.InterfaceRateList, dataRate)
 			}
+			// 否则进行 for 循环的跳出
+			break
+		} else {
+			// 否则继续
+			continue
 		}
 	}
 	return nil

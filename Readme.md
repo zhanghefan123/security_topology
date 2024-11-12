@@ -72,6 +72,11 @@
 
 # 5. 启动的详细步骤
 
-- [1] sudo ./cmd http_service 就可以完成 http 服务的启动
+- [1] 进入 security_topology/cmd
+- [2] 执行 bash build.sh 进行 build 操作
+- [3] sudo ./cmd http_service 就可以完成 http 服务的启动, 注意一定要执行 sudo
 
 # 6. submodule 相关内容
+
+- [1] 如果要提交 submodule 之中的内容, git add [到子模块的路径]
+- [2] git commit

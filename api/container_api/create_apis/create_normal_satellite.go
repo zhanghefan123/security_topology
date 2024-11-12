@@ -12,10 +12,10 @@ import (
 )
 
 // CreateNormalSatellite 创建普通卫星容器
-func CreateNormalSatellite(client *docker.Client, satellite *satellites.NormalSatellite) error {
+func CreateNormalSatellite(client *docker.Client, normalSatellite *satellites.NormalSatellite) error {
 	// 1. 检查状态
-	if satellite.Status != types.NetworkNodeStatus_Logic {
-		return fmt.Errorf("normal satellite not in logic status cannot create")
+	if normalSatellite.Status != types.NetworkNodeStatus_Logic {
+		return fmt.Errorf("normal normalSatellite not in logic status cannot create")
 	}
 
 	// 2. 创建 sysctls
@@ -40,20 +40,21 @@ func CreateNormalSatellite(client *docker.Client, satellite *satellites.NormalSa
 
 	// 3. 获取配置
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
-	nodeDir := filepath.Join(simulationDir, satellite.ContainerName)
+	nodeDir := filepath.Join(simulationDir, normalSatellite.ContainerName)
 	enableFrr := configs.TopConfiguration.NetworkConfig.EnableFrr
 	ipv6ServerPort := configs.TopConfiguration.AppsConfig.IPv6Config.ServerPort
 
 	// 4. 创建容器卷映射
 	volumes := []string{
-		fmt.Sprintf("%s:%s", nodeDir, fmt.Sprintf("/configuration/%s", satellite.ContainerName)),
+		fmt.Sprintf("%s:%s", nodeDir, fmt.Sprintf("/configuration/%s", normalSatellite.ContainerName)),
 	}
 
 	// 5. 配置环境变量
 	envs := []string{
-		fmt.Sprintf("%s=%d", "NODE_ID", satellite.Id),
-		fmt.Sprintf("%s=%s", "CONTAINER_NAME", satellite.ContainerName),
+		fmt.Sprintf("%s=%d", "NODE_ID", normalSatellite.Id),
+		fmt.Sprintf("%s=%s", "CONTAINER_NAME", normalSatellite.ContainerName),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
+		fmt.Sprintf("%s=%s", "INTERFACE_NAME", fmt.Sprintf("%s%d_idx%d", types.GetPrefix(normalSatellite.Type), normalSatellite.Id, 1)),
 		fmt.Sprintf("%s=%d", "IPV6_SERVER_PORT", ipv6ServerPort),
 	}
 
@@ -80,16 +81,16 @@ func CreateNormalSatellite(client *docker.Client, satellite *satellites.NormalSa
 		hostConfig,
 		nil,
 		nil,
-		satellite.ContainerName,
+		normalSatellite.ContainerName,
 	)
 	if err != nil {
-		return fmt.Errorf("create satellite container failed %v", err)
+		return fmt.Errorf("create normalSatellite container failed %v", err)
 	}
 
-	satellite.ContainerId = response.ID
+	normalSatellite.ContainerId = response.ID
 
 	// 9. 状态转换
-	satellite.Status = types.NetworkNodeStatus_Created
+	normalSatellite.Status = types.NetworkNodeStatus_Created
 
 	return nil
 }

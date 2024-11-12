@@ -28,6 +28,7 @@ chain_maker_config:
   enabled: true
   p2p_start_port: 11301
   rpc_start_port: 12301
+  http_start_port: 13301
   consensus_type: 1
   log_level: DEBUG
   vm_go_runtime_port: 32351

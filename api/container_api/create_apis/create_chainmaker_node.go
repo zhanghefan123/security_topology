@@ -72,7 +72,9 @@ func CreateChainMakerNode(client *docker.Client, chainMakerNode *nodes.Chainmake
 	envs := []string{
 		fmt.Sprintf("%s=%d", "NODE_ID", chainMakerNode.Id),
 		fmt.Sprintf("%s=%s", "CONTAINER_NAME", chainMakerNode.ContainerName),
+		fmt.Sprintf("%s=%d", "HTTP_PORT", chainMakerConfig.HttpStartPort+chainMakerNode.Id-1),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
+		fmt.Sprintf("%s=%s", "INTERFACE_NAME", fmt.Sprintf("%s%d_idx%d", types.GetPrefix(chainMakerNode.Type), chainMakerNode.Id, 1)),
 		fmt.Sprintf("%s=%s", "LISTEN_ADDR", chainMakerNode.Interfaces[0].Ipv4Addr),
 		fmt.Sprintf("%s=%t", "SPEED_CHECK", chainMakerConfig.SpeedCheck),
 		fmt.Sprintf("%s=%t", "ENABLE_DDOS_DEFENCE", chainMakerConfig.EnableDdosDefence),
@@ -89,9 +91,11 @@ func CreateChainMakerNode(client *docker.Client, chainMakerNode *nodes.Chainmake
 
 	// 7. 创建端口映射
 	rpcPort := nat.Port(fmt.Sprintf("%d/tcp", chainMakerConfig.RpcStartPort+chainMakerNode.Id-1))
+	httpPort := nat.Port(fmt.Sprintf("%d/tcp", chainMakerConfig.HttpStartPort+chainMakerNode.Id-1))
 
 	exposedPorts := nat.PortSet{
-		rpcPort: {},
+		rpcPort:  {},
+		httpPort: {},
 	}
 
 	portBindings := nat.PortMap{
@@ -99,6 +103,12 @@ func CreateChainMakerNode(client *docker.Client, chainMakerNode *nodes.Chainmake
 			{
 				HostIP:   "0.0.0.0",
 				HostPort: string(rpcPort),
+			},
+		},
+		httpPort: []nat.PortBinding{
+			{
+				HostIP:   "0.0.0.0",
+				HostPort: string(httpPort),
 			},
 		},
 	}

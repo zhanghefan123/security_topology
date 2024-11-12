@@ -52,6 +52,7 @@ func CreateConsensusNode(client *docker.Client, consensusNode *nodes.ConsensusNo
 		fmt.Sprintf("%s=%d", "NODE_ID", consensusNode.Id),
 		fmt.Sprintf("%s=%s", "CONTAINER_NAME", consensusNode.ContainerName),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
+		fmt.Sprintf("%s=%s", "INTERFACE_NAME", fmt.Sprintf("%s%d_idx%d", types.GetPrefix(consensusNode.Type), consensusNode.Id, 1)),
 	}
 
 	// 6. containerConfig

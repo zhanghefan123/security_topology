@@ -52,6 +52,7 @@ func CreateRouter(client *docker.Client, router *nodes.Router) error {
 		fmt.Sprintf("%s=%d", "NODE_ID", router.Id),
 		fmt.Sprintf("%s=%s", "CONTAINER_NAME", router.ContainerName),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
+		fmt.Sprintf("%s=%s", "INTERFACE_NAME", fmt.Sprintf("%s%d_idx%d", types.GetPrefix(router.Type), router.Id, 1)),
 	}
 
 	// 6. containerConfig
