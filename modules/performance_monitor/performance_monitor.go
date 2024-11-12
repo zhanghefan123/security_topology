@@ -14,8 +14,8 @@ var (
 
 // PerformanceMonitor 性能检测者
 type PerformanceMonitor struct {
-	abstractNode *node.AbstractNode
-	normalNode   *normal_node.NormalNode
+	AbstractNode *node.AbstractNode
+	NormalNode   *normal_node.NormalNode
 	TimeList     []int // 时间列表
 
 	InterfaceRateList []float64 // 接口速率监控
@@ -26,11 +26,11 @@ type PerformanceMonitor struct {
 
 	MemoryMBList []float64 // 内存占用
 
-	BlockHeightPercentage []float64 // 区块高度占比
+	BlockHeightPercentageList []float64 // 区块高度占比
 
-	fixedLength  int           // 队列的长度
+	FixedLength  int           // 队列的长度
 	StopChannel  chan struct{} // 停止channel
-	currentCount int           // 当前的数量
+	CurrentCount int           // 当前的数量
 }
 
 // NewInstancePerformanceMonitor 创建新的接口监听器
@@ -40,8 +40,8 @@ func NewInstancePerformanceMonitor(abstractNode *node.AbstractNode) (*Performanc
 		return nil, fmt.Errorf("GetNormalNodeFromAbstractNode failed: %w", err)
 	}
 	performanceMonitor := &PerformanceMonitor{
-		abstractNode: abstractNode,
-		normalNode:   normalNode,
+		AbstractNode: abstractNode,
+		NormalNode:   normalNode,
 		TimeList:     make([]int, 0),
 
 		InterfaceRateList: make([]float64, 0),
@@ -52,11 +52,11 @@ func NewInstancePerformanceMonitor(abstractNode *node.AbstractNode) (*Performanc
 
 		MemoryMBList: make([]float64, 0),
 
-		BlockHeightPercentage: make([]float64, 0),
+		BlockHeightPercentageList: make([]float64, 0),
 
-		fixedLength:  10,
+		FixedLength:  10,
 		StopChannel:  nil, // 在启动之后会进行赋值
-		currentCount: 0,
+		CurrentCount: 0,
 	}
 	PerformanceMonitorMapping[normalNode.ContainerName] = performanceMonitor
 	return performanceMonitor, nil
@@ -104,7 +104,7 @@ func (pm *PerformanceMonitor) KeepGettingPerformance() {
 				}
 				// 更新区块链的高度信息
 				// 判断节点类型 -> 只有共识节点才需要进行写入
-				if pm.normalNode.Type == types.NetworkNodeType_ChainMakerNode {
+				if pm.NormalNode.Type == types.NetworkNodeType_ChainMakerNode {
 					err = pm.UpdateBlockHeightInfo()
 					if err != nil {
 						fmt.Printf("UpdateBlockHeightInfo failed: %v\n", err)
@@ -112,13 +112,13 @@ func (pm *PerformanceMonitor) KeepGettingPerformance() {
 					}
 				}
 				// 进行队列长度的控制
-				if len(pm.TimeList) == pm.fixedLength {
+				if len(pm.TimeList) == pm.FixedLength {
 					pm.TimeList = pm.TimeList[1:]
-					pm.TimeList = append(pm.TimeList, pm.currentCount)
+					pm.TimeList = append(pm.TimeList, pm.CurrentCount)
 				} else {
-					pm.TimeList = append(pm.TimeList, pm.currentCount)
+					pm.TimeList = append(pm.TimeList, pm.CurrentCount)
 				}
-				pm.currentCount += 1
+				pm.CurrentCount += 1
 				time.Sleep(time.Second)
 			}
 		}

@@ -10,12 +10,12 @@ import (
 )
 
 func (pm *PerformanceMonitor) UpdateInterfaceRate() error {
-	content, err := ReadNetworkInterfaceFile(pm.normalNode.Pid)
+	content, err := ReadNetworkInterfaceFile(pm.NormalNode.Pid)
 	if err != nil {
 		return fmt.Errorf("ReadNetworkInterfaceFile error: %w", err)
 	}
 	networkInterfaceLines := strings.Split(content, "\n")
-	firstInterfaceName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(pm.normalNode.Type), pm.normalNode.Id, 1)
+	firstInterfaceName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(pm.NormalNode.Type), pm.NormalNode.Id, 1)
 	for _, networkInterfaceLine := range networkInterfaceLines {
 		if strings.Contains(networkInterfaceLine, firstInterfaceName) {
 			interfaceData := interface_data.ResolveNetworkInterfaceLine(networkInterfaceLine) // 第一个是 loop back
@@ -23,7 +23,7 @@ func (pm *PerformanceMonitor) UpdateInterfaceRate() error {
 			delta := float64(currentReceivedBytes - pm.LastReceivedBytes)
 			dataRate := delta / float64(1024) / float64(1024)
 			pm.LastReceivedBytes = currentReceivedBytes
-			if len(pm.TimeList) == pm.fixedLength {
+			if len(pm.TimeList) == pm.FixedLength {
 				pm.InterfaceRateList = pm.InterfaceRateList[1:]
 				pm.InterfaceRateList = append(pm.InterfaceRateList, dataRate)
 			} else {

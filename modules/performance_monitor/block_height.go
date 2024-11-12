@@ -24,7 +24,7 @@ func (pm *PerformanceMonitor) UpdateBlockHeightInfo() (err error) {
 	// ----------------------------------------------------------------------
 	blockHeightFilePath = fmt.Sprintf("%s/%s/peers_height.stat",
 		configs.TopConfiguration.PathConfig.ConfigGeneratePath,
-		pm.normalNode.ContainerName)
+		pm.NormalNode.ContainerName)
 	blockHeightFile, err = os.Open(blockHeightFilePath)
 	if err != nil {
 		return fmt.Errorf("cannot open %s for reason %w", blockHeightFilePath, err)
@@ -75,11 +75,11 @@ func (pm *PerformanceMonitor) UpdateBlockHeightInfo() (err error) {
 	// 计算当前节点的区块高度占整个区块高度的百分比
 	// ----------------------------------------------------------------------
 	blockHeightPercentage = float64(currentNodeHeight) / float64(largestHeight) * 100
-	if len(pm.TimeList) == pm.fixedLength {
-		pm.BlockHeightPercentage = pm.BlockHeightPercentage[1:]
-		pm.BlockHeightPercentage = append(pm.BlockHeightPercentage, blockHeightPercentage)
+	if len(pm.TimeList) == pm.FixedLength {
+		pm.BlockHeightPercentageList = pm.BlockHeightPercentageList[1:]
+		pm.BlockHeightPercentageList = append(pm.BlockHeightPercentageList, blockHeightPercentage)
 	} else {
-		pm.BlockHeightPercentage = append(pm.BlockHeightPercentage, blockHeightPercentage)
+		pm.BlockHeightPercentageList = append(pm.BlockHeightPercentageList, blockHeightPercentage)
 	}
 	// ----------------------------------------------------------------------
 	return nil

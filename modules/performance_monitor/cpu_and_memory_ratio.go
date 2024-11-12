@@ -13,7 +13,7 @@ import (
 func (pm *PerformanceMonitor) UpdateInstanceCpuAndMemoryRatio() (err error) {
 	// 打开 cgroupFile
 	// ---------------------------------------------------------------------------------------------
-	processCgroupFile, err := os.Open(fmt.Sprintf("/proc/%d/cgroup", pm.normalNode.Pid))
+	processCgroupFile, err := os.Open(fmt.Sprintf("/proc/%d/cgroup", pm.NormalNode.Pid))
 	if err != nil {
 		return fmt.Errorf("cannot open process cgroup file: %v", err)
 	}
@@ -62,7 +62,7 @@ func (pm *PerformanceMonitor) UpdateInstanceCpuAndMemoryRatio() (err error) {
 	containerCpuBusy := usageUsec / 1000
 	cpuRatio := (containerCpuBusy - pm.LastCpuBusy) / 1000
 	pm.LastCpuBusy = containerCpuBusy
-	if len(pm.TimeList) == pm.fixedLength {
+	if len(pm.TimeList) == pm.FixedLength {
 		pm.CpuRatioList = pm.CpuRatioList[1:]
 		pm.CpuRatioList = append(pm.CpuRatioList, cpuRatio)
 		pm.MemoryMBList = pm.MemoryMBList[1:]

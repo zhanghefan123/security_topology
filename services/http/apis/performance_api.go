@@ -5,10 +5,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"net/http"
+	"zhanghefan123/security_topology/modules/entities/types"
 	"zhanghefan123/security_topology/modules/performance_monitor"
 )
 
-type CaptureRateRequest struct {
+type CapturePerformanceRequest struct {
 	ContainerName string `json:"container_name"`
 }
 
@@ -23,7 +24,7 @@ func StartCaptureInstancePerformance(c *gin.Context) {
 	// 1. 进行参数绑定 -> 从而进行容器名的获取
 	var performanceMonitor *performance_monitor.PerformanceMonitor
 	var ok bool
-	captureRateRequest := CaptureRateRequest{}
+	captureRateRequest := CapturePerformanceRequest{}
 	err := c.ShouldBindJSON(&captureRateRequest)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -31,15 +32,28 @@ func StartCaptureInstancePerformance(c *gin.Context) {
 		})
 		return
 	}
+
 	// 2. 判断是否已经存在了相应的监听实例, 如果已经存在就进行数据的返回
 	if performanceMonitor, ok = performance_monitor.PerformanceMonitorMapping[captureRateRequest.ContainerName]; ok {
-		// 2.1 如果已经存在，则进行数据的返回
-		c.JSON(http.StatusOK, gin.H{
-			"time_list":           performanceMonitor.TimeList,
-			"interface_rate_list": performanceMonitor.InterfaceRateList,
-			"cpu_ratio_list":      performanceMonitor.CpuRatioList,
-			"memory_list":         performanceMonitor.MemoryMBList,
-		})
+		// 2.1.1 判断节点的类型
+		if performanceMonitor.NormalNode.Type == types.NetworkNodeType_ChainMakerNode {
+			c.JSON(http.StatusOK, gin.H{
+				"time_list":           performanceMonitor.TimeList,
+				"interface_rate_list": performanceMonitor.InterfaceRateList,
+				"cpu_ratio_list":      performanceMonitor.CpuRatioList,
+				"memory_list":         performanceMonitor.MemoryMBList,
+				"block_ratio_list":    performanceMonitor.BlockHeightPercentageList,
+			})
+		} else {
+			// 如果是其他类型 (并非长安链节点类型)
+			c.JSON(http.StatusOK, gin.H{
+				"time_list":           performanceMonitor.TimeList,
+				"interface_rate_list": performanceMonitor.InterfaceRateList,
+				"cpu_ratio_list":      performanceMonitor.CpuRatioList,
+				"memory_list":         performanceMonitor.MemoryMBList,
+			})
+		}
+
 		return
 	} else {
 		// 2.2 如果不存在，则创建新的并返回空的数据
@@ -74,7 +88,7 @@ func StopCaptureInstancePerformance(c *gin.Context) {
 	}
 	body, err := ioutil.ReadAll(c.Request.Body)
 	// 2. 进行参数绑定
-	captureRateRequest := CaptureRateRequest{}
+	captureRateRequest := CapturePerformanceRequest{}
 	err = json.Unmarshal(body, &captureRateRequest)
 	//err = c.ShouldBindJSON(&captureRateRequest)
 	if err != nil {
