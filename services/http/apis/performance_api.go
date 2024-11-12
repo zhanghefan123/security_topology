@@ -35,7 +35,7 @@ func StartCaptureInstancePerformance(c *gin.Context) {
 
 	// 2. 判断是否已经存在了相应的监听实例, 如果已经存在就进行数据的返回
 	if performanceMonitor, ok = performance_monitor.PerformanceMonitorMapping[captureRateRequest.ContainerName]; ok {
-		// 2.1.1 判断节点的类型
+		// 判断节点的类型
 		if performanceMonitor.NormalNode.Type == types.NetworkNodeType_ChainMakerNode {
 			c.JSON(http.StatusOK, gin.H{
 				"time_list":           performanceMonitor.TimeList,
@@ -53,7 +53,6 @@ func StartCaptureInstancePerformance(c *gin.Context) {
 				"memory_list":         performanceMonitor.MemoryMBList,
 			})
 		}
-
 		return
 	} else {
 		// 2.2 如果不存在，则创建新的并返回空的数据

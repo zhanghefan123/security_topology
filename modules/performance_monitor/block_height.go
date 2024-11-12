@@ -45,29 +45,33 @@ func (pm *PerformanceMonitor) UpdateBlockHeightInfo() (err error) {
 	}
 	lines := strings.Split(string(blockHeightFileBytes), "\n")
 	for _, line := range lines {
-		splitParts := strings.Split(line, "->")
-		if len(splitParts) != 3 {
-			return fmt.Errorf("cannot parse line: %s", line)
-		}
-		if splitParts[0] == "self" {
-			height, err = strconv.Atoi(splitParts[2])
-			if err != nil {
-				return fmt.Errorf("cannot parse height: %s", splitParts[2])
-			}
-			currentNodeHeight = height
-			if height > largestHeight {
-				largestHeight = height
-			}
-		} else if splitParts[0] == "other" {
-			height, err = strconv.Atoi(splitParts[2])
-			if err != nil {
-				return fmt.Errorf("cannot parse height: %s", splitParts[2])
-			}
-			if height > largestHeight {
-				largestHeight = height
-			}
+		if line == "" {
+			continue
 		} else {
-			return fmt.Errorf("cannot parse line: %s", line)
+			splitParts := strings.Split(line, "->")
+			if len(splitParts) != 3 {
+				return fmt.Errorf("cannot parse line: %s", line)
+			}
+			if splitParts[0] == "self" {
+				height, err = strconv.Atoi(splitParts[2])
+				if err != nil {
+					return fmt.Errorf("cannot parse height: %s", splitParts[2])
+				}
+				currentNodeHeight = height
+				if height > largestHeight {
+					largestHeight = height
+				}
+			} else if splitParts[0] == "other" {
+				height, err = strconv.Atoi(splitParts[2])
+				if err != nil {
+					return fmt.Errorf("cannot parse height: %s", splitParts[2])
+				}
+				if height > largestHeight {
+					largestHeight = height
+				}
+			} else {
+				return fmt.Errorf("cannot parse line: %s", line)
+			}
 		}
 	}
 	// ----------------------------------------------------------------------
