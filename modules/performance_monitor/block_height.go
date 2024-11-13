@@ -49,7 +49,11 @@ func (pm *PerformanceMonitor) UpdateBlockHeightInfo() (err error) {
 
 	// 计算当前节点的区块高度占整个区块高度的百分比
 	// ----------------------------------------------------------------------
-	blockHeightPercentage = float64(currentBlockHeight) / float64(largestBlockHeight) * 100
+	if (currentBlockHeight == 0) && (largestBlockHeight == 0) {
+		blockHeightPercentage = 100
+	} else {
+		blockHeightPercentage = float64(currentBlockHeight) / float64(largestBlockHeight) * 100
+	}
 	if len(pm.TimeList) == pm.FixedLength {
 		pm.BlockHeightPercentageList = pm.BlockHeightPercentageList[1:]
 		pm.BlockHeightPercentageList = append(pm.BlockHeightPercentageList, blockHeightPercentage)
