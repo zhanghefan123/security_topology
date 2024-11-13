@@ -14,9 +14,11 @@ var (
 
 // PerformanceMonitor 性能检测者
 type PerformanceMonitor struct {
-	AbstractNode *node.AbstractNode
-	NormalNode   *normal_node.NormalNode
-	TimeList     []int // 时间列表
+	AbstractNode                *node.AbstractNode      // 监听的抽象节点
+	NormalNode                  *normal_node.NormalNode // 监听的普通节点
+	AllChainMakerContainerNames []string                // 所有长安链节点的名称
+
+	TimeList []int // 时间列表
 
 	InterfaceRateList []float64 // 接口速率监控
 	LastReceivedBytes int       // 上一次收到的字节数
@@ -34,15 +36,16 @@ type PerformanceMonitor struct {
 }
 
 // NewInstancePerformanceMonitor 创建新的接口监听器
-func NewInstancePerformanceMonitor(abstractNode *node.AbstractNode) (*PerformanceMonitor, error) {
+func NewInstancePerformanceMonitor(abstractNode *node.AbstractNode, allChainMakerContainerNames []string) (*PerformanceMonitor, error) {
 	normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
 	if err != nil {
 		return nil, fmt.Errorf("GetNormalNodeFromAbstractNode failed: %w", err)
 	}
 	performanceMonitor := &PerformanceMonitor{
-		AbstractNode: abstractNode,
-		NormalNode:   normalNode,
-		TimeList:     make([]int, 0),
+		AbstractNode:                abstractNode,
+		NormalNode:                  normalNode,
+		AllChainMakerContainerNames: allChainMakerContainerNames,
+		TimeList:                    make([]int, 0),
 
 		InterfaceRateList: make([]float64, 0),
 		LastReceivedBytes: 0,

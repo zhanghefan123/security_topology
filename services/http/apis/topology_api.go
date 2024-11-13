@@ -14,20 +14,16 @@ import (
 	"zhanghefan123/security_topology/services/http/params"
 )
 
-var (
-	TopologyInstance *topology.Topology
-)
-
 // GetTopologyState 进行拓扑状态的获取
 func GetTopologyState(c *gin.Context) {
-	if TopologyInstance == nil {
+	if topology.TopologyInstance == nil {
 		c.JSON(http.StatusOK, gin.H{
 			"state": "down",
 		})
 	} else {
 		c.JSON(http.StatusOK, gin.H{
 			"state":           "up",
-			"topology_params": TopologyInstance.TopologyParams, // 如果已经创建完成了, 还需要进行创建的参数的返回
+			"topology_params": topology.TopologyInstance.TopologyParams, // 如果已经创建完成了, 还需要进行创建的参数的返回
 		})
 	}
 }
@@ -35,7 +31,7 @@ func GetTopologyState(c *gin.Context) {
 // StartTopology 进行拓扑的启动
 func StartTopology(c *gin.Context) {
 	// 1. 如果拓扑还没有启动, 那么直接返回
-	if TopologyInstance != nil {
+	if topology.TopologyInstance != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "topology already created",
 		})
@@ -91,14 +87,14 @@ func startTopologyInner(topologyParams *params.TopologyParams) error {
 	listenPort := configs.TopConfiguration.ServicesConfig.EtcdConfig.ClientPort
 	etcdClient, err := etcd_api.NewEtcdClient(listenAddr, listenPort)
 	// 5. 创建拓扑实例
-	TopologyInstance = topology.NewTopology(dockerClient, etcdClient, topologyParams)
+	topology.TopologyInstance = topology.NewTopology(dockerClient, etcdClient, topologyParams)
 	// 6. 进行 init
-	err = TopologyInstance.Init()
+	err = topology.TopologyInstance.Init()
 	if err != nil {
 		return fmt.Errorf("init topology err: %w", err)
 	}
 	// 7. 进行start
-	err = TopologyInstance.Start()
+	err = topology.TopologyInstance.Start()
 	if err != nil {
 		return fmt.Errorf("start topology err: %w", err)
 	}
@@ -112,7 +108,7 @@ func startTopologyInner(topologyParams *params.TopologyParams) error {
 
 // StopTopology 进行拓扑的删除
 func StopTopology(c *gin.Context) {
-	if TopologyInstance == nil {
+	if topology.TopologyInstance == nil {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "down",
 			"message": "images already stopped",
@@ -137,9 +133,9 @@ func StopTopology(c *gin.Context) {
 
 // stopTopologyInner 实际的拓扑销毁逻辑
 func stopTopologyInner() error {
-	err := TopologyInstance.Remove()
+	err := topology.TopologyInstance.Remove()
 	defer func() {
-		TopologyInstance = nil
+		topology.TopologyInstance = nil
 		performance_monitor.PerformanceMonitorMapping = make(map[string]*performance_monitor.PerformanceMonitor)
 	}()
 	if err != nil {

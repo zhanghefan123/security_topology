@@ -21,6 +21,15 @@ func (t *Topology) GetChainMakerNodeListenAddresses() []string {
 	return listeningAddresses
 }
 
+// GetChainMakerNodeContainerNames 获取所有长安链容器的名称
+func (t *Topology) GetChainMakerNodeContainerNames() []string {
+	chainMakerNodeNames := make([]string, 0)
+	for _, node := range t.ChainmakerNodes {
+		chainMakerNodeNames = append(chainMakerNodeNames, node.ContainerName)
+	}
+	return chainMakerNodeNames
+}
+
 // GetContainerNameToAddressMapping 获取所有节点的从容器名称到地址的一个映射
 func (t *Topology) GetContainerNameToAddressMapping() (map[string]string, error) {
 	addressMapping := make(map[string]string)

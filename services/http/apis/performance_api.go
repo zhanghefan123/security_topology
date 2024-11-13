@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"net/http"
+	"zhanghefan123/security_topology/modules/entities/real_entities/topology"
 	"zhanghefan123/security_topology/modules/entities/types"
 	"zhanghefan123/security_topology/modules/performance_monitor"
 )
@@ -15,7 +16,7 @@ type CapturePerformanceRequest struct {
 
 // StartCaptureInstancePerformance 开启接口速率监听
 func StartCaptureInstancePerformance(c *gin.Context) {
-	if TopologyInstance == nil {
+	if topology.TopologyInstance == nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "already shutdown",
 		})
@@ -56,8 +57,10 @@ func StartCaptureInstancePerformance(c *gin.Context) {
 		return
 	} else {
 		// 2.2 如果不存在，则创建新的并返回空的数据
-		abstractNode := TopologyInstance.AbstractNodesMap[captureRateRequest.ContainerName]
-		performanceMonitor, err = performance_monitor.NewInstancePerformanceMonitor(abstractNode)
+		abstractNode := topology.TopologyInstance.AbstractNodesMap[captureRateRequest.ContainerName]
+		// 获取所有的 chainMakerContainer 的 name
+		performanceMonitor, err = performance_monitor.NewInstancePerformanceMonitor(abstractNode,
+			topology.TopologyInstance.GetChainMakerNodeContainerNames())
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"message": "could not create performance_monitor monitor",
@@ -79,7 +82,7 @@ func StartCaptureInstancePerformance(c *gin.Context) {
 // StopCaptureInstancePerformance 停止接口速率监听
 func StopCaptureInstancePerformance(c *gin.Context) {
 	// 1. 如果已经不存在了就返回错误
-	if TopologyInstance == nil {
+	if topology.TopologyInstance == nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"state": "down",
 		})
@@ -97,7 +100,7 @@ func StopCaptureInstancePerformance(c *gin.Context) {
 		return
 	}
 	// 3. 拿到对应的抽象节点并调用 Remove 逻辑
-	abstractNode := TopologyInstance.AbstractNodesMap[captureRateRequest.ContainerName]
+	abstractNode := topology.TopologyInstance.AbstractNodesMap[captureRateRequest.ContainerName]
 	err = performance_monitor.RemovePerformanceMonitor(abstractNode)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

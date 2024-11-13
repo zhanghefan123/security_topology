@@ -10,7 +10,7 @@ type ChainMakerConfig struct {
 	VmGoRuntimePort int    `mapstructure:"vm_go_runtime_port"`
 	VmGoEnginePort  int    `mapstructure:"vm_go_engine_port"`
 
-	EnableDdosDefence        bool    `mapstructure:"enable_ddos_defence"`
+	EnableBroadcastDefence   bool    `mapstructure:"enable_broadcast_defence"`
 	DirectRemoveAttackedNode bool    `mapstructure:"direct_remove_attacked_node"`
 	SpeedCheck               bool    `mapstructure:"speed_check"`
 	BlocksPerProposer        int     `mapstructure:"blocks_per_proposer"`

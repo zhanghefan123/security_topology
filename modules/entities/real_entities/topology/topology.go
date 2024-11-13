@@ -13,7 +13,8 @@ import (
 )
 
 var (
-	topologyLogger = logger.GetLogger(logger.ModuleTopology)
+	topologyLogger   = logger.GetLogger(logger.ModuleTopology)
+	TopologyInstance *Topology
 )
 
 type Topology struct {
