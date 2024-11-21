@@ -3,9 +3,9 @@ import json
 from flask import Flask, request
 from gevent.pywsgi import WSGIServer
 from flask_cors import *
-
 from modules.attacks.manager import AttackManager
 from modules.utils import json_response as jrm
+from modules.config import env_loader as elm
 
 flask_instance = Flask(__name__)  # 创建 flask 实例
 
@@ -16,7 +16,7 @@ def start_flask_http_service():
     """
     CORS(flask_instance, supports_credentials=True)  # CORS 应对措施
     listen_ip_address = "0.0.0.0"
-    listen_port = int(os.getenv("LISTEN_PORT"))
+    listen_port = int(elm.env_loader.listen_port)
     http_server = WSGIServer((listen_ip_address, listen_port), flask_instance)
     print("http server start successfully", flush=True)
     http_server.serve_forever()

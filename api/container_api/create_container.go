@@ -71,6 +71,12 @@ func CreateContainer(client *docker.Client, node *node.AbstractNode) error {
 		if err != nil {
 			return fmt.Errorf("CreateMaliciousNode err: %w", err)
 		}
+	case types.NetworkNodeType_LirNode:
+		lirNode, _ := node.ActualNode.(*nodes.LiRNode)
+		err = create_apis.CreateLirNode(client, lirNode)
+		if err != nil {
+			return fmt.Errorf("CreateLirNode err: %w", err)
+		}
 	}
 	return nil
 }

@@ -80,3 +80,14 @@
 
 - [1] 如果要提交 submodule 之中的内容, git add [到子模块的路径]
 - [2] git commit
+
+# 7. 想要添加自己节点的完整步骤
+
+- [1] 首先在 images_config.go 以及 configuration.yml 之中添加镜像名称.
+- [2] 在 entities.proto 之中添加自己的类型, 并在其目录执行 protoc --go_out=../types entities.proto
+- [3] 然后在 Topology.go 之中添加相应的集合 (以 LirNode 为例), 需要添加 LirNodes, LirAbstractNodes
+- [4] 在 create_container.go 之中添加对应类型节点的容器创建过程
+- [5] 在 abstract_node.go 之中添加从抽象节点之中提取普通节点的过程
+- [6] 在 modules/entities/real_entities/nodes 下添加自己的节点类型
+- [7] 在 topology_init.go 之中的 GenerateNodes 和 getSourceNodeAndTargetNode 函数之中添加新类型的相应处理逻辑
+- [8] 在 modules/entities/types/utils.go 之中添加自己的节点的前缀

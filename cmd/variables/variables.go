@@ -11,6 +11,7 @@ const (
 	ImageNameNormalNode     = "normal_node"
 	ImageNameConsensusNode  = "consensus_node"
 	ImageNameMaliciousNode  = "malicious_node"
+	ImageLiRNode            = "lir_node"
 
 	AllImages = "all_images"
 )
@@ -24,8 +25,10 @@ const (
 var (
 	UserSelectedImage     = ImageNormalSatellite
 	UserSelectedOperation = OperationBuild
-	ImagesInBuildOrder    = []string{ImageUbuntuWithSoftware, ImageGoEnv, ImageNormalSatellite}
-	AvailableOperations   = map[string]interface{}{
+	ImagesInBuildOrder    = []string{ImageUbuntuWithSoftware, ImagePythonEnv, ImageGoEnv,
+		ImageNormalSatellite, ImageNameEtcd, ImageNamePosition, ImageNameRouter,
+		ImageNameNormalNode, ImageNameConsensusNode, ImageNameMaliciousNode, ImageLiRNode}
+	AvailableOperations = map[string]interface{}{
 		OperationBuild:   struct{}{},
 		OperationRebuild: struct{}{},
 		OperationRemove:  struct{}{},
@@ -41,7 +44,7 @@ var (
 		ImageNameNormalNode:     false,
 		ImageNameConsensusNode:  false,
 		ImageNameMaliciousNode:  false,
-
-		AllImages: false,
+		ImageLiRNode:            false,
+		AllImages:               false,
 	}
 )

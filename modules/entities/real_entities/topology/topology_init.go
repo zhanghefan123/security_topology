@@ -140,6 +140,14 @@ func (t *Topology) GenerateNodes() error {
 			t.MaliciousAbstractNodes = append(t.MaliciousAbstractNodes, abstractMaliciousNode)
 			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractMaliciousNode)
 			t.AbstractNodesMap[maliciousNodeTmp.ContainerName] = abstractMaliciousNode
+		case types.NetworkNodeType_LirNode:
+			lirNodeTmp := nodes.NewLiRNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
+			t.LirNodes = append(t.LirNodes, lirNodeTmp)
+			// 注意只能唯一创建一次
+			abstractLirNode := node.NewAbstractNode(types.NetworkNodeType_LirNode, lirNodeTmp)
+			t.LirAbstractNodes = append(t.LirAbstractNodes, abstractLirNode)
+			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractLirNode)
+			t.AbstractNodesMap[lirNodeTmp.ContainerName] = abstractLirNode
 		}
 	}
 
@@ -278,6 +286,8 @@ func (t *Topology) getSourceNodeAndTargetNode(sourceNodeParam, targetNodeParam p
 		sourceNode = t.ChainMakerAbstractNodes[sourceNodeParam.Index-1]
 	case types.NetworkNodeType_MaliciousNode:
 		sourceNode = t.MaliciousAbstractNodes[sourceNodeParam.Index-1]
+	case types.NetworkNodeType_LirNode:
+		sourceNode = t.LirAbstractNodes[sourceNodeParam.Index-1]
 	default:
 		return nil, nil, fmt.Errorf("unsupported source node type: %s", *sourceNodeType)
 	}
@@ -294,6 +304,8 @@ func (t *Topology) getSourceNodeAndTargetNode(sourceNodeParam, targetNodeParam p
 		targetNode = t.ChainMakerAbstractNodes[targetNodeParam.Index-1]
 	case types.NetworkNodeType_MaliciousNode:
 		targetNode = t.MaliciousAbstractNodes[targetNodeParam.Index-1]
+	case types.NetworkNodeType_LirNode:
+		targetNode = t.LirAbstractNodes[targetNodeParam.Index-1]
 	default:
 		return nil, nil, fmt.Errorf("unsupported target node type: %s", *sourceNodeType)
 	}

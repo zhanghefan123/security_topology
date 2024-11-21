@@ -29,12 +29,14 @@ type Topology struct {
 	ConsensusNodes  []*nodes.ConsensusNode
 	ChainmakerNodes []*nodes.ChainmakerNode
 	MaliciousNodes  []*nodes.MaliciousNode
+	LirNodes        []*nodes.LiRNode
 
 	RouterAbstractNodes     []*node.AbstractNode
 	NormalAbstractNodes     []*node.AbstractNode
 	ConsensusAbstractNodes  []*node.AbstractNode
 	ChainMakerAbstractNodes []*node.AbstractNode
 	MaliciousAbstractNodes  []*node.AbstractNode
+	LirAbstractNodes        []*node.AbstractNode
 	AllAbstractNodes        []*node.AbstractNode
 	AbstractNodesMap        map[string]*node.AbstractNode
 
@@ -58,14 +60,17 @@ func NewTopology(client *docker.Client, etcdClient *clientv3.Client, params *par
 		ConsensusNodes:  make([]*nodes.ConsensusNode, 0),
 		ChainmakerNodes: make([]*nodes.ChainmakerNode, 0),
 		MaliciousNodes:  make([]*nodes.MaliciousNode, 0),
+		LirNodes:        make([]*nodes.LiRNode, 0),
 
 		RouterAbstractNodes:     make([]*node.AbstractNode, 0),
 		NormalAbstractNodes:     make([]*node.AbstractNode, 0),
 		ConsensusAbstractNodes:  make([]*node.AbstractNode, 0),
 		ChainMakerAbstractNodes: make([]*node.AbstractNode, 0),
 		MaliciousAbstractNodes:  make([]*node.AbstractNode, 0),
-		AllAbstractNodes:        make([]*node.AbstractNode, 0),
-		AbstractNodesMap:        make(map[string]*node.AbstractNode),
+		LirAbstractNodes:        make([]*node.AbstractNode, 0),
+
+		AllAbstractNodes: make([]*node.AbstractNode, 0),
+		AbstractNodesMap: make(map[string]*node.AbstractNode),
 
 		Links:              make([]*link.AbstractLink, 0),
 		LinksMap:           make(map[string]map[string]*link.AbstractLink),

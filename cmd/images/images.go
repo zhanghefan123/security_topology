@@ -1,9 +1,9 @@
 package images
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/spf13/cobra"
+	"os"
 	"os/exec"
 	"strings"
 	"zhanghefan123/security_topology/cmd/tools"
@@ -91,8 +91,8 @@ func buildImage(userSelectedImage string) error {
 	}
 
 	cmd := exec.Command("docker", strings.Split(commandStr, " ")...)
-	var out bytes.Buffer
-	cmd.Stdout = &out
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
 	// 2.运行命令并检查是否有错误
 	err := cmd.Run()
@@ -116,8 +116,8 @@ func removeImage(userSelectedImage string) error {
 	// 1. 创建命令
 	commandStr := fmt.Sprintf("rmi %s", userSelectedImage)
 	cmd := exec.Command("docker", strings.Split(commandStr, " ")...)
-	var out bytes.Buffer
-	cmd.Stdout = &out
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
 	// 2. 运行命令并检查是否有错误
 	err := cmd.Run()

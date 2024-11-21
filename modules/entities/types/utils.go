@@ -22,6 +22,8 @@ func GetPrefix(typ NetworkNodeType) string {
 		return "cm"
 	} else if typ == NetworkNodeType_MaliciousNode {
 		return "mn"
+	} else if typ == NetworkNodeType_LirNode {
+		return "ln"
 	}
 	return ""
 }

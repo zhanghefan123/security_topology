@@ -38,9 +38,9 @@ chain_maker_config:
   speed_check: false
   blocks_per_proposer: 1
   ddos_warning_rate: 7 # Mbps
-  chainmaker_go_project_path: /home/zhf/Projects/chainmaker_go # srv6/chainmaker/
+  chainmaker_go_project_path: /home/zhf/Projects/srv6/chainmaker/chainmaker_go # srv6/chainmaker/
   chainmaker_build: ./build
-  crypto_gen_path: /home/zhf/Projects/chainmaker_go/tools/chainmaker-cryptogen # srv6/chainmaker/
+  crypto_gen_path: /home/zhf/Projects/srv6/chainmaker/chainmaker_go/tools/chainmaker-cryptogen # srv6/chainmaker/
   templates_file_path: ../resources/templates
 
 
@@ -54,6 +54,7 @@ images_config:
   malicious_node_image_name: "malicious_node"
   etcd_service_image_name: "etcd_service"
   position_service_image_name: "position_service"
+  lir_node_image_name: "lir_node"
 
 path_config:
   resources_path: "../resources"

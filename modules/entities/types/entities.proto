@@ -19,6 +19,7 @@ enum NetworkNodeType {
   ConsensusNode = 6;
   ChainMakerNode = 7;
   MaliciousNode = 8;
+  LirNode = 9;
 }
 
 enum NetworkLinkType {
