@@ -5,3 +5,6 @@
 [submodule "images/ubuntu_with_software/libtins"]
 	path = images/ubuntu_with_software/libtins
 	url = https://github.com/mfontanini/libtins.git
+[submodule "images/lir_node"]
+	path = images/lir_node
+	url = https://github.com/zhanghefan123/lir_node.git
