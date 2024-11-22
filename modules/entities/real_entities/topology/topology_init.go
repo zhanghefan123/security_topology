@@ -27,15 +27,16 @@ type InitModule struct {
 }
 
 const (
-	GenerateChainMakerConfig       = "GenerateChainMakerConfig"
-	GenerateNodes                  = "GenerateNodes"                  // 生成节点
-	GenerateSubnets                = "GenerateSubnets"                // 创建子网
-	GenerateLinks                  = "GenerateLinks"                  // 生成链路
-	GenerateFrrConfigurationFiles  = "GenerateFrrConfigurationFiles"  // 生成 frr 配置
-	GenerateAddressMapping         = "GenerateAddressMapping"         // 生成容器名 -> 地址的映射
-	GeneratePortMapping            = "GeneratePortMapping"            // 生成容器名 -> 端口的映射
-	CalculateAndWriteSegmentRoutes = "CalculateAndWriteSegmentRoutes" // 生成 srv6 路由文件
-	CalculateAndWriteLiRRoutes     = "CalculateAndWriteLiRRoutes"     // 生成 lir 路由文件
+	GenerateChainMakerConfig              = "GenerateChainMakerConfig"
+	GenerateNodes                         = "GenerateNodes"                         // 生成节点
+	GenerateSubnets                       = "GenerateSubnets"                       // 创建子网
+	GenerateLinks                         = "GenerateLinks"                         // 生成链路
+	GenerateFrrConfigurationFiles         = "GenerateFrrConfigurationFiles"         // 生成 frr 配置
+	GenerateAddressMapping                = "GenerateAddressMapping"                // 生成容器名 -> 地址的映射
+	GeneratePortMapping                   = "GeneratePortMapping"                   // 生成容器名 -> 端口的映射
+	CalculateAndWriteSegmentRoutes        = "CalculateAndWriteSegmentRoutes"        // 生成 srv6 路由文件
+	CalculateAndWriteLiRRoutes            = "CalculateAndWriteLiRRoutes"            // 生成 lir 路由文件
+	GenerateIfnameToLinkIdentifierMapping = "GenerateIfnameToLinkIdentifierMapping" // 生成从接口名称到 link identifier 的映射文件
 )
 
 // Init 进行初始化
@@ -52,6 +53,7 @@ func (t *Topology) Init() error {
 		{GeneratePortMapping: InitModule{true, t.GeneratePortMapping}},
 		{CalculateAndWriteSegmentRoutes: InitModule{true, t.CalculateAndWriteSegmentRoutes}},
 		{CalculateAndWriteLiRRoutes: InitModule{true, t.CalculateAndWriteLiRRoutes}},
+		{GenerateIfnameToLinkIdentifierMapping: InitModule{true, t.GenerateIfnameToLinkIdentifierMapping}},
 	}
 	err := t.initializeSteps(initSteps)
 	if err != nil {
@@ -507,5 +509,29 @@ func (t *Topology) CalculateAndWriteLiRRoutes() error {
 
 	t.topologyInitSteps[CalculateAndWriteLiRRoutes] = struct{}{}
 	topologyLogger.Infof("calculate lir routes")
+	return nil
+}
+
+// GenerateIfnameToLinkIdentifierMapping 生成从接口名到链路标识的映射
+func (t *Topology) GenerateIfnameToLinkIdentifierMapping() error {
+	if _, ok := t.topologyInitSteps[GenerateIfnameToLinkIdentifierMapping]; ok {
+		topologyLogger.Infof("already generate ifname to link identifier")
+		return nil
+	}
+
+	// 遍历所有的节点生成 mapping
+	for _, abstractNode := range t.AllAbstractNodes {
+		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
+		if err != nil {
+			return fmt.Errorf("generate ifname to link identifier mapping files failed, %w", err)
+		}
+		err = normalNode.GenerateIfnameToLidMapping()
+		if err != nil {
+			return fmt.Errorf("generate ifname to link identifier mapping files failed, %w", err)
+		}
+	}
+
+	t.topologyInitSteps[GenerateIfnameToLinkIdentifierMapping] = struct{}{}
+	topologyLogger.Infof("generate ifname to link identifier")
 	return nil
 }

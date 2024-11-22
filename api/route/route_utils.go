@@ -38,9 +38,9 @@ func GetAbstractLink(hopList []graph.Node, sourceIndex, targetIndex int, linksMa
 	// 找到相应的链路 -> 带有方向的
 	abstractLink := (*linksMap)[sourceNormal.ContainerName][targetNormal.ContainerName]
 	if abstractLink != nil {
-		return abstractLink, abstractLink.OrderLinkId, nil
+		return abstractLink, abstractLink.SourceInterface.LinkIdentifier, nil
 	} else {
 		abstractLink = (*linksMap)[targetNormal.ContainerName][sourceNormal.ContainerName]
-		return abstractLink, abstractLink.OrderLinkId, nil
+		return abstractLink, abstractLink.TargetInterface.LinkIdentifier, nil
 	}
 }

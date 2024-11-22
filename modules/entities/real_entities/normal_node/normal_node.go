@@ -17,7 +17,7 @@ type NormalNode struct {
 	Pid                     int                     // 对应的进程编号
 	Ifidx                   int                     // 接口索引
 	Interfaces              []*intf.NetworkInterface
-	IfNameToInterfaceMap    map[string]*intf.NetworkInterface // 从接口索引到对应的 ip 地址的映射
+	IfNameToInterfaceMap    map[string]*intf.NetworkInterface // 从接口名称到对应的 ip 地址的映射
 	ConnectedIpv4SubnetList []string                          // 连接到的 IPV4 的子网
 	ConnectedIpv6SubnetList []string                          // 连接到的 IPV6 的子网
 	ContainerName           string                            // 对应的容器的名称

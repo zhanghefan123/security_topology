@@ -30,8 +30,6 @@ type AbstractLink struct {
 	SourceNode          *node.AbstractNode     `json:"-"` // 源节点
 	TargetNode          *node.AbstractNode     `json:"-"` // 目的节点
 	BandWidth           int                    `json:"-"` // 带宽
-	OrderLinkId         int
-	ReverseLinkId       int
 }
 
 func NewAbstractLink(typ types.NetworkLinkType, id int,
@@ -47,10 +45,8 @@ func NewAbstractLink(typ types.NetworkLinkType, id int,
 	// 在这里进行了双向的链路的添加
 	orderEdge := graphTmp.NewEdge(sourceNode, targetNode)
 	graphTmp.SetEdge(orderEdge)
-	orderLinkId := graphTmp.Edges().Len()
 	reverseOrderEdge := graphTmp.NewEdge(targetNode, sourceNode)
 	graphTmp.SetEdge(reverseOrderEdge)
-	reverseLinkId := graphTmp.Edges().Len()
 
 	return &AbstractLink{
 		Type:                typ,
@@ -66,8 +62,6 @@ func NewAbstractLink(typ types.NetworkLinkType, id int,
 		SourceNode:          sourceNode,
 		TargetNode:          targetNode,
 		BandWidth:           bandWidth,
-		OrderLinkId:         orderLinkId,
-		ReverseLinkId:       reverseLinkId,
 	}
 }
 
