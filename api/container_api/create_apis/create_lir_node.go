@@ -75,7 +75,7 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode) error {
 	}
 	// 7. 容器配置
 	containerConfig := &container.Config{
-		Image:        configs.TopConfiguration.ImagesConfig.MaliciousNodeImageName,
+		Image:        configs.TopConfiguration.ImagesConfig.LirNodeImageName,
 		Tty:          true,
 		Env:          envs,
 		ExposedPorts: exposedPorts,
@@ -105,6 +105,9 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode) error {
 	}
 
 	lirNode.ContainerId = response.ID
+
+	// 10. 状态转换
+	lirNode.Status = types.NetworkNodeStatus_Created
 
 	return nil
 }

@@ -1,4 +1,3 @@
-import os
 from flask import Flask
 from gevent.pywsgi import WSGIServer
 from flask_cors import *

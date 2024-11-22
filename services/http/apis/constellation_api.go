@@ -11,20 +11,16 @@ import (
 	"zhanghefan123/security_topology/modules/entities/real_entities/constellation"
 )
 
-var (
-	constellationInstance *constellation.Constellation
-)
-
 // GetConstellationState 获取星座的状态
 func GetConstellationState(c *gin.Context) {
-	if constellationInstance == nil {
+	if constellation.ConstellationInstance == nil {
 		c.JSON(http.StatusOK, gin.H{
 			"state": "down",
 		})
 	} else {
 		constellationParams := map[string]int{
-			"orbit_number":        constellationInstance.OrbitNumber,
-			"satellite_per_orbit": constellationInstance.SatellitePerOrbit,
+			"orbit_number":        constellation.ConstellationInstance.OrbitNumber,
+			"satellite_per_orbit": constellation.ConstellationInstance.SatellitePerOrbit,
 		}
 
 		c.JSON(http.StatusOK, gin.H{
@@ -36,7 +32,7 @@ func GetConstellationState(c *gin.Context) {
 
 // GetInstancePositions 获取所有实例的位置
 func GetInstancePositions(c *gin.Context) {
-	if constellationInstance == nil {
+	if constellation.ConstellationInstance == nil {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "down",
 			"message": "constellation already stopped",
@@ -46,14 +42,14 @@ func GetInstancePositions(c *gin.Context) {
 
 	links := map[int][]string{}
 
-	for _, link := range constellationInstance.AllSatelliteLinks {
+	for _, link := range constellation.ConstellationInstance.AllSatelliteLinks {
 		links[link.Id] = make([]string, 0)
 		links[link.Id] = append(links[link.Id], link.SourceContainerName)
 		links[link.Id] = append(links[link.Id], link.TargetContainerName)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"positions": constellationInstance.ContainerNameToPosition,
+		"positions": constellation.ConstellationInstance.ContainerNameToPosition,
 		"links":     links,
 	})
 }
@@ -61,7 +57,7 @@ func GetInstancePositions(c *gin.Context) {
 // StartConstellation 进行星座的启动
 func StartConstellation(c *gin.Context) {
 	// 如果已经存在实例之后就不要再创建了
-	if constellationInstance != nil {
+	if constellation.ConstellationInstance != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "up",
 			"message": "constellation already created",
@@ -120,12 +116,12 @@ func startConstellationInner(constellationParams *constellation.Parameters) erro
 	configs.TopConfiguration.ConstellationConfig.OrbitNumber = constellationParams.OrbitNumber
 	configs.TopConfiguration.ConstellationConfig.SatellitePerOrbit = constellationParams.SatellitePerOrbit
 	// 创建星座实例
-	constellationInstance = constellation.NewConstellation(dockerClient, etcdClient, startTime) // 创建一个星座, 使用的参数是 dockerClient
-	err = constellationInstance.Init()                                                          // 进行星座的初始化
+	constellation.ConstellationInstance = constellation.NewConstellation(dockerClient, etcdClient, startTime) // 创建一个星座, 使用的参数是 dockerClient
+	err = constellation.ConstellationInstance.Init()                                                          // 进行星座的初始化
 	if err != nil {
 		return fmt.Errorf("init constellation err: %w", err)
 	}
-	err = constellationInstance.Start()
+	err = constellation.ConstellationInstance.Start()
 	if err != nil {
 		return fmt.Errorf("start constellation err: %w", err)
 	}
@@ -134,7 +130,7 @@ func startConstellationInner(constellationParams *constellation.Parameters) erro
 
 // StopConstellation 进行星座的停止
 func StopConstellation(c *gin.Context) {
-	if constellationInstance == nil {
+	if constellation.ConstellationInstance == nil {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "down",
 			"message": "constellation already stopped",
@@ -161,9 +157,9 @@ func StopConstellation(c *gin.Context) {
 
 // stopConstellationInner 停止星座的内部逻辑
 func stopConstellationInner() error {
-	err := constellationInstance.Remove()
+	err := constellation.ConstellationInstance.Remove()
 	defer func() {
-		constellationInstance = nil
+		constellation.ConstellationInstance = nil
 	}()
 	if err != nil {
 		return fmt.Errorf("stop constellation error: %w", err)

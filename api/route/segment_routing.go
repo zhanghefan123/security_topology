@@ -2,8 +2,8 @@ package route
 
 import (
 	"fmt"
-	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/path"
+	"gonum.org/v1/gonum/graph/simple"
 	"net"
 	"os"
 	"path/filepath"
@@ -15,45 +15,18 @@ import (
 	"zhanghefan123/security_topology/modules/utils/dir"
 )
 
-// CalculateAndWriteSegmentRoute 进行到其他节点的段路由的计算
-func CalculateAndWriteSegmentRoute(abstractNode *node.AbstractNode, linksMap *map[string]map[string]*link.AbstractLink) error {
-	var err error
-	var ipRouteStrings []string
-	ipRouteStrings, err = GenerateSegmentRoutingStrings(abstractNode, linksMap)
-	if err != nil {
-		return fmt.Errorf("GenerateIpRouteStrings: %s", err)
-	}
-	normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
-	if err != nil {
-		return fmt.Errorf("GetNormalNodeFromAbstractNode: %w", err)
-	}
-	err = WriteSegmentRoutingStringsIntoFile(normalNode.ContainerName, ipRouteStrings)
-	if err != nil {
-		return fmt.Errorf("WriteIPRouteStringsIntoFile: %s", err)
-	}
-	return nil
-}
-
-// GetNormalNodeFromGraphNode 从图节点获取普通节点
-func GetNormalNodeFromGraphNode(graphNode graph.Node) (*normal_node.NormalNode, error) {
-	currentAbstract, ok := graphNode.(*node.AbstractNode)
-	if !ok {
-		return nil, fmt.Errorf("convert to normal node failed")
-	}
-	normalNode, err := currentAbstract.GetNormalNodeFromAbstractNode()
-	if err != nil {
-		return nil, fmt.Errorf("GetNormalNodeFromAbstractNode: %w", err)
-	}
-	return normalNode, nil
+// GenerateSegmentRoutingString 到单个节点的静态路由的生成
+func GenerateSegmentRoutingString(destinationIp string, ipSegmentList *[]string, interfaceName string) string {
+	result := strings.Join(*ipSegmentList, ",")
+	return fmt.Sprintf("/bin/ip -6 route add %s encap seg6 mode encap segs %s dev %s", destinationIp, result, interfaceName)
 }
 
 // GenerateSegmentRoutingStrings  到所有节点的静态路由的生成
-func GenerateSegmentRoutingStrings(abstractNode *node.AbstractNode, linksMap *map[string]map[string]*link.AbstractLink) ([]string, error) {
+func GenerateSegmentRoutingStrings(abstractNode *node.AbstractNode, linksMap *map[string]map[string]*link.AbstractLink, graphTmp *simple.DirectedGraph) ([]string, error) {
 	var err error
 	var finalResult []string
-	constellationGraph := configs.ConstellationGraph
-	shortestPath := path.DijkstraFrom(abstractNode, constellationGraph)
-	iterator := constellationGraph.Nodes()
+	shortestPath := path.DijkstraFrom(abstractNode, graphTmp)
+	iterator := graphTmp.Nodes()
 	for {
 		hasNext := iterator.Next()
 		if !hasNext {
@@ -124,15 +97,8 @@ func GenerateSegmentRoutingStrings(abstractNode *node.AbstractNode, linksMap *ma
 	return finalResult, nil
 }
 
-// GenerateSegmentRoutingString 到单个节点的静态路由的生成
-func GenerateSegmentRoutingString(destinationIp string, ipSegmentList *[]string, interfaceName string) string {
-	result := strings.Join(*ipSegmentList, ",")
-	return fmt.Sprintf("/bin/ip -6 route add %s encap seg6 mode encap segs %s dev %s", destinationIp, result, interfaceName)
-}
-
 // WriteSegmentRoutingStringsIntoFile 将段路由信息写入到文件之中
-func WriteSegmentRoutingStringsIntoFile(containerName string, IPRouteStringList []string) error {
-	var err error
+func WriteSegmentRoutingStringsIntoFile(containerName string, IPRouteStringList []string) (err error) {
 	// simulation 文件夹的位置
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	// route dir 文件的位置
@@ -148,7 +114,10 @@ func WriteSegmentRoutingStringsIntoFile(containerName string, IPRouteStringList 
 	var ipv6SegmentRouteFile *os.File
 	ipv6SegmentRouteFile, err = os.Create(filePath)
 	defer func() {
-		err = ipv6SegmentRouteFile.Close()
+		closeErr := ipv6SegmentRouteFile.Close()
+		if err == nil {
+			err = closeErr
+		}
 	}()
 	if err != nil {
 		return fmt.Errorf("calculate route error: %w", err)
@@ -157,6 +126,25 @@ func WriteSegmentRoutingStringsIntoFile(containerName string, IPRouteStringList 
 	_, err = ipv6SegmentRouteFile.WriteString(strings.Join(IPRouteStringList, "\n"))
 	if err != nil {
 		return fmt.Errorf("write route error: %w", err)
+	}
+	return nil
+}
+
+// CalculateAndWriteSegmentRoute 进行到其他节点的段路由的计算
+func CalculateAndWriteSegmentRoute(abstractNode *node.AbstractNode, linksMap *map[string]map[string]*link.AbstractLink, graphTmp *simple.DirectedGraph) error {
+	var err error
+	var ipRouteStrings []string
+	ipRouteStrings, err = GenerateSegmentRoutingStrings(abstractNode, linksMap, graphTmp)
+	if err != nil {
+		return fmt.Errorf("generate segment routing strings failed: %w", err)
+	}
+	normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
+	if err != nil {
+		return fmt.Errorf("get normal node from abstract node failed: %w", err)
+	}
+	err = WriteSegmentRoutingStringsIntoFile(normalNode.ContainerName, ipRouteStrings)
+	if err != nil {
+		return fmt.Errorf("write segment routing strings into file failed: %w", err)
 	}
 	return nil
 }

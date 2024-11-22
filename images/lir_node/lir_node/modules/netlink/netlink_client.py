@@ -50,15 +50,15 @@ class NetlinkClient(GenericNetlinkSocket):
         print("---------SEND NETLINK MSG TO KERNEL----------", flush=True)
         print("---------RCEIVE KERNEL RESPONSE----------", flush=True)
         response_data = kernel_response[0]
-        print(f"RLINK_ATTR_LEN = %d", response_data.get_attr("RLINK_ATTR_LEN"), flush=True)
-        print(f"RLINK_ATTR_DATA = %s", response_data.get_attr("RLINK_ATTR_DATA"), flush=True)
+        print(f"RLINK_ATTR_LEN = {response_data.get_attr('RLINK_ATTR_LEN')}", flush=True)
+        print(f"RLINK_ATTR_DATA = {response_data.get_attr('RLINK_ATTR_DATA')}", flush=True)
         print("---------RCEIVE KERNEL RESPONSE----------", flush=True)
 
 
 if __name__ == "__main__":
     netlink_client = NetlinkClient()
     while True:
-        netlink_message_type_str_tmp = input("please input input message type: [1. ECHO] q or quit to exit")
+        netlink_message_type_str_tmp = input("please input input message type: [1. ECHO] [q or quit to exit]:")
         if "q" == netlink_message_type_str_tmp or "quit" == netlink_message_type_str_tmp:
             break
         else:

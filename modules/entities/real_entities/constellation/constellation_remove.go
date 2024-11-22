@@ -11,7 +11,6 @@ import (
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
-	"zhanghefan123/security_topology/modules/entities/types"
 )
 
 const (
@@ -187,11 +186,11 @@ func (c *Constellation) RemoveEtcdService() error {
 		return nil
 	}
 
-	err := container_api.StopContainer(c.client, node.NewAbstractNode(types.NetworkNodeType_EtcdService, c.etcdService))
+	err := container_api.StopContainer(c.client, c.abstractEtcdService)
 	if err != nil {
 		return fmt.Errorf("stop etcd service failed, %s", err)
 	}
-	err = container_api.RemoveContainer(c.client, node.NewAbstractNode(types.NetworkNodeType_EtcdService, c.etcdService))
+	err = container_api.RemoveContainer(c.client, c.abstractEtcdService)
 	if err != nil {
 		return fmt.Errorf("remove etcd service failed, %s", err)
 	}
@@ -209,11 +208,11 @@ func (c *Constellation) RemovePositionService() error {
 		return nil
 	}
 
-	err := container_api.StopContainer(c.client, node.NewAbstractNode(types.NetworkNodeType_PositionService, c.positionService))
+	err := container_api.StopContainer(c.client, c.abstractPositionService)
 	if err != nil {
 		return fmt.Errorf("stop position service failed %v", err)
 	}
-	err = container_api.RemoveContainer(c.client, node.NewAbstractNode(types.NetworkNodeType_PositionService, c.positionService))
+	err = container_api.RemoveContainer(c.client, c.abstractPositionService)
 	if err != nil {
 		return fmt.Errorf("remove position service failed %v", err)
 	}

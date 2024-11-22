@@ -32,7 +32,8 @@ RUN apt-get update \
     libxrender-dev \
     xauth \
     libpcap-dev \
-    libssl-dev
+    libssl-dev \
+    libsqlite3-dev
 
 # libpcap-dev 和 libssl-dev 是为 libtins 安装的
 

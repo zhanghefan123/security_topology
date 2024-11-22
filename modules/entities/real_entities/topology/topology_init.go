@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"zhanghefan123/security_topology/api/linux_tc_api"
+	"zhanghefan123/security_topology/api/route"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/chainmaker_prepare"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/intf"
@@ -26,13 +27,15 @@ type InitModule struct {
 }
 
 const (
-	GenerateChainMakerConfig      = "GenerateChainMakerConfig"
-	GenerateNodes                 = "GenerateNodes"                 // 生成节点
-	GenerateSubnets               = "GenerateSubnets"               // 创建子网
-	GenerateLinks                 = "GenerateLinks"                 // 生成链路
-	GenerateFrrConfigurationFiles = "GenerateFrrConfigurationFiles" // 生成 frr 配置
-	GenerateAddressMapping        = "GenerateAddressMapping"        // 生成容器名 -> 地址的映射
-	GeneratePortMapping           = "GeneratePortMapping"           // 生成容器名 -> 端口的映射
+	GenerateChainMakerConfig       = "GenerateChainMakerConfig"
+	GenerateNodes                  = "GenerateNodes"                  // 生成节点
+	GenerateSubnets                = "GenerateSubnets"                // 创建子网
+	GenerateLinks                  = "GenerateLinks"                  // 生成链路
+	GenerateFrrConfigurationFiles  = "GenerateFrrConfigurationFiles"  // 生成 frr 配置
+	GenerateAddressMapping         = "GenerateAddressMapping"         // 生成容器名 -> 地址的映射
+	GeneratePortMapping            = "GeneratePortMapping"            // 生成容器名 -> 端口的映射
+	CalculateAndWriteSegmentRoutes = "CalculateAndWriteSegmentRoutes" // 生成 srv6 路由文件
+	CalculateAndWriteLiRRoutes     = "CalculateAndWriteLiRRoutes"     // 生成 lir 路由文件
 )
 
 // Init 进行初始化
@@ -47,6 +50,8 @@ func (t *Topology) Init() error {
 		{GenerateChainMakerConfig: InitModule{enabledChainMaker, t.GenerateChainMakerConfig}},
 		{GenerateAddressMapping: InitModule{true, t.GenerateAddressMapping}},
 		{GeneratePortMapping: InitModule{true, t.GeneratePortMapping}},
+		{CalculateAndWriteSegmentRoutes: InitModule{true, t.CalculateAndWriteSegmentRoutes}},
+		{CalculateAndWriteLiRRoutes: InitModule{true, t.CalculateAndWriteLiRRoutes}},
 	}
 	err := t.initializeSteps(initSteps)
 	if err != nil {
@@ -104,7 +109,7 @@ func (t *Topology) GenerateNodes() error {
 			routerTmp := nodes.NewRouter(nodeParam.Index, nodeParam.X, nodeParam.Y)
 			t.Routers = append(t.Routers, routerTmp)
 			// 注意只能唯一创建一次
-			abstractRouter := node.NewAbstractNode(types.NetworkNodeType_Router, routerTmp)
+			abstractRouter := node.NewAbstractNode(types.NetworkNodeType_Router, routerTmp, TopologyInstance.TopologyGraph)
 			t.RouterAbstractNodes = append(t.RouterAbstractNodes, abstractRouter)
 			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractRouter)
 			t.AbstractNodesMap[routerTmp.ContainerName] = abstractRouter
@@ -112,7 +117,7 @@ func (t *Topology) GenerateNodes() error {
 			normalNodeTmp := normal_node.NewNormalNode(types.NetworkNodeType_NormalNode, nodeParam.Index, fmt.Sprintf("%s-%d", nodeType.String(), nodeParam.Index))
 			t.NormalNodes = append(t.NormalNodes, normalNodeTmp)
 			// 注意只能唯一创建一次
-			abstractNormalNode := node.NewAbstractNode(types.NetworkNodeType_NormalNode, normalNodeTmp)
+			abstractNormalNode := node.NewAbstractNode(types.NetworkNodeType_NormalNode, normalNodeTmp, TopologyInstance.TopologyGraph)
 			t.NormalAbstractNodes = append(t.NormalAbstractNodes, abstractNormalNode)
 			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractNormalNode)
 			t.AbstractNodesMap[normalNodeTmp.ContainerName] = abstractNormalNode
@@ -120,7 +125,7 @@ func (t *Topology) GenerateNodes() error {
 			consensusNodeTmp := nodes.NewConsensusNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
 			t.ConsensusNodes = append(t.ConsensusNodes, consensusNodeTmp)
 			// 注意只能唯一创建一次
-			abstractConsensusNode := node.NewAbstractNode(types.NetworkNodeType_ConsensusNode, consensusNodeTmp)
+			abstractConsensusNode := node.NewAbstractNode(types.NetworkNodeType_ConsensusNode, consensusNodeTmp, TopologyInstance.TopologyGraph)
 			t.ConsensusAbstractNodes = append(t.ConsensusAbstractNodes, abstractConsensusNode)
 			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractConsensusNode)
 			t.AbstractNodesMap[consensusNodeTmp.ContainerName] = abstractConsensusNode
@@ -128,7 +133,7 @@ func (t *Topology) GenerateNodes() error {
 			chainmakerNodeTmp := nodes.NewChainmakerNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
 			t.ChainmakerNodes = append(t.ChainmakerNodes, chainmakerNodeTmp)
 			// 注意只能唯一创建一次
-			abstractChainmakerNode := node.NewAbstractNode(types.NetworkNodeType_ChainMakerNode, chainmakerNodeTmp)
+			abstractChainmakerNode := node.NewAbstractNode(types.NetworkNodeType_ChainMakerNode, chainmakerNodeTmp, TopologyInstance.TopologyGraph)
 			t.ChainMakerAbstractNodes = append(t.ChainMakerAbstractNodes, abstractChainmakerNode)
 			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractChainmakerNode)
 			t.AbstractNodesMap[chainmakerNodeTmp.ContainerName] = abstractChainmakerNode
@@ -136,7 +141,7 @@ func (t *Topology) GenerateNodes() error {
 			maliciousNodeTmp := nodes.NewMaliciousNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
 			t.MaliciousNodes = append(t.MaliciousNodes, maliciousNodeTmp)
 			// 注意只能唯一创建一次
-			abstractMaliciousNode := node.NewAbstractNode(types.NetworkNodeType_MaliciousNode, maliciousNodeTmp)
+			abstractMaliciousNode := node.NewAbstractNode(types.NetworkNodeType_MaliciousNode, maliciousNodeTmp, TopologyInstance.TopologyGraph)
 			t.MaliciousAbstractNodes = append(t.MaliciousAbstractNodes, abstractMaliciousNode)
 			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractMaliciousNode)
 			t.AbstractNodesMap[maliciousNodeTmp.ContainerName] = abstractMaliciousNode
@@ -144,7 +149,7 @@ func (t *Topology) GenerateNodes() error {
 			lirNodeTmp := nodes.NewLiRNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
 			t.LirNodes = append(t.LirNodes, lirNodeTmp)
 			// 注意只能唯一创建一次
-			abstractLirNode := node.NewAbstractNode(types.NetworkNodeType_LirNode, lirNodeTmp)
+			abstractLirNode := node.NewAbstractNode(types.NetworkNodeType_LirNode, lirNodeTmp, TopologyInstance.TopologyGraph)
 			t.LirAbstractNodes = append(t.LirAbstractNodes, abstractLirNode)
 			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractLirNode)
 			t.AbstractNodesMap[lirNodeTmp.ContainerName] = abstractLirNode
@@ -247,14 +252,15 @@ func (t *Topology) GenerateLinks() error {
 			sourceNormalNode.ContainerName, targetNormalNode.ContainerName,
 			sourceIntf, targetIntf,
 			sourceAbstractNode, targetAbstractNode,
-			bandWidth)
+			bandWidth,
+			TopologyInstance.TopologyGraph)
 		sourceNormalNode.Ifidx++
 		targetNormalNode.Ifidx++
 		t.Links = append(t.Links, abstractLink)
-		if _, ok := t.LinksMap[sourceNormalNode.ContainerName]; !ok {
-			t.LinksMap[sourceNormalNode.ContainerName] = make(map[string]*link.AbstractLink)
+		if _, ok := t.AllLinksMap[sourceNormalNode.ContainerName]; !ok {
+			t.AllLinksMap[sourceNormalNode.ContainerName] = make(map[string]*link.AbstractLink)
 		}
-		t.LinksMap[sourceNormalNode.ContainerName][targetNormalNode.ContainerName] = abstractLink
+		t.AllLinksMap[sourceNormalNode.ContainerName][targetNormalNode.ContainerName] = abstractLink
 	}
 	// -------------------------------------------
 
@@ -463,5 +469,43 @@ func (t *Topology) GeneratePortMapping() error {
 
 	t.topologyInitSteps[GeneratePortMapping] = struct{}{}
 	topologyLogger.Infof("generate port mapping")
+	return nil
+}
+
+// CalculateAndWriteSegmentRoutes 进行段路由的计算
+func (t *Topology) CalculateAndWriteSegmentRoutes() error {
+	if _, ok := t.topologyInitSteps[CalculateAndWriteSegmentRoutes]; ok {
+		topologyLogger.Infof("already calculate segment routes")
+		return nil
+	}
+
+	for _, abstractNode := range t.AllAbstractNodes {
+		err := route.CalculateAndWriteSegmentRoute(abstractNode, &(t.AllLinksMap), TopologyInstance.TopologyGraph)
+		if err != nil {
+			return fmt.Errorf("calculate route failed: %w", err)
+		}
+	}
+
+	t.topologyInitSteps[CalculateAndWriteSegmentRoutes] = struct{}{}
+	topologyLogger.Infof("calculate segment routes")
+	return nil
+}
+
+// CalculateAndWriteLiRRoutes 进行 LiR 路由的计算
+func (t *Topology) CalculateAndWriteLiRRoutes() error {
+	if _, ok := t.topologyInitSteps[CalculateAndWriteLiRRoutes]; ok {
+		topologyLogger.Infof("already calculate lir routes")
+		return nil
+	}
+
+	for _, abstractNode := range t.AllAbstractNodes {
+		err := route.CalculateAndWriteLiRRoutes(abstractNode, &(t.AllLinksMap), TopologyInstance.TopologyGraph)
+		if err != nil {
+			return fmt.Errorf("calculate lir routes failed: %w", err)
+		}
+	}
+
+	t.topologyInitSteps[CalculateAndWriteLiRRoutes] = struct{}{}
+	topologyLogger.Infof("calculate lir routes")
 	return nil
 }

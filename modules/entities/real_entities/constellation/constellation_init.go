@@ -17,12 +17,12 @@ import (
 )
 
 const (
-	GenerateSatellites            = "GenerateSatellites"            // 生成卫星
-	GenerateSubnets               = "GenerateIPv4Subnets"           // 创建子网
-	GenerateLinks                 = "GenerateLinks"                 // 生成链路
-	GenerateFrrConfigurationFiles = "GenerateFrrConfigurationFiles" // 生成 frr 配置
-	GeneratePeerIdAndPrivateKey   = "GeneratePeerIdAndPrivateKey"   // 生成 peerId 以及私钥
-	CalculateSegmentRoutes        = "CalculateSegmentRoutes"        // 进行段路由的计算
+	GenerateSatellites             = "GenerateSatellites"             // 生成卫星
+	GenerateSubnets                = "GenerateIPv4Subnets"            // 创建子网
+	GenerateLinks                  = "GenerateLinks"                  // 生成链路
+	GenerateFrrConfigurationFiles  = "GenerateFrrConfigurationFiles"  // 生成 frr 配置
+	GeneratePeerIdAndPrivateKey    = "GeneratePeerIdAndPrivateKey"    // 生成 peerId 以及私钥
+	CalculateAndWriteSegmentRoutes = "CalculateAndWriteSegmentRoutes" // 进行段路由的计算
 )
 
 type InitFunction func() error
@@ -43,7 +43,7 @@ func (c *Constellation) Init() error {
 		{GenerateLinks: InitModule{true, c.GenerateLinks}},
 		{GenerateFrrConfigurationFiles: InitModule{true, c.GenerateFrrConfigurationFiles}},
 		{GeneratePeerIdAndPrivateKey: InitModule{true, c.GeneratePeerIdAndPrivateKey}},
-		{CalculateSegmentRoutes: InitModule{enableSRv6, c.CalculateSegmentRoutes}},
+		{CalculateAndWriteSegmentRoutes: InitModule{enableSRv6, c.CalculateAndWriteSegmentRoutes}},
 	}
 	err := c.initializeSteps(initSteps)
 	if err != nil {
@@ -122,7 +122,7 @@ func (c *Constellation) GenerateSatellites() error {
 				// 添加卫星
 				c.NormalSatellites = append(c.NormalSatellites, normalSatellite)
 				// 创建抽象节点
-				normalSatelliteAbstract := node.NewAbstractNode(normalSatellite.Type, normalSatellite)
+				normalSatelliteAbstract := node.NewAbstractNode(normalSatellite.Type, normalSatellite, ConstellationInstance.ConstellationGraph)
 				// 将 satellite 放到 allAbstractNodes 之中
 				c.AllAbstractNodes = append(c.AllAbstractNodes, normalSatelliteAbstract)
 			} else if c.SatelliteType == types.NetworkNodeType_ConsensusSatellite { // 2. 如果是生成共识卫星
@@ -131,7 +131,7 @@ func (c *Constellation) GenerateSatellites() error {
 				// 添加卫星
 				c.ConsensusSatellites = append(c.ConsensusSatellites, consensusSatellite)
 				// 创建抽象节点
-				consensusSatelliteAbstract := node.NewAbstractNode(consensusSatellite.Type, consensusSatellite)
+				consensusSatelliteAbstract := node.NewAbstractNode(consensusSatellite.Type, consensusSatellite, ConstellationInstance.ConstellationGraph)
 				// 将 satellite 放到 allAbstractNodes 之中
 				c.AllAbstractNodes = append(c.AllAbstractNodes, consensusSatelliteAbstract)
 			} else {
@@ -237,7 +237,7 @@ func (c *Constellation) generateLinksForConsensusSatellites() {
 				sourceSat.Id, targetSat.Id,
 				sourceSat.ContainerName, targetSat.ContainerName,
 				sourceIntf, targetIntf,
-				sourceAbstract, targetAbstract, configs.TopConfiguration.ConstellationConfig.ISLBandwidth)
+				sourceAbstract, targetAbstract, configs.TopConfiguration.ConstellationConfig.ISLBandwidth, ConstellationInstance.ConstellationGraph)
 			sourceSat.Ifidx++                                                 // 接口索引变化
 			targetSat.Ifidx++                                                 // 接口索引变化
 			c.AllSatelliteLinks = append(c.AllSatelliteLinks, intraOrbitLink) // 添加到所有链路集合
@@ -280,7 +280,7 @@ func (c *Constellation) generateLinksForConsensusSatellites() {
 				sourceSat.Id, targetSat.Id,
 				sourceSat.ContainerName, targetSat.ContainerName,
 				sourceIntf, targetIntf,
-				sourceAbstract, targetAbstract, configs.TopConfiguration.ConstellationConfig.ISLBandwidth)
+				sourceAbstract, targetAbstract, configs.TopConfiguration.ConstellationConfig.ISLBandwidth, ConstellationInstance.ConstellationGraph)
 			sourceSat.Ifidx++                                                 // 接口索引变化
 			targetSat.Ifidx++                                                 // 接口索引变化
 			c.AllSatelliteLinks = append(c.AllSatelliteLinks, interOrbitLink) // 添加到所有链路集合
@@ -335,7 +335,8 @@ func (c *Constellation) generateLinksForNormalSatellite() {
 				sourceSat.Id, targetSat.Id,
 				sourceSat.ContainerName, targetSat.ContainerName,
 				sourceIntf, targetIntf,
-				sourceAbstract, targetAbstract, configs.TopConfiguration.ConstellationConfig.ISLBandwidth)
+				sourceAbstract, targetAbstract, configs.TopConfiguration.ConstellationConfig.ISLBandwidth,
+				ConstellationInstance.ConstellationGraph)
 			sourceSat.Ifidx++                                                 // 接口索引变化
 			targetSat.Ifidx++                                                 // 接口索引变化
 			c.AllSatelliteLinks = append(c.AllSatelliteLinks, intraOrbitLink) // 添加到所有链路集合
@@ -378,7 +379,8 @@ func (c *Constellation) generateLinksForNormalSatellite() {
 				sourceSat.Id, targetSat.Id,
 				sourceSat.ContainerName, targetSat.ContainerName,
 				sourceIntf, targetIntf,
-				sourceAbstract, targetAbstract, configs.TopConfiguration.ConstellationConfig.ISLBandwidth)
+				sourceAbstract, targetAbstract, configs.TopConfiguration.ConstellationConfig.ISLBandwidth,
+				ConstellationInstance.ConstellationGraph)
 			sourceSat.Ifidx++                                                 // 接口索引变化
 			targetSat.Ifidx++                                                 // 接口索引变化
 			c.AllSatelliteLinks = append(c.AllSatelliteLinks, interOrbitLink) // 添加到所有链路集合
@@ -449,21 +451,21 @@ func (c *Constellation) GeneratePeerIdAndPrivateKey() error {
 	return nil
 }
 
-// CalculateSegmentRoutes 进行段路由的计算
-func (c *Constellation) CalculateSegmentRoutes() error {
-	if _, ok := c.systemInitSteps[CalculateSegmentRoutes]; ok {
+// CalculateAndWriteSegmentRoutes 进行段路由的计算
+func (c *Constellation) CalculateAndWriteSegmentRoutes() error {
+	if _, ok := c.systemInitSteps[CalculateAndWriteSegmentRoutes]; ok {
 		constellationLogger.Infof("already calculate segment routes")
 		return nil
 	}
 
 	for _, abstractNode := range c.AllAbstractNodes {
-		err := route.CalculateAndWriteSegmentRoute(abstractNode, &(c.AllSatelliteLinksMap))
+		err := route.CalculateAndWriteSegmentRoute(abstractNode, &(c.AllSatelliteLinksMap), ConstellationInstance.ConstellationGraph)
 		if err != nil {
 			return fmt.Errorf("calculate route failed: %w", err)
 		}
 	}
 
-	c.systemInitSteps[CalculateSegmentRoutes] = struct{}{}
+	c.systemInitSteps[CalculateAndWriteSegmentRoutes] = struct{}{}
 	constellationLogger.Infof("calculate segment routes")
 	return nil
 }

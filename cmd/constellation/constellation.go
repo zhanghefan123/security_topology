@@ -15,7 +15,6 @@ import (
 )
 
 var (
-	constellationInstance  *constellation.Constellation
 	cmdConstellationLogger = logger.GetLogger(logger.ModuleMainCmdConstellation)
 )
 
@@ -84,12 +83,12 @@ func Initialize() error {
 	listenPort := configs.TopConfiguration.ServicesConfig.EtcdConfig.ClientPort
 	etcdClient, err := etcd_api.NewEtcdClient(listenAddr, listenPort)
 	startTime := configs.TopConfiguration.ConstellationConfig.GoStartTime
-	constellationInstance = constellation.NewConstellation(dockerClient, etcdClient, startTime) // 创建一个星座, 使用的参数是 dockerClient
-	err = constellationInstance.Init()                                                          // 进行星座的初始化
+	constellation.ConstellationInstance = constellation.NewConstellation(dockerClient, etcdClient, startTime) // 创建一个星座, 使用的参数是 dockerClient
+	err = constellation.ConstellationInstance.Init()                                                          // 进行星座的初始化
 	if err != nil {
 		return fmt.Errorf("init constellation failed: %w", err)
 	}
-	err = constellationInstance.Start() // 进行星座的启动
+	err = constellation.ConstellationInstance.Start() // 进行星座的启动
 	if err != nil {
 		return fmt.Errorf("start constellation failed: %w", err)
 	}
@@ -98,7 +97,7 @@ func Initialize() error {
 
 // Delete 进行星座的删除
 func Delete() error {
-	err := constellationInstance.Remove()
+	err := constellation.ConstellationInstance.Remove()
 	if err != nil {
 		return fmt.Errorf("remove constellation failed: %w", err)
 	}

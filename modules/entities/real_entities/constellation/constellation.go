@@ -5,6 +5,7 @@ import (
 	"github.com/c-robinson/iplib/v2"
 	docker "github.com/docker/docker/client"
 	"go.etcd.io/etcd/client/v3"
+	"gonum.org/v1/gonum/graph/simple"
 	"time"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
@@ -18,7 +19,8 @@ import (
 )
 
 var (
-	constellationLogger = logger.GetLogger(logger.ModuleConstellation)
+	ConstellationInstance *Constellation
+	constellationLogger   = logger.GetLogger(logger.ModuleConstellation)
 )
 
 // Parameters -星座参数
@@ -47,6 +49,7 @@ type Constellation struct {
 	ConsensusSatellites     []*satellites.ConsensusSatellite   // 所有的共识卫星
 	AllAbstractNodes        []*node.AbstractNode               // 所有的 abstract nodes
 	ContainerNameToPosition map[string]*position_info.Position // 所有节点的位置
+	ConstellationGraph      *simple.DirectedGraph              // 有向图
 
 	AllSatelliteLinks        []*link.AbstractLink                     // 所有的卫星链路
 	AllSatelliteLinksMap     map[string]map[string]*link.AbstractLink // map[source][target]*link.AbstractLink // 创建链路映射
@@ -60,7 +63,9 @@ type Constellation struct {
 	serviceContext           context.Context           // 服务上下文
 	serviceContextCancelFunc context.CancelFunc        // 服务上下文的取消函数
 	etcdService              *etcd.EtcdNode            // etcd 服务
+	abstractEtcdService      *node.AbstractNode        // 抽象 etcd 节点
 	positionService          *position.PositionService // position 服务
+	abstractPositionService  *node.AbstractNode        // 抽象位置节点
 }
 
 // NewConstellation 创建一个新的空的星座
@@ -77,13 +82,15 @@ func NewConstellation(client *docker.Client, etcdClient *clientv3.Client, startT
 			SatelliteRPCPort: configs.TopConfiguration.ConstellationConfig.SatelliteConfig.RPCPort,
 			SatelliteP2PPort: configs.TopConfiguration.ConstellationConfig.SatelliteConfig.P2PPort,
 		},
-		client:                   client,
-		etcdClient:               etcdClient,
-		startTime:                startTime,
-		NormalSatellites:         make([]*satellites.NormalSatellite, 0),
-		ConsensusSatellites:      make([]*satellites.ConsensusSatellite, 0),
-		AllAbstractNodes:         make([]*node.AbstractNode, 0),
-		ContainerNameToPosition:  make(map[string]*position_info.Position),
+		client:                  client,
+		etcdClient:              etcdClient,
+		startTime:               startTime,
+		NormalSatellites:        make([]*satellites.NormalSatellite, 0),
+		ConsensusSatellites:     make([]*satellites.ConsensusSatellite, 0),
+		AllAbstractNodes:        make([]*node.AbstractNode, 0),
+		ContainerNameToPosition: make(map[string]*position_info.Position),
+		ConstellationGraph:      simple.NewDirectedGraph(),
+
 		InterOrbitSatelliteLinks: make([]*link.AbstractLink, 0),
 		IntraOrbitSatelliteLinks: make([]*link.AbstractLink, 0),
 		systemInitSteps:          make(map[string]struct{}),

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/vishvananda/netlink"
 	"go.etcd.io/etcd/client/v3"
+	"gonum.org/v1/gonum/graph/simple"
 	"zhanghefan123/security_topology/api/linux_tc_api"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/intf"
@@ -29,6 +30,8 @@ type AbstractLink struct {
 	SourceNode          *node.AbstractNode     `json:"-"` // 源节点
 	TargetNode          *node.AbstractNode     `json:"-"` // 目的节点
 	BandWidth           int                    `json:"-"` // 带宽
+	OrderLinkId         int
+	ReverseLinkId       int
 }
 
 func NewAbstractLink(typ types.NetworkLinkType, id int,
@@ -37,11 +40,17 @@ func NewAbstractLink(typ types.NetworkLinkType, id int,
 	sourceContainerName, targetContainerName string,
 	sourceIntf, targetIntf *intf.NetworkInterface,
 	sourceNode, targetNode *node.AbstractNode,
-	bandWidth int) *AbstractLink {
+	bandWidth int,
+	graphTmp *simple.DirectedGraph) *AbstractLink {
 
 	// 进行星座拓扑的边的添加 (注意这是有向图, 需要进行双向的链路的添加)
-	configs.ConstellationGraph.SetEdge(configs.ConstellationGraph.NewEdge(sourceNode, targetNode))
-	configs.ConstellationGraph.SetEdge(configs.ConstellationGraph.NewEdge(targetNode, sourceNode))
+	// 在这里进行了双向的链路的添加
+	orderEdge := graphTmp.NewEdge(sourceNode, targetNode)
+	graphTmp.SetEdge(orderEdge)
+	orderLinkId := graphTmp.Edges().Len()
+	reverseOrderEdge := graphTmp.NewEdge(targetNode, sourceNode)
+	graphTmp.SetEdge(reverseOrderEdge)
+	reverseLinkId := graphTmp.Edges().Len()
 
 	return &AbstractLink{
 		Type:                typ,
@@ -57,6 +66,8 @@ func NewAbstractLink(typ types.NetworkLinkType, id int,
 		SourceNode:          sourceNode,
 		TargetNode:          targetNode,
 		BandWidth:           bandWidth,
+		OrderLinkId:         orderLinkId,
+		ReverseLinkId:       reverseLinkId,
 	}
 }
 

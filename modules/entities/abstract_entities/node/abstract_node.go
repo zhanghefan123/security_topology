@@ -3,7 +3,7 @@ package node
 import (
 	"fmt"
 	"gonum.org/v1/gonum/graph"
-	"zhanghefan123/security_topology/configs"
+	"gonum.org/v1/gonum/graph/simple"
 	"zhanghefan123/security_topology/modules/entities/real_entities/nodes"
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/satellites"
@@ -20,11 +20,16 @@ type AbstractNode struct {
 }
 
 // NewAbstractNode 创建新的抽象节点
-func NewAbstractNode(nodeType types.NetworkNodeType, actualNode interface{}) *AbstractNode {
+func NewAbstractNode(nodeType types.NetworkNodeType, actualNode interface{}, graphTmp *simple.DirectedGraph) *AbstractNode {
 	// 进行图节点的创建
-	graphNode := configs.ConstellationGraph.NewNode()
-	// 进行图节点的添加
-	configs.ConstellationGraph.AddNode(graphNode)
+	var graphNode graph.Node
+	// 当节点为 etcd_service 或者 position_service 的时候, graphTmp 为 nil
+	if graphTmp == nil {
+		graphNode = nil
+	} else {
+		graphNode = graphTmp.NewNode()
+		graphTmp.AddNode(graphNode)
+	}
 	return &AbstractNode{
 		Node:       graphNode,
 		Type:       nodeType,

@@ -187,14 +187,14 @@ func (c *Constellation) StartEtcdService() error {
 	c.etcdService = etcdService
 
 	// 4. 创建抽象节点
-	abstractEtcdService := node.NewAbstractNode(types.NetworkNodeType_EtcdService, c.etcdService)
+	c.abstractEtcdService = node.NewAbstractNode(types.NetworkNodeType_EtcdService, c.etcdService, nil)
 
 	// 5. 进行容器的创建和启动
-	err := container_api.CreateContainer(c.client, abstractEtcdService)
+	err := container_api.CreateContainer(c.client, c.abstractEtcdService)
 	if err != nil {
 		return fmt.Errorf("create etcd container failed, %s", err.Error())
 	}
-	err = container_api.StartContainer(c.client, abstractEtcdService)
+	err = container_api.StartContainer(c.client, c.abstractEtcdService)
 	if err != nil {
 		return fmt.Errorf("start etcd container failed, %s", err.Error())
 	}
@@ -286,16 +286,16 @@ func (c *Constellation) StartPositionService() error {
 	// 3. 创建抽象节点
 	c.positionService = positionService
 
-	abstractPositionService := node.NewAbstractNode(types.NetworkNodeType_PositionService, positionService)
+	c.abstractPositionService = node.NewAbstractNode(types.NetworkNodeType_PositionService, positionService, nil)
 
 	// 4. 进行容器的创建
-	err := container_api.CreateContainer(c.client, abstractPositionService)
+	err := container_api.CreateContainer(c.client, c.abstractPositionService)
 	if err != nil {
 		return fmt.Errorf("create position service failed, %s", err)
 	}
 
 	// 5. 进行容器的启动
-	err = container_api.StartContainer(c.client, abstractPositionService)
+	err = container_api.StartContainer(c.client, c.abstractPositionService)
 	if err != nil {
 		return fmt.Errorf("start position service failed, %s", err)
 	}
