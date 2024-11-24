@@ -3,16 +3,24 @@ package normal_node
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"zhanghefan123/security_topology/configs"
 )
 
 // GenerateIfnameToLidMapping 进行接口名称到Lid映射文件的生成
 func (normalNode *NormalNode) GenerateIfnameToLidMapping() (err error) {
+	// 最后的写入的内容
 	finalString := ""
-	err = os.MkdirAll(fmt.Sprintf("/configuration/%s/interface", normalNode.ContainerName), os.ModePerm)
+	// simulationDir 文件夹的位置
+	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
+	// interface dir 文件架的位置
+	outputDir := filepath.Join(simulationDir, normalNode.ContainerName, "interface")
+	// 进行文件夹的创建
+	err = os.MkdirAll(outputDir, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("mkdir for interface error: %w", err)
 	}
-	filePath := fmt.Sprintf("/configuration/%s/interface/interface.txt", normalNode.ContainerName)
+	filePath := filepath.Join(outputDir, "interface.txt")
 	for interfaceName, networkIntf := range normalNode.IfNameToInterfaceMap {
 		finalString += fmt.Sprintf("%s->%d\n", interfaceName, networkIntf.LinkIdentifier)
 	}

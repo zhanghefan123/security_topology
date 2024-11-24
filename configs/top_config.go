@@ -13,6 +13,7 @@ import (
 	"zhanghefan123/security_topology/configs/consensus"
 	"zhanghefan123/security_topology/configs/constellation"
 	"zhanghefan123/security_topology/configs/images"
+	"zhanghefan123/security_topology/configs/lir"
 	"zhanghefan123/security_topology/configs/network"
 	"zhanghefan123/security_topology/configs/path"
 	"zhanghefan123/security_topology/configs/resources"
@@ -38,6 +39,7 @@ type TopConfig struct {
 	ServicesConfig      services.ServicesConfig           `mapstructure:"services_config"`
 	AppsConfig          apps.AppsConfig                   `mapstructure:"apps_config"`
 	ResourcesConfig     resources.ResourcesConfig         `mapstructure:"resources_config"`
+	LiRConfig           lir.LiRConfig                     `mapstructure:"lir_config"`
 }
 
 var availableOspfVersions = map[string]struct{}{

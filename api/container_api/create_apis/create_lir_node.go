@@ -56,9 +56,14 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode) error {
 	}
 
 	// 4. 获取配置
+	// 4.1 获取一般配置
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	nodeDir := filepath.Join(simulationDir, lirNode.ContainerName)
 	enableFrr := configs.TopConfiguration.NetworkConfig.EnableFrr
+	// 4.2 获取布隆过滤器相关配置
+	effectiveBits := configs.TopConfiguration.LiRConfig.EffectiveBits
+	hashSeed := configs.TopConfiguration.LiRConfig.HashSeed
+	numberOfHashFunctions := configs.TopConfiguration.LiRConfig.NumberOfHashFunctions
 
 	// 5. 创建容器卷映射
 	volumes := []string{
@@ -72,6 +77,9 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode) error {
 		fmt.Sprintf("%s=%s", "CONTAINER_NAME", lirNode.ContainerName),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
 		fmt.Sprintf("%s=%s", "INTERFACE_NAME", fmt.Sprintf("%s%d_idx%d", types.GetPrefix(lirNode.Type), lirNode.Id, 1)),
+		fmt.Sprintf("%s=%d", "EFFECTIVE_BITS", effectiveBits),
+		fmt.Sprintf("%s=%d", "HASH_SEED", hashSeed),
+		fmt.Sprintf("%s=%d", "NUMBER_OF_HASH_FUNCTIONS", numberOfHashFunctions),
 	}
 	// 7. 容器配置
 	containerConfig := &container.Config{

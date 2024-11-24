@@ -90,3 +90,8 @@ apps_config:
 resources_config:
   cpu_limit: 1
   memory_limit: 1
+
+lir_config:
+  effective_bits: 32 # 有效的位数
+  hash_seed: 12 # hash 种子
+  number_of_hash_functions: 5 # 哈希函数的个数
