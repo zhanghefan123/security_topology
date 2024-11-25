@@ -5,6 +5,7 @@ import (
 	"github.com/c-robinson/iplib/v2"
 	"os"
 	"path/filepath"
+	"strings"
 	"zhanghefan123/security_topology/api/linux_tc_api"
 	"zhanghefan123/security_topology/api/route"
 	"zhanghefan123/security_topology/configs"
@@ -15,6 +16,8 @@ import (
 	"zhanghefan123/security_topology/modules/entities/real_entities/nodes"
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/entities/types"
+	"zhanghefan123/security_topology/modules/utils/dir"
+	"zhanghefan123/security_topology/modules/utils/file"
 	"zhanghefan123/security_topology/modules/utils/network"
 	"zhanghefan123/security_topology/services/http/params"
 )
@@ -35,7 +38,7 @@ const (
 	GenerateAddressMapping                = "GenerateAddressMapping"                // 生成容器名 -> 地址的映射
 	GeneratePortMapping                   = "GeneratePortMapping"                   // 生成容器名 -> 端口的映射
 	CalculateAndWriteSegmentRoutes        = "CalculateAndWriteSegmentRoutes"        // 生成 srv6 路由文件
-	CalculateAndWriteLiRRoutes            = "CalculateAndWriteLiRRoutes"            // 生成 lir 路由文件
+	CalculateAndWriteLiRRoutes            = "CalculateAndWriteLiRRoutes"            // 生成 path_validation 路由文件
 	GenerateIfnameToLinkIdentifierMapping = "GenerateIfnameToLinkIdentifierMapping" // 生成从接口名称到 link identifier 的映射文件
 )
 
@@ -231,22 +234,24 @@ func (t *Topology) GenerateLinks() error {
 			linkType = types.NetworkLinkType_BackboneLink
 			bandWidth = linux_tc_api.LargeBandwidth // 没有限制
 		}
-		ipv4SubNet := t.Ipv4SubNets[currentLinkNums]                                                                            // 获取当前ipv4 子网
-		ipv6SubNet := t.Ipv6SubNets[currentLinkNums]                                                                            // 获取当前 ipv6 子网
-		sourceNormalNode.ConnectedIpv4SubnetList = append(sourceNormalNode.ConnectedIpv4SubnetList, ipv4SubNet.String())        // 卫星添加ipv4子网
-		targetNormalNode.ConnectedIpv4SubnetList = append(targetNormalNode.ConnectedIpv4SubnetList, ipv4SubNet.String())        // 卫星添加ipv4子网
-		sourceNormalNode.ConnectedIpv6SubnetList = append(sourceNormalNode.ConnectedIpv6SubnetList, ipv6SubNet.String())        // 卫星添加ipv6子网
-		targetNormalNode.ConnectedIpv6SubnetList = append(targetNormalNode.ConnectedIpv6SubnetList, ipv6SubNet.String())        // 卫星添加ipv6子网
-		sourceIpv4Addr, targetIpv4Addr := network.GenerateTwoAddrsFromIpv4Subnet(ipv4SubNet)                                    // 提取ipv4第一个和第二个地址
-		sourceIpv6Addr, targetIpv6Addr := network.GenerateTwoAddrsFromIpv6Subnet(ipv6SubNet)                                    // 提取ipv6第一个和第二个地址
-		sourceIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(sourceNodeType), sourceNormalNode.Id, sourceNormalNode.Ifidx) // 源接口名
-		targetIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(targetNodeType), targetNormalNode.Id, targetNormalNode.Ifidx) // 目的接口名
-		sourceIntf := intf.NewNetworkInterface(sourceNormalNode.Ifidx, sourceIfName, sourceIpv4Addr, sourceIpv6Addr)            // 创建第一个接口
-		targetIntf := intf.NewNetworkInterface(targetNormalNode.Ifidx, targetIfName, targetIpv4Addr, targetIpv6Addr)            // 创建第二个接口
-		sourceNormalNode.IfNameToInterfaceMap[sourceIfName] = sourceIntf                                                        // 设置源节点地址
-		targetNormalNode.IfNameToInterfaceMap[targetIfName] = targetIntf                                                        // 设置目的节点地址
-		sourceNormalNode.Interfaces = append(sourceNormalNode.Interfaces, sourceIntf)                                           // 源接口
-		targetNormalNode.Interfaces = append(targetNormalNode.Interfaces, targetIntf)                                           // 目的接口
+		ipv4SubNet := t.Ipv4SubNets[currentLinkNums]                                                                                      // 获取当前ipv4 子网
+		ipv6SubNet := t.Ipv6SubNets[currentLinkNums]                                                                                      // 获取当前 ipv6 子网
+		sourceNormalNode.ConnectedIpv4SubnetList = append(sourceNormalNode.ConnectedIpv4SubnetList, ipv4SubNet.String())                  // 卫星添加ipv4子网
+		targetNormalNode.ConnectedIpv4SubnetList = append(targetNormalNode.ConnectedIpv4SubnetList, ipv4SubNet.String())                  // 卫星添加ipv4子网
+		sourceNormalNode.ConnectedIpv6SubnetList = append(sourceNormalNode.ConnectedIpv6SubnetList, ipv6SubNet.String())                  // 卫星添加ipv6子网
+		targetNormalNode.ConnectedIpv6SubnetList = append(targetNormalNode.ConnectedIpv6SubnetList, ipv6SubNet.String())                  // 卫星添加ipv6子网
+		sourceIpv4Addr, targetIpv4Addr := network.GenerateTwoAddrsFromIpv4Subnet(ipv4SubNet)                                              // 提取ipv4第一个和第二个地址
+		sourceIpv6Addr, targetIpv6Addr := network.GenerateTwoAddrsFromIpv6Subnet(ipv6SubNet)                                              // 提取ipv6第一个和第二个地址
+		sourceIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(sourceNodeType), sourceNormalNode.Id, sourceNormalNode.Ifidx)           // 源接口名
+		targetIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(targetNodeType), targetNormalNode.Id, targetNormalNode.Ifidx)           // 目的接口名
+		t.NetworkInterfaces += 1                                                                                                          // 接口数量 ++
+		sourceIntf := intf.NewNetworkInterface(sourceNormalNode.Ifidx, sourceIfName, sourceIpv4Addr, sourceIpv6Addr, t.NetworkInterfaces) // 创建第一个接口
+		t.NetworkInterfaces += 1                                                                                                          // 接口数量 ++
+		targetIntf := intf.NewNetworkInterface(targetNormalNode.Ifidx, targetIfName, targetIpv4Addr, targetIpv6Addr, t.NetworkInterfaces) // 创建第二个接口
+		sourceNormalNode.IfNameToInterfaceMap[sourceIfName] = sourceIntf                                                                  // 设置源节点地址
+		targetNormalNode.IfNameToInterfaceMap[targetIfName] = targetIntf                                                                  // 设置目的节点地址
+		sourceNormalNode.Interfaces = append(sourceNormalNode.Interfaces, sourceIntf)                                                     // 源接口
+		targetNormalNode.Interfaces = append(targetNormalNode.Interfaces, targetIntf)                                                     // 目的接口
 		abstractLink := link.NewAbstractLink(linkType,
 			linkId,
 			sourceNodeType, targetNodeType,
@@ -496,19 +501,57 @@ func (t *Topology) CalculateAndWriteSegmentRoutes() error {
 // CalculateAndWriteLiRRoutes 进行 LiR 路由的计算
 func (t *Topology) CalculateAndWriteLiRRoutes() error {
 	if _, ok := t.topologyInitSteps[CalculateAndWriteLiRRoutes]; ok {
-		topologyLogger.Infof("already calculate lir routes")
+		topologyLogger.Infof("already calculate path_validation routes")
 		return nil
 	}
 
+	// simulation 文件夹的位置
+	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
+
+	// 所有的节点的 LiR 路由
+	allLiRRoutes := make([]string, 0)
+
+	// 遍历所有节点生成路由文件
 	for _, abstractNode := range t.AllAbstractNodes {
-		err := route.CalculateAndWriteLiRRoutes(abstractNode, &(t.AllLinksMap), TopologyInstance.TopologyGraph)
+		// 获取单个节点的路由条目集合
+		lirRoute, err := route.GenerateLiRRoute(abstractNode, &(t.AllLinksMap), TopologyInstance.TopologyGraph)
 		if err != nil {
-			return fmt.Errorf("calculate lir routes failed: %w", err)
+			return fmt.Errorf("generate path_validation route failed: %w", err)
 		}
+		// 更新总路由条目
+		allLiRRoutes = append(allLiRRoutes, lirRoute)
+	}
+
+	allLirRoutesString := strings.Join(allLiRRoutes, "\n")
+
+	// 准备写入文件
+	for index, abstractNode := range t.AllAbstractNodes {
+		// 提取普通节点
+		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
+		if err != nil {
+			return fmt.Errorf("cannot get normal node from abstract node, %w", err)
+		}
+		// route 文件夹的位置
+		routeDir := filepath.Join(simulationDir, normalNode.ContainerName, "route")
+		// 进行文件夹的生成
+		err = dir.Generate(routeDir)
+		if err != nil {
+			return fmt.Errorf("cannot generate route directory, %w", err)
+		}
+		// 单节点路由文件的路径
+		lirRouteFilePath := filepath.Join(routeDir, "lir.txt")
+		// 所有节点路由文件的路径
+		allLiRRouteFilePath := filepath.Join(routeDir, "all_lir.txt")
+		// 写入文件
+		err = file.WriteStringIntoFile(lirRouteFilePath, allLiRRoutes[index])
+		if err != nil {
+			return fmt.Errorf("error writing path_validation route file, %w", err)
+		}
+		err = file.WriteStringIntoFile(allLiRRouteFilePath, allLirRoutesString)
 	}
 
 	t.topologyInitSteps[CalculateAndWriteLiRRoutes] = struct{}{}
-	topologyLogger.Infof("calculate lir routes")
+	topologyLogger.Infof("calculate path_validation routes")
 	return nil
 }
 

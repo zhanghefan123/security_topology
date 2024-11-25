@@ -66,6 +66,8 @@ type Constellation struct {
 	abstractEtcdService      *node.AbstractNode        // 抽象 etcd 节点
 	positionService          *position.PositionService // position 服务
 	abstractPositionService  *node.AbstractNode        // 抽象位置节点
+
+	NetworkInterfaces int // 网络接口的数量 -> 用来表征链路标识
 }
 
 // NewConstellation 创建一个新的空的星座
@@ -97,6 +99,8 @@ func NewConstellation(client *docker.Client, etcdClient *clientv3.Client, startT
 		systemStartSteps:         make(map[string]struct{}),
 		systemStopSteps:          make(map[string]struct{}),
 		AllSatelliteLinksMap:     make(map[string]map[string]*link.AbstractLink),
+
+		NetworkInterfaces: 0,
 	}
 	constellationLogger.Infof("create new constellation")
 	return constellation

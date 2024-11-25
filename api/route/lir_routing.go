@@ -13,7 +13,7 @@ import (
 	"zhanghefan123/security_topology/modules/utils/dir"
 )
 
-// GenerateLiRRoutingString 为 lir 到某个地点生成路由
+// GenerateLiRRoutingString 为 path_validation 到某个地点生成路由
 func GenerateLiRRoutingString(sourceNode, destinationNode int64, linkIdentifiers, nodeIds []int) string {
 	length := len(linkIdentifiers)
 	finalString := ""
@@ -27,7 +27,7 @@ func GenerateLiRRoutingString(sourceNode, destinationNode int64, linkIdentifiers
 	return fmt.Sprintf("%d,%d,%d,%s", sourceNode, destinationNode, len(linkIdentifiers), finalString)
 }
 
-// GenerateLiRRoutingStrings 为 lir 到所有目的节点生成路由
+// GenerateLiRRoutingStrings 为 path_validation 到所有目的节点生成路由
 func GenerateLiRRoutingStrings(abstractNode *node.AbstractNode, linksMap *map[string]map[string]*link.AbstractLink, graphTmp *simple.DirectedGraph) ([]string, error) {
 	var err error
 	var linkIdentifier int
@@ -80,7 +80,7 @@ func WriteLiRRoutingStringsIntoFile(containerName string, LiRRoutingStringList [
 		return fmt.Errorf("write route error: %w", err)
 	}
 	// 文件的路径
-	filePath := filepath.Join(outputDir, "lir.txt")
+	filePath := filepath.Join(outputDir, "path_validation.txt")
 	// 创建写入文件
 	var lirRouteFile *os.File
 	lirRouteFile, err = os.Create(filePath)
@@ -101,13 +101,24 @@ func WriteLiRRoutingStringsIntoFile(containerName string, LiRRoutingStringList [
 	return nil
 }
 
+// GenerateLiRRoute 生成单个 LiR 节点的路由条目
+func GenerateLiRRoute(abstractNode *node.AbstractNode, linksMap *map[string]map[string]*link.AbstractLink, graphTmp *simple.DirectedGraph) (string, error) {
+	var err error
+	var lirRouteStrings []string
+	lirRouteStrings, err = GenerateLiRRoutingStrings(abstractNode, linksMap, graphTmp)
+	if err != nil {
+		return "", fmt.Errorf("generate path_validation routing strings failed: %w", err)
+	}
+	return strings.Join(lirRouteStrings, "\n"), nil
+}
+
 // CalculateAndWriteLiRRoutes 进行路由的计算以及文件的写入
 func CalculateAndWriteLiRRoutes(abstractNode *node.AbstractNode, linksMap *map[string]map[string]*link.AbstractLink, graphTmp *simple.DirectedGraph) error {
 	var err error
 	var lirRouteStrings []string
 	lirRouteStrings, err = GenerateLiRRoutingStrings(abstractNode, linksMap, graphTmp)
 	if err != nil {
-		return fmt.Errorf("generate lir routing strings failed: %w", err)
+		return fmt.Errorf("generate path_validation routing strings failed: %w", err)
 	}
 	normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
 	if err != nil {
@@ -115,7 +126,7 @@ func CalculateAndWriteLiRRoutes(abstractNode *node.AbstractNode, linksMap *map[s
 	}
 	err = WriteLiRRoutingStringsIntoFile(normalNode.ContainerName, lirRouteStrings)
 	if err != nil {
-		return fmt.Errorf("write lir routing strings failed: %w", err)
+		return fmt.Errorf("write path_validation routing strings failed: %w", err)
 	}
 	return nil
 }

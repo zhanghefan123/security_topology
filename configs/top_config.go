@@ -13,9 +13,9 @@ import (
 	"zhanghefan123/security_topology/configs/consensus"
 	"zhanghefan123/security_topology/configs/constellation"
 	"zhanghefan123/security_topology/configs/images"
-	"zhanghefan123/security_topology/configs/lir"
 	"zhanghefan123/security_topology/configs/network"
 	"zhanghefan123/security_topology/configs/path"
+	"zhanghefan123/security_topology/configs/path_validation"
 	"zhanghefan123/security_topology/configs/resources"
 	"zhanghefan123/security_topology/configs/services"
 	"zhanghefan123/security_topology/modules/logger"
@@ -30,16 +30,16 @@ var (
 )
 
 type TopConfig struct {
-	NetworkConfig       network.NetworkConfig             `mapstructure:"network_config"`
-	ConsensusConfig     consensus.ConsensusConfig         `mapstructure:"consensus_config"`
-	ConstellationConfig constellation.ConstellationConfig `mapstructure:"constellation_config"`
-	ChainMakerConfig    chainmaker.ChainMakerConfig       `mapstructure:"chain_maker_config"`
-	ImagesConfig        images.ImagesConfig               `mapstructure:"images_config"`
-	PathConfig          path.PathConfig                   `mapstructure:"path_config"`
-	ServicesConfig      services.ServicesConfig           `mapstructure:"services_config"`
-	AppsConfig          apps.AppsConfig                   `mapstructure:"apps_config"`
-	ResourcesConfig     resources.ResourcesConfig         `mapstructure:"resources_config"`
-	LiRConfig           lir.LiRConfig                     `mapstructure:"lir_config"`
+	NetworkConfig        network.NetworkConfig                `mapstructure:"network_config"`
+	ConsensusConfig      consensus.ConsensusConfig            `mapstructure:"consensus_config"`
+	ConstellationConfig  constellation.ConstellationConfig    `mapstructure:"constellation_config"`
+	ChainMakerConfig     chainmaker.ChainMakerConfig          `mapstructure:"chain_maker_config"`
+	ImagesConfig         images.ImagesConfig                  `mapstructure:"images_config"`
+	PathConfig           path.PathConfig                      `mapstructure:"path_config"`
+	ServicesConfig       services.ServicesConfig              `mapstructure:"services_config"`
+	AppsConfig           apps.AppsConfig                      `mapstructure:"apps_config"`
+	ResourcesConfig      resources.ResourcesConfig            `mapstructure:"resources_config"`
+	PathValidationConfig path_validation.PathValidationConfig `mapstructure:"path_validation_config"`
 }
 
 var availableOspfVersions = map[string]struct{}{

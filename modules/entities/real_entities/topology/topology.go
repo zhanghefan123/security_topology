@@ -48,6 +48,8 @@ type Topology struct {
 	topologyInitSteps  map[string]struct{} // 拓扑初始化步骤
 	topologyStartSteps map[string]struct{} // 拓扑启动步骤
 	topologyStopSteps  map[string]struct{} // 拓扑停止步骤
+
+	NetworkInterfaces int // 网络接口数量
 }
 
 // NewTopology 创建新的拓扑
@@ -80,6 +82,8 @@ func NewTopology(client *docker.Client, etcdClient *clientv3.Client, params *par
 		topologyInitSteps:  make(map[string]struct{}),
 		topologyStartSteps: make(map[string]struct{}),
 		topologyStopSteps:  make(map[string]struct{}),
+
+		NetworkInterfaces: 0,
 	}
 	topologyLogger.Infof("create new images")
 	return topology

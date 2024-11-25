@@ -15,7 +15,7 @@ import (
 func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode) error {
 	// 1. 检查状态
 	if lirNode.Status != types.NetworkNodeStatus_Logic {
-		return fmt.Errorf("lir node not in logic status cannot create")
+		return fmt.Errorf("path_validation node not in logic status cannot create")
 	}
 
 	// 2. 创建 sysctls
@@ -61,9 +61,11 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode) error {
 	nodeDir := filepath.Join(simulationDir, lirNode.ContainerName)
 	enableFrr := configs.TopConfiguration.NetworkConfig.EnableFrr
 	// 4.2 获取布隆过滤器相关配置
-	effectiveBits := configs.TopConfiguration.LiRConfig.EffectiveBits
-	hashSeed := configs.TopConfiguration.LiRConfig.HashSeed
-	numberOfHashFunctions := configs.TopConfiguration.LiRConfig.NumberOfHashFunctions
+	effectiveBits := configs.TopConfiguration.PathValidationConfig.EffectiveBits
+	hashSeed := configs.TopConfiguration.PathValidationConfig.HashSeed
+	numberOfHashFunctions := configs.TopConfiguration.PathValidationConfig.NumberOfHashFunctions
+	// 4.3 获取路由表类型
+	routingTableType := configs.TopConfiguration.PathValidationConfig.RoutingTableType
 
 	// 5. 创建容器卷映射
 	volumes := []string{
@@ -80,6 +82,7 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode) error {
 		fmt.Sprintf("%s=%d", "EFFECTIVE_BITS", effectiveBits),
 		fmt.Sprintf("%s=%d", "HASH_SEED", hashSeed),
 		fmt.Sprintf("%s=%d", "NUMBER_OF_HASH_FUNCTIONS", numberOfHashFunctions),
+		fmt.Sprintf("%s=%d", "ROUTING_TABLE_TYPE", routingTableType),
 	}
 	// 7. 容器配置
 	containerConfig := &container.Config{
@@ -109,7 +112,7 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode) error {
 		lirNode.ContainerName,
 	)
 	if err != nil {
-		return fmt.Errorf("create lir node failed: %v", err)
+		return fmt.Errorf("create path_validation node failed: %v", err)
 	}
 
 	lirNode.ContainerId = response.ID
