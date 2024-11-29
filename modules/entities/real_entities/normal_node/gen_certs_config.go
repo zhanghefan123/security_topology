@@ -22,7 +22,10 @@ func (normalNode *NormalNode) GeneratePeerIdAndPrivateKey() (err error) {
 	var privateKeyFile *os.File
 	peerIdFile, err = os.Create(peerIdPath)
 	defer func() {
-		err = peerIdFile.Close()
+		closeFileErr := peerIdFile.Close()
+		if err == nil {
+			err = closeFileErr
+		}
 	}()
 	if err != nil {
 		return fmt.Errorf("generate peer id file err: %w", err)
@@ -30,7 +33,10 @@ func (normalNode *NormalNode) GeneratePeerIdAndPrivateKey() (err error) {
 
 	privateKeyFile, err = os.Create(privateKeyPath)
 	defer func() {
-		err = privateKeyFile.Close()
+		fileCloseErr := privateKeyFile.Close()
+		if err == nil {
+			err = fileCloseErr
+		}
 	}()
 	if err != nil {
 		return fmt.Errorf("generate private key file err: %w", err)

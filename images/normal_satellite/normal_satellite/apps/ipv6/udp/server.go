@@ -27,9 +27,13 @@ func StartServer() (err error) {
 		return fmt.Errorf("failed to start UDP client: %w", err)
 	}
 	defer func(udpConn *net.UDPConn) {
-		if udpConn.Close() != nil {
-			err = fmt.Errorf("failed to close UDP connection: %w", err)
+
+		closeErr := udpConn.Close()
+
+		if err == nil {
+			err = closeErr
 		}
+
 	}(udpConn)
 
 	fmt.Println("Listening on UDP port " + listenPort)

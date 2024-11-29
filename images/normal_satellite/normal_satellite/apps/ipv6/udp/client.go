@@ -48,8 +48,9 @@ func StartClient() (err error) {
 	}
 	// 在结束时删除连接
 	defer func(udpConn *net.UDPConn) {
-		if udpConn.Close() != nil {
-			err = fmt.Errorf("can't close udp client: %w", err)
+		udpCloseErr := udpConn.Close()
+		if err == nil {
+			err = udpCloseErr
 		}
 	}(udpConn)
 

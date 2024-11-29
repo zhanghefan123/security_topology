@@ -48,7 +48,10 @@ func (normalNode *NormalNode) SetVethNamespace() (err error) {
 		return fmt.Errorf("netns.Get() failed: %w", err)
 	}
 	defer func(ns netns.NsHandle) {
-		err = netns.Set(ns)
+		nsSetErr := netns.Set(ns)
+		if err == nil {
+			err = nsSetErr
+		}
 	}(hostNetNs)
 
 	// 2. 获取 pid
@@ -57,7 +60,10 @@ func (normalNode *NormalNode) SetVethNamespace() (err error) {
 	// 3. 获取容器的 netns
 	netNs, err := netns.GetFromPid(pid)
 	defer func(netNs *netns.NsHandle) {
-		err = netNs.Close()
+		nsCloseErr := netNs.Close()
+		if err == nil {
+			err = nsCloseErr
+		}
 	}(&netNs)
 	if err != nil {
 		return fmt.Errorf("netns.Get() failed: %w", err)

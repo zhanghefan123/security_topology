@@ -24,8 +24,9 @@ func StartClient() (err error) {
 		return fmt.Errorf("error connecting to server %s: %w", serverAddr, err)
 	}
 	defer func(connection net.Conn) {
-		if connection.Close() != nil {
-			err = fmt.Errorf("error closing connection to server %s: %w", serverAddr, err)
+		connCloseErr := connection.Close()
+		if err == nil {
+			err = connCloseErr
 		}
 	}(connection)
 

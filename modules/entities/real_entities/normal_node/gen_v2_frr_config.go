@@ -71,9 +71,9 @@ func (normalNode *NormalNode) GenerateOspfV2FrrConfig() error {
 	// /simulation/containerName/route/frr.conf
 	f, err = os.Create(fmt.Sprintf("%s/frr.conf", outputDir))
 	defer func(f *os.File) {
-		err = f.Close()
-		if err != nil {
-			err = fmt.Errorf("fail to close file %w", err)
+		fileCloseErr := f.Close()
+		if err == nil {
+			err = fileCloseErr
 		}
 	}(f)
 	if err != nil {

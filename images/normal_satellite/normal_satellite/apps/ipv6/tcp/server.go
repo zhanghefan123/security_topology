@@ -21,8 +21,9 @@ func StartServer() (err error) {
 		return fmt.Errorf("Error listening on %s: %w\n", listenAddr, err)
 	}
 	defer func(listener net.Listener) {
-		if listener.Close() != nil {
-			err = fmt.Errorf("Error closing listener: %w\n", err)
+		listenerCloseErr := listener.Close()
+		if err == nil {
+			err = listenerCloseErr
 		}
 	}(listener)
 	fmt.Println("Listening on ", listenAddr)
@@ -47,6 +48,11 @@ func StartServer() (err error) {
 func HandleConnection(connection net.Conn) (err error) {
 	// 在最后进行连接的关闭
 	defer func(connection net.Conn) {
+		connCloseErr := connection.Close()
+		if err == nil {
+			err = connCloseErr
+		}
+
 		if connection.Close() != nil {
 			err = fmt.Errorf("Error closing connection: %w\n", err)
 		}

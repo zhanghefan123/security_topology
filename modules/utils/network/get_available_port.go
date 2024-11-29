@@ -1,7 +1,6 @@
 package network
 
 import (
-	"fmt"
 	"net"
 )
 
@@ -13,8 +12,8 @@ func GetAvailablePort() (int, error) {
 	}
 	defer func(listener net.Listener) {
 		closeError := listener.Close()
-		if closeError != nil {
-			err = fmt.Errorf("error closing listener: %w", err)
+		if err == nil {
+			err = closeError
 		}
 	}(listener) // 记得关闭监听器
 

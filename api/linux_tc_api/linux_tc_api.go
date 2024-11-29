@@ -49,15 +49,18 @@ func SetInterfacesDelay(containerPid int, interfaces []string, delays []float64)
 
 	// 2. 最后记住进行 ns 的释放
 	defer func(ns netns.NsHandle) {
-		err = netns.Set(ns)
+		nsSetErr := netns.Set(ns)
+		if err == nil {
+			err = nsSetErr
+		}
 	}(hostNetNs)
 
 	// 3. 获取容器的 ns
 	netNs, err := netns.GetFromPid(containerPid)
 	defer func(netNs *netns.NsHandle) {
-		err = netNs.Close()
-		if err != nil {
-			err = fmt.Errorf("netns.Get() failed: %w", err)
+		closeErr := netNs.Close()
+		if err == nil {
+			err = closeErr
 		}
 	}(&netNs)
 
@@ -101,7 +104,10 @@ func SetInterfaceBandwidth(containerInterface *intf.NetworkInterface, containerP
 
 	// 2. 最后记住进行 ns 的释放
 	defer func(ns netns.NsHandle) {
-		err = netns.Set(ns)
+		nsSetErr := netns.Set(ns)
+		if err == nil {
+			err = nsSetErr
+		}
 	}(hostNetNs)
 
 	// 3. 获取容器的 ns
