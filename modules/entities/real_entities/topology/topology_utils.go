@@ -44,6 +44,19 @@ func (t *Topology) GetContainerNameToAddressMapping() (map[string]string, error)
 	return addressMapping, nil
 }
 
+// GetContainerNameToGraphIdMapping 获取从所有节点的容器名称到图节点id的一个映射
+func (t *Topology) GetContainerNameToGraphIdMapping() (map[string]int, error) {
+	idMapping := make(map[string]int)
+	for _, abstractNode := range t.AllAbstractNodes {
+		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
+		if err != nil {
+			return nil, fmt.Errorf("GetContainerNameToGraphIdMapping abstract node error: %w", err)
+		}
+		idMapping[normalNode.ContainerName] = int(abstractNode.Node.ID())
+	}
+	return idMapping, nil
+}
+
 // GetContainerNameToPortMapping 获取所有共识节点从容器名到
 func (t *Topology) GetContainerNameToPortMapping() (map[string]*ChainmakerPorts, error) {
 	portMapping := make(map[string]*ChainmakerPorts)

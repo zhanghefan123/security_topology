@@ -3,7 +3,6 @@ package configs
 import (
 	"fmt"
 	"github.com/spf13/viper"
-	"gonum.org/v1/gonum/graph/simple"
 	"reflect"
 	"strconv"
 	"strings"
@@ -25,7 +24,6 @@ import (
 var (
 	ConfigurationFilePath = "../resources/configuration.yml"
 	TopConfiguration      = &TopConfig{}
-	ConstellationGraph    = simple.NewDirectedGraph()
 	moduleConfigLogger    = logger.GetLogger(logger.ModuleConfig)
 )
 

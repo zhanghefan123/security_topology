@@ -398,9 +398,15 @@ func (t *Topology) GenerateAddressMapping() error {
 		return fmt.Errorf("generate address mapping files failed, %w", err)
 	}
 
+	idMapping, err := t.GetContainerNameToGraphIdMapping()
+	if err != nil {
+		return fmt.Errorf("generate id mapping files failed, %w", err)
+	}
+
 	finalString := ""
-	for key, value := range addressMapping {
-		finalString += fmt.Sprintf("%s->%s\n", key, value)
+	for containerName, ip := range addressMapping {
+		graphId := idMapping[containerName]
+		finalString += fmt.Sprintf("%s->%d->%s\n", containerName, graphId, ip)
 	}
 
 	// 进行所有节点的遍历

@@ -73,7 +73,7 @@ func CreateContainer(client *docker.Client, node *node.AbstractNode) error {
 		}
 	case types.NetworkNodeType_LirNode:
 		lirNode, _ := node.ActualNode.(*nodes.LiRNode)
-		err = create_apis.CreateLirNode(client, lirNode)
+		err = create_apis.CreateLirNode(client, lirNode, int(node.Node.ID()))
 		if err != nil {
 			return fmt.Errorf("CreateLirNode err: %w", err)
 		}

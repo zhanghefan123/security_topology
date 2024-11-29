@@ -12,7 +12,8 @@ import (
 	"zhanghefan123/security_topology/modules/entities/types"
 )
 
-func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode) error {
+// CreateLirNode 创建 LiRNode
+func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode, graphNodeId int) error {
 	// 1. 检查状态
 	if lirNode.Status != types.NetworkNodeStatus_Logic {
 		return fmt.Errorf("path_validation node not in logic status cannot create")
@@ -66,6 +67,8 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode) error {
 	numberOfHashFunctions := configs.TopConfiguration.PathValidationConfig.NumberOfHashFunctions
 	// 4.3 获取路由表类型
 	routingTableType := configs.TopConfiguration.PathValidationConfig.RoutingTableType
+	// 4.4 获取路由类型
+	routingType := configs.TopConfiguration.PathValidationConfig.RoutingType
 
 	// 5. 创建容器卷映射
 	volumes := []string{
@@ -75,6 +78,7 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode) error {
 	// 6. 配置环境变量
 	envs := []string{
 		fmt.Sprintf("%s=%d", "NODE_ID", lirNode.Id),
+		fmt.Sprintf("%s=%d", "GRAPH_NODE_ID", graphNodeId),
 		fmt.Sprintf("%s=%d", "LISTEN_PORT", httpPortInteger),
 		fmt.Sprintf("%s=%s", "CONTAINER_NAME", lirNode.ContainerName),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
@@ -83,6 +87,7 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode) error {
 		fmt.Sprintf("%s=%d", "HASH_SEED", hashSeed),
 		fmt.Sprintf("%s=%d", "NUMBER_OF_HASH_FUNCTIONS", numberOfHashFunctions),
 		fmt.Sprintf("%s=%d", "ROUTING_TABLE_TYPE", routingTableType),
+		fmt.Sprintf("%s=%d", "ROUTING_TYPE", routingType),
 	}
 	// 7. 容器配置
 	containerConfig := &container.Config{
