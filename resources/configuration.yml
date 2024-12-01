@@ -2,9 +2,9 @@ network_config:
   base_v4_network_address: 192.168.0.0/16
   base_v6_network_address: 2001:db8:1234:5678::/112
   http_listen_port: 8080
-  enable_frr: false
+  enable_frr: true
   ospf_version: ospfv2
-  enable_srv6: true
+  enable_srv6: false
 
 consensus_config:
   consensus_protocol: pbft
@@ -38,9 +38,9 @@ chain_maker_config:
   speed_check: false
   blocks_per_proposer: 1
   ddos_warning_rate: 7 # Mbps
-  chainmaker_go_project_path: /home/zhf/Projects/chainmaker_go # srv6/chainmaker/
+  chainmaker_go_project_path: /home/zhf/Projects/srv6/chainmaker/chainmaker_go # srv6/chainmaker/
   chainmaker_build: ./build
-  crypto_gen_path: /home/zhf/Projects/chainmaker_go/tools/chainmaker-cryptogen # srv6/chainmaker/
+  crypto_gen_path: /home/zhf/Projects/srv6/chainmaker/chainmaker_go/tools/chainmaker-cryptogen # srv6/chainmaker/
   templates_file_path: ../resources/templates
 
 
@@ -92,7 +92,6 @@ resources_config:
   memory_limit: 1
 
 path_validation_config:
-  routing_type: 1  # 1 -> shortest path first multicast | 2 -> primary based multicast
   routing_table_type: 2 # 1 -> array based routing table | 2 -> hash based routing table
   effective_bits: 32 # 有效的位数
   hash_seed: 12 # hash 种子

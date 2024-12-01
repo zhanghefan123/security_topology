@@ -67,8 +67,6 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode, graphNodeId in
 	numberOfHashFunctions := configs.TopConfiguration.PathValidationConfig.NumberOfHashFunctions
 	// 4.3 获取路由表类型
 	routingTableType := configs.TopConfiguration.PathValidationConfig.RoutingTableType
-	// 4.4 获取路由类型
-	routingType := configs.TopConfiguration.PathValidationConfig.RoutingType
 
 	// 5. 创建容器卷映射
 	volumes := []string{
@@ -87,7 +85,6 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode, graphNodeId in
 		fmt.Sprintf("%s=%d", "HASH_SEED", hashSeed),
 		fmt.Sprintf("%s=%d", "NUMBER_OF_HASH_FUNCTIONS", numberOfHashFunctions),
 		fmt.Sprintf("%s=%d", "ROUTING_TABLE_TYPE", routingTableType),
-		fmt.Sprintf("%s=%d", "ROUTING_TYPE", routingType),
 	}
 	// 7. 容器配置
 	containerConfig := &container.Config{

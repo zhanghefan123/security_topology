@@ -52,7 +52,7 @@ func (t *Topology) GetContainerNameToGraphIdMapping() (map[string]int, error) {
 		if err != nil {
 			return nil, fmt.Errorf("GetContainerNameToGraphIdMapping abstract node error: %w", err)
 		}
-		idMapping[normalNode.ContainerName] = int(abstractNode.Node.ID())
+		idMapping[normalNode.ContainerName] = int(abstractNode.Node.ID() + 1)
 	}
 	return idMapping, nil
 }
