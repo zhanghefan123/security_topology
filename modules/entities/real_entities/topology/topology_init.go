@@ -158,6 +158,14 @@ func (t *Topology) GenerateNodes() error {
 			t.LirAbstractNodes = append(t.LirAbstractNodes, abstractLirNode)
 			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractLirNode)
 			t.AbstractNodesMap[lirNodeTmp.ContainerName] = abstractLirNode
+		case types.NetworkNodeType_Entrance:
+			entranceTmp := nodes.NewEntrance(nodeParam.Index, nodeParam.X, nodeParam.Y)
+			t.Entrances = append(t.Entrances, entranceTmp)
+			// 注意只能通过实际节点创建抽象节点一次
+			abstractEntrance := node.NewAbstractNode(types.NetworkNodeType_Entrance, entranceTmp, TopologyInstance.TopologyGraph)
+			t.EntranceAbstractNodes = append(t.EntranceAbstractNodes, abstractEntrance)
+			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractEntrance)
+			t.AbstractNodesMap[entranceTmp.ContainerName] = abstractEntrance
 		}
 	}
 
@@ -301,6 +309,8 @@ func (t *Topology) getSourceNodeAndTargetNode(sourceNodeParam, targetNodeParam p
 		sourceNode = t.MaliciousAbstractNodes[sourceNodeParam.Index-1]
 	case types.NetworkNodeType_LirNode:
 		sourceNode = t.LirAbstractNodes[sourceNodeParam.Index-1]
+	case types.NetworkNodeType_Entrance:
+		sourceNode = t.EntranceAbstractNodes[sourceNodeParam.Index-1]
 	default:
 		return nil, nil, fmt.Errorf("unsupported source node type: %s", *sourceNodeType)
 	}
@@ -319,6 +329,8 @@ func (t *Topology) getSourceNodeAndTargetNode(sourceNodeParam, targetNodeParam p
 		targetNode = t.MaliciousAbstractNodes[targetNodeParam.Index-1]
 	case types.NetworkNodeType_LirNode:
 		targetNode = t.LirAbstractNodes[targetNodeParam.Index-1]
+	case types.NetworkNodeType_Entrance:
+		targetNode = t.EntranceAbstractNodes[targetNodeParam.Index-1]
 	default:
 		return nil, nil, fmt.Errorf("unsupported target node type: %s", *sourceNodeType)
 	}

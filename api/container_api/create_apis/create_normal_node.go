@@ -18,7 +18,8 @@ func CreateNormalNode(client *docker.Client, normalNode *normal_node.NormalNode)
 	}
 
 	// 2. 创建 sysctls
-	sysctls := map[string]string{
+	var sysctls map[string]string
+	sysctls = map[string]string{
 		// ipv4 的相关网络配置
 		"net.ipv4.ip_forward":          "1",
 		"net.ipv4.conf.all.forwarding": "1",
@@ -63,7 +64,8 @@ func CreateNormalNode(client *docker.Client, normalNode *normal_node.NormalNode)
 	}
 
 	// 7. hostConfig
-	hostConfig := &container.HostConfig{
+	var hostConfig *container.HostConfig
+	hostConfig = &container.HostConfig{
 		// 容器数据卷映射
 		Binds:      volumes,
 		CapAdd:     []string{"NET_ADMIN"},

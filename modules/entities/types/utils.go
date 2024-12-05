@@ -24,6 +24,8 @@ func GetPrefix(typ NetworkNodeType) string {
 		return "mn"
 	} else if typ == NetworkNodeType_LirNode {
 		return "ln"
+	} else if typ == NetworkNodeType_Entrance {
+		return "en"
 	}
 	return ""
 }

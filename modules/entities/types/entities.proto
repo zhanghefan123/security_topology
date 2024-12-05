@@ -20,6 +20,7 @@ enum NetworkNodeType {
   ChainMakerNode = 7;
   MaliciousNode = 8;
   LirNode = 9;
+  Entrance = 10;
 }
 
 enum NetworkLinkType {

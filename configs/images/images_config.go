@@ -11,4 +11,5 @@ type ImagesConfig struct {
 	ChainMakerNodeImageName     string `mapstructure:"chain_maker_node_image_name"`
 	MaliciousNodeImageName      string `mapstructure:"malicious_node_image_name"`
 	LirNodeImageName            string `mapstructure:"lir_node_image_name"`
+	EntranceImageName           string `mapstructure:"entrance_image_name"`
 }

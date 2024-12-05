@@ -32,6 +32,7 @@ type Topology struct {
 	ChainmakerNodes []*nodes.ChainmakerNode
 	MaliciousNodes  []*nodes.MaliciousNode
 	LirNodes        []*nodes.LiRNode
+	Entrances       []*nodes.Entrance
 
 	RouterAbstractNodes     []*node.AbstractNode
 	NormalAbstractNodes     []*node.AbstractNode
@@ -39,6 +40,7 @@ type Topology struct {
 	ChainMakerAbstractNodes []*node.AbstractNode
 	MaliciousAbstractNodes  []*node.AbstractNode
 	LirAbstractNodes        []*node.AbstractNode
+	EntranceAbstractNodes   []*node.AbstractNode
 	AllAbstractNodes        []*node.AbstractNode
 	AbstractNodesMap        map[string]*node.AbstractNode
 
@@ -66,6 +68,7 @@ func NewTopology(client *docker.Client, etcdClient *clientv3.Client, params *par
 		ChainmakerNodes: make([]*nodes.ChainmakerNode, 0),
 		MaliciousNodes:  make([]*nodes.MaliciousNode, 0),
 		LirNodes:        make([]*nodes.LiRNode, 0),
+		Entrances:       make([]*nodes.Entrance, 0),
 
 		RouterAbstractNodes:     make([]*node.AbstractNode, 0),
 		NormalAbstractNodes:     make([]*node.AbstractNode, 0),
@@ -73,6 +76,7 @@ func NewTopology(client *docker.Client, etcdClient *clientv3.Client, params *par
 		ChainMakerAbstractNodes: make([]*node.AbstractNode, 0),
 		MaliciousAbstractNodes:  make([]*node.AbstractNode, 0),
 		LirAbstractNodes:        make([]*node.AbstractNode, 0),
+		EntranceAbstractNodes:   make([]*node.AbstractNode, 0),
 
 		AllAbstractNodes: make([]*node.AbstractNode, 0),
 		AbstractNodesMap: make(map[string]*node.AbstractNode),

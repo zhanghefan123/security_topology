@@ -80,6 +80,11 @@ func (abstractNode *AbstractNode) GetNormalNodeFromAbstractNode() (*normal_node.
 		if lirNode, ok := abstractNode.ActualNode.(*nodes.LiRNode); ok {
 			return lirNode.NormalNode, nil
 		}
+	case types.NetworkNodeType_Entrance:
+		if entrance, ok := abstractNode.ActualNode.(*nodes.Entrance); ok {
+			return entrance.NormalNode, nil
+		}
 	}
+
 	return nil, fmt.Errorf("cannot get normal node from abstract node")
 }
