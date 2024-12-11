@@ -91,3 +91,8 @@
 - [6] 在 modules/entities/real_entities/nodes 下添加自己的节点类型
 - [7] 在 topology_init.go 之中的 GenerateNodes 和 getSourceNodeAndTargetNode 函数之中添加新类型的相应处理逻辑
 - [8] 在 modules/entities/types/utils.go 之中添加自己的节点的前缀
+
+# 8. 当部署的位置发生变化的时候需要修改的文件
+
+- [1] 需要修改 cmd/build.sh 之中的 go 语言的绝对路径
+- [2] 需要修改 resources/configuration.yml 之中的 chainmaker_go_project_path 和 chainmaker_gen_path

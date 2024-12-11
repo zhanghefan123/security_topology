@@ -62,7 +62,8 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode, graphNodeId in
 	nodeDir := filepath.Join(simulationDir, lirNode.ContainerName)
 	enableFrr := configs.TopConfiguration.NetworkConfig.EnableFrr
 	// 4.2 获取布隆过滤器相关配置
-	effectiveBits := configs.TopConfiguration.PathValidationConfig.EffectiveBits
+	bfEffectiveBits := configs.TopConfiguration.PathValidationConfig.BfEffectiveBits
+	pvfEffectiveBits := configs.TopConfiguration.PathValidationConfig.PVFEffectiveBits
 	hashSeed := configs.TopConfiguration.PathValidationConfig.HashSeed
 	numberOfHashFunctions := configs.TopConfiguration.PathValidationConfig.NumberOfHashFunctions
 	// 4.3 获取路由表类型
@@ -81,7 +82,8 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode, graphNodeId in
 		fmt.Sprintf("%s=%s", "CONTAINER_NAME", lirNode.ContainerName),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
 		fmt.Sprintf("%s=%s", "INTERFACE_NAME", fmt.Sprintf("%s%d_idx%d", types.GetPrefix(lirNode.Type), lirNode.Id, 1)),
-		fmt.Sprintf("%s=%d", "EFFECTIVE_BITS", effectiveBits),
+		fmt.Sprintf("%s=%d", "BF_EFFECTIVE_BITS", bfEffectiveBits),
+		fmt.Sprintf("%s=%d", "PVF_EFFECTIVE_BITS", pvfEffectiveBits),
 		fmt.Sprintf("%s=%d", "HASH_SEED", hashSeed),
 		fmt.Sprintf("%s=%d", "NUMBER_OF_HASH_FUNCTIONS", numberOfHashFunctions),
 		fmt.Sprintf("%s=%d", "ROUTING_TABLE_TYPE", routingTableType),
