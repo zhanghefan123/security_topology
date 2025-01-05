@@ -75,7 +75,7 @@ func CreateChainMakerNode(client *docker.Client, chainMakerNode *nodes.Chainmake
 		fmt.Sprintf("%s=%d", "HTTP_PORT", chainMakerConfig.HttpStartPort+chainMakerNode.Id-1),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
 		fmt.Sprintf("%s=%s", "INTERFACE_NAME", fmt.Sprintf("%s%d_idx%d", types.GetPrefix(chainMakerNode.Type), chainMakerNode.Id, 1)),
-		fmt.Sprintf("%s=%s", "LISTEN_ADDR", chainMakerNode.Interfaces[0].Ipv4Addr),
+		fmt.Sprintf("%s=%s", "LISTEN_ADDR", chainMakerNode.Interfaces[0].SourceIpv4Addr),
 		fmt.Sprintf("%s=%t", "SPEED_CHECK", chainMakerConfig.SpeedCheck),
 		fmt.Sprintf("%s=%t", "ENABLE_BROADCAST_DEFENCE", chainMakerConfig.EnableBroadcastDefence),
 		fmt.Sprintf("%s=%f", "DDOS_WARNING_RATE", chainMakerConfig.DdosWarningRate),

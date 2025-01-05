@@ -7,7 +7,7 @@ import (
 	"zhanghefan123/security_topology/configs"
 )
 
-// GenerateIfnameToLidMapping 进行接口名称到Lid映射文件的生成
+// GenerateIfnameToLidMapping 进行映射的生成 <接口名称, LiD, 对侧接口的 ip 地址>
 func (normalNode *NormalNode) GenerateIfnameToLidMapping() (err error) {
 	// 最后的写入的内容
 	finalString := ""
@@ -22,7 +22,7 @@ func (normalNode *NormalNode) GenerateIfnameToLidMapping() (err error) {
 	}
 	filePath := filepath.Join(outputDir, "interface.txt")
 	for interfaceName, networkIntf := range normalNode.IfNameToInterfaceMap {
-		finalString += fmt.Sprintf("%s->%d\n", interfaceName, networkIntf.LinkIdentifier)
+		finalString += fmt.Sprintf("%s->%d->%s\n", interfaceName, networkIntf.LinkIdentifier, networkIntf.TargetIpv4Addr)
 	}
 	file, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {

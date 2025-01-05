@@ -61,7 +61,7 @@ func GenerateSegmentRoutingStrings(abstractNode *node.AbstractNode, linksMap *ma
 				// 找到相应的链路 -> 带有方向的
 				isl := (*linksMap)[sourceNormal.ContainerName][targetNormal.ContainerName]
 				if isl != nil { // 如果不为空，说明方向是对的
-					ip, _, _ := net.ParseCIDR(isl.TargetInterface.Ipv6Addr)
+					ip, _, _ := net.ParseCIDR(isl.TargetInterface.SourceIpv6Addr)
 					ipSegmentList = append(ipSegmentList, ip.String())
 
 					if index == 0 {
@@ -70,12 +70,12 @@ func GenerateSegmentRoutingStrings(abstractNode *node.AbstractNode, linksMap *ma
 
 					// 最后一个链路
 					if index == len(hopList)-2 {
-						ip, _, _ = net.ParseCIDR(isl.TargetInterface.Ipv6Addr)
+						ip, _, _ = net.ParseCIDR(isl.TargetInterface.SourceIpv6Addr)
 						destination = ip.String()
 					}
 				} else { // 如果为空，说明方向是反的
 					isl = (*linksMap)[targetNormal.ContainerName][sourceNormal.ContainerName]
-					ip, _, _ := net.ParseCIDR(isl.SourceInterface.Ipv6Addr)
+					ip, _, _ := net.ParseCIDR(isl.SourceInterface.SourceIpv6Addr)
 					ipSegmentList = append(ipSegmentList, ip.String())
 
 					if index == 0 {
@@ -84,7 +84,7 @@ func GenerateSegmentRoutingStrings(abstractNode *node.AbstractNode, linksMap *ma
 
 					// 最后一个链路
 					if index == len(hopList)-2 {
-						ip, _, _ = net.ParseCIDR(isl.SourceInterface.Ipv6Addr)
+						ip, _, _ = net.ParseCIDR(isl.SourceInterface.SourceIpv6Addr)
 						destination = ip.String()
 					}
 				}

@@ -15,7 +15,7 @@ type ChainmakerPorts struct {
 func (t *Topology) GetChainMakerNodeListenAddresses() []string {
 	listeningAddresses := make([]string, 0)
 	for _, node := range t.ChainmakerNodes {
-		ip, _, _ := net.ParseCIDR(node.Interfaces[0].Ipv4Addr)
+		ip, _, _ := net.ParseCIDR(node.Interfaces[0].SourceIpv4Addr)
 		listeningAddresses = append(listeningAddresses, ip.String())
 	}
 	return listeningAddresses
@@ -38,7 +38,7 @@ func (t *Topology) GetContainerNameToAddressMapping() (map[string]string, error)
 		if err != nil {
 			return nil, fmt.Errorf("GetContainerNameToAddressMapping abstract node error: %w", err)
 		}
-		ip, _, _ := net.ParseCIDR(normalNode.Interfaces[0].Ipv4Addr)
+		ip, _, _ := net.ParseCIDR(normalNode.Interfaces[0].SourceIpv4Addr)
 		addressMapping[normalNode.ContainerName] = ip.String()
 	}
 	return addressMapping, nil

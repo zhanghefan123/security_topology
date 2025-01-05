@@ -104,14 +104,14 @@ func (normalNode *NormalNode) SetVethNamespace() (err error) {
 
 		// 设置 ipv4 地址
 		ifName := veth.Attrs().Name
-		ipv4Addr := normalNode.IfNameToInterfaceMap[ifName].Ipv4Addr
+		ipv4Addr := normalNode.IfNameToInterfaceMap[ifName].SourceIpv4Addr
 		ipv4, _ := netlink.ParseAddr(ipv4Addr)
 		if err = netlink.AddrAdd(veth, ipv4); err != nil {
 			return fmt.Errorf("netlink.AddrAdd(%s) failed: %w", ipv4, err)
 		}
 
 		// 设置 ipv6 地址
-		ipv6Addr := normalNode.IfNameToInterfaceMap[ifName].Ipv6Addr
+		ipv6Addr := normalNode.IfNameToInterfaceMap[ifName].SourceIpv6Addr
 		ipv6, _ := netlink.ParseAddr(ipv6Addr)
 		if err = netlink.AddrAdd(veth, ipv6); err != nil {
 			fmt.Printf("netlink.AddrAdd(%s) failed: %v", ipv6, err)

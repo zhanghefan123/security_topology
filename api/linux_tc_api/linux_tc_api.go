@@ -138,7 +138,9 @@ func SetInterfaceBandwidth(containerInterface *intf.NetworkInterface, containerP
 	// 7. 进行延迟的设置
 	netemInfo := netlink.NewNetem(
 		NetQdiscTemplate.QdiscAttrs,
-		netlink.NetemQdiscAttrs{}, // 这里没有设置延迟
+		netlink.NetemQdiscAttrs{
+			Latency: 0,
+		}, // 这里没有设置延迟
 	)
 	netemInfo.LinkIndex = vethInterface.Attrs().Index
 	err = netlink.QdiscReplace(netemInfo)

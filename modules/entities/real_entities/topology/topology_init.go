@@ -242,24 +242,24 @@ func (t *Topology) GenerateLinks() error {
 			linkType = types.NetworkLinkType_BackboneLink
 			bandWidth = linux_tc_api.LargeBandwidth // 没有限制
 		}
-		ipv4SubNet := t.Ipv4SubNets[currentLinkNums]                                                                                      // 获取当前ipv4 子网
-		ipv6SubNet := t.Ipv6SubNets[currentLinkNums]                                                                                      // 获取当前 ipv6 子网
-		sourceNormalNode.ConnectedIpv4SubnetList = append(sourceNormalNode.ConnectedIpv4SubnetList, ipv4SubNet.String())                  // 卫星添加ipv4子网
-		targetNormalNode.ConnectedIpv4SubnetList = append(targetNormalNode.ConnectedIpv4SubnetList, ipv4SubNet.String())                  // 卫星添加ipv4子网
-		sourceNormalNode.ConnectedIpv6SubnetList = append(sourceNormalNode.ConnectedIpv6SubnetList, ipv6SubNet.String())                  // 卫星添加ipv6子网
-		targetNormalNode.ConnectedIpv6SubnetList = append(targetNormalNode.ConnectedIpv6SubnetList, ipv6SubNet.String())                  // 卫星添加ipv6子网
-		sourceIpv4Addr, targetIpv4Addr := network.GenerateTwoAddrsFromIpv4Subnet(ipv4SubNet)                                              // 提取ipv4第一个和第二个地址
-		sourceIpv6Addr, targetIpv6Addr := network.GenerateTwoAddrsFromIpv6Subnet(ipv6SubNet)                                              // 提取ipv6第一个和第二个地址
-		sourceIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(sourceNodeType), sourceNormalNode.Id, sourceNormalNode.Ifidx)           // 源接口名
-		targetIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(targetNodeType), targetNormalNode.Id, targetNormalNode.Ifidx)           // 目的接口名
-		t.NetworkInterfaces += 1                                                                                                          // 接口数量 ++
-		sourceIntf := intf.NewNetworkInterface(sourceNormalNode.Ifidx, sourceIfName, sourceIpv4Addr, sourceIpv6Addr, t.NetworkInterfaces) // 创建第一个接口
-		t.NetworkInterfaces += 1                                                                                                          // 接口数量 ++
-		targetIntf := intf.NewNetworkInterface(targetNormalNode.Ifidx, targetIfName, targetIpv4Addr, targetIpv6Addr, t.NetworkInterfaces) // 创建第二个接口
-		sourceNormalNode.IfNameToInterfaceMap[sourceIfName] = sourceIntf                                                                  // 设置源节点地址
-		targetNormalNode.IfNameToInterfaceMap[targetIfName] = targetIntf                                                                  // 设置目的节点地址
-		sourceNormalNode.Interfaces = append(sourceNormalNode.Interfaces, sourceIntf)                                                     // 源接口
-		targetNormalNode.Interfaces = append(targetNormalNode.Interfaces, targetIntf)                                                     // 目的接口
+		ipv4SubNet := t.Ipv4SubNets[currentLinkNums]                                                                                                                      // 获取当前ipv4 子网
+		ipv6SubNet := t.Ipv6SubNets[currentLinkNums]                                                                                                                      // 获取当前 ipv6 子网
+		sourceNormalNode.ConnectedIpv4SubnetList = append(sourceNormalNode.ConnectedIpv4SubnetList, ipv4SubNet.String())                                                  // 卫星添加ipv4子网
+		targetNormalNode.ConnectedIpv4SubnetList = append(targetNormalNode.ConnectedIpv4SubnetList, ipv4SubNet.String())                                                  // 卫星添加ipv4子网
+		sourceNormalNode.ConnectedIpv6SubnetList = append(sourceNormalNode.ConnectedIpv6SubnetList, ipv6SubNet.String())                                                  // 卫星添加ipv6子网
+		targetNormalNode.ConnectedIpv6SubnetList = append(targetNormalNode.ConnectedIpv6SubnetList, ipv6SubNet.String())                                                  // 卫星添加ipv6子网
+		sourceIpv4Addr, targetIpv4Addr := network.GenerateTwoAddrsFromIpv4Subnet(ipv4SubNet)                                                                              // 提取ipv4第一个和第二个地址
+		sourceIpv6Addr, targetIpv6Addr := network.GenerateTwoAddrsFromIpv6Subnet(ipv6SubNet)                                                                              // 提取ipv6第一个和第二个地址
+		sourceIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(sourceNodeType), sourceNormalNode.Id, sourceNormalNode.Ifidx)                                           // 源接口名
+		targetIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(targetNodeType), targetNormalNode.Id, targetNormalNode.Ifidx)                                           // 目的接口名
+		t.NetworkInterfaces += 1                                                                                                                                          // 接口数量 ++
+		sourceIntf := intf.NewNetworkInterface(sourceNormalNode.Ifidx, sourceIfName, sourceIpv4Addr, sourceIpv6Addr, targetIpv4Addr, targetIpv6Addr, t.NetworkInterfaces) // 创建第一个接口
+		t.NetworkInterfaces += 1                                                                                                                                          // 接口数量 ++
+		targetIntf := intf.NewNetworkInterface(targetNormalNode.Ifidx, targetIfName, targetIpv4Addr, targetIpv6Addr, sourceIpv4Addr, sourceIpv6Addr, t.NetworkInterfaces) // 创建第二个接口
+		sourceNormalNode.IfNameToInterfaceMap[sourceIfName] = sourceIntf                                                                                                  // 设置源节点地址
+		targetNormalNode.IfNameToInterfaceMap[targetIfName] = targetIntf                                                                                                  // 设置目的节点地址
+		sourceNormalNode.Interfaces = append(sourceNormalNode.Interfaces, sourceIntf)                                                                                     // 源接口
+		targetNormalNode.Interfaces = append(targetNormalNode.Interfaces, targetIntf)                                                                                     // 目的接口
 		abstractLink := link.NewAbstractLink(linkType,
 			linkId,
 			sourceNodeType, targetNodeType,

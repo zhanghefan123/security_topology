@@ -2,7 +2,7 @@ network_config:
   base_v4_network_address: 192.168.0.0/16
   base_v6_network_address: 2001:db8:1234:5678::/112
   http_listen_port: 8080
-  enable_frr: true
+  enable_frr: false # 这里设置成为false是不想要影响接口的接收速率
   ospf_version: ospfv2
   enable_srv6: false
 
