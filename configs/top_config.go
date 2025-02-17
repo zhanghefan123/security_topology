@@ -3,6 +3,7 @@ package configs
 import (
 	"fmt"
 	"github.com/spf13/viper"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -51,38 +52,56 @@ func NewDefaultTopConfig() *TopConfig {
 
 // InitLocalConfig 进行配置的初始化
 func InitLocalConfig() error {
+	var err error
+	// 初始化解析器
 	tempViper := viper.New()
+	// 设置yml文件的地址
 	configFilePath := ConfigurationFilePath
 	tempViper.SetConfigFile(configFilePath)
-	if err := tempViper.ReadInConfig(); err != nil {
+	// 将yml加载
+	if err = tempViper.ReadInConfig(); err != nil {
 		moduleConfigLogger.Errorf("read config error: %v", err)
 	}
+	// 将yml进行反序列化
 	TopConfiguration = NewDefaultTopConfig()
-	if err := tempViper.Unmarshal(TopConfiguration); err != nil {
+	if err = tempViper.Unmarshal(TopConfiguration); err != nil {
 		return fmt.Errorf("unmarshal config error: %v", err)
 	}
+	// 进行顶级配置对象的处理
+	if err = ProcessTopConfiguration(TopConfiguration); err != nil {
+		return fmt.Errorf("process top configuration error: %v", err)
+	}
+	// 进行处理后的配置的打印
+	PrintLocalConfig()
+	return nil
+}
+
+// ProcessTopConfiguration 进行顶级配置对象的处理
+func ProcessTopConfiguration(topConfiguration *TopConfig) error {
+	// 解析 chainmaker-go 的一些内部路径
+	chainMakerGoProjectPath := topConfiguration.ChainMakerConfig.ChainMakerGoProjectPath
+	topConfiguration.ChainMakerConfig.CryptoGenProjectPath = filepath.Join(chainMakerGoProjectPath, "/tools/chainmaker-cryptogen")
 	// 将路径转换为绝对路径
-	err := TopConfiguration.PathConfig.ConvertToAbsPath()
+	err := topConfiguration.PathConfig.ConvertToAbsPath()
 	if err != nil {
 		return fmt.Errorf("convert to abs path error: %v", err)
 	}
 	// 进行时间的解析
-	TopConfiguration.ConstellationConfig.GoStartTime = ResolveStartTime()
+	topConfiguration.ConstellationConfig.GoStartTime = ResolveStartTime()
 	// 获取本地的网络地址
 	localNetworkAddr, err := networkUtils.GetLocalNetworkAddr()
 	if err != nil {
 		return fmt.Errorf("get local network addr error: %v", err)
 	}
 	// 进行本地网路地址的设置
-	TopConfiguration.NetworkConfig.LocalNetworkAddress = localNetworkAddr
+	topConfiguration.NetworkConfig.LocalNetworkAddress = localNetworkAddr
 	// 进行 ospf 版本号的判断
-	if _, ok := availableOspfVersions[TopConfiguration.NetworkConfig.OspfVersion]; !ok {
-		return fmt.Errorf("unsupported OSPF version: %s", TopConfiguration.NetworkConfig.OspfVersion)
+	if _, ok := availableOspfVersions[topConfiguration.NetworkConfig.OspfVersion]; !ok {
+		return fmt.Errorf("unsupported OSPF version: %s", topConfiguration.NetworkConfig.OspfVersion)
 	}
 	// 进行 constellation bandwidth 的更新
-	TopConfiguration.ConstellationConfig.ISLBandwidth = TopConfiguration.ConstellationConfig.ISLBandwidth * 1e6
-	// 进行 chainmaker 路径的更新
-	PrintLocalConfig()
+	topConfiguration.ConstellationConfig.ISLBandwidth = topConfiguration.ConstellationConfig.ISLBandwidth * 1e6
+	// 没有错误,返回 nil
 	return nil
 }
 

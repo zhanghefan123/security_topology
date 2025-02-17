@@ -29,6 +29,7 @@ func CreateContract(c *gin.Context) {
 	})
 }
 
+// StartTxRateTestRequest 是web request对应的回调函数
 func StartTxRateTestRequest(c *gin.Context) {
 	// 1. 判断是否拓扑已经启动
 	if topology.TopologyInstance == nil {

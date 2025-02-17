@@ -30,8 +30,9 @@ func GetConstellationState(c *gin.Context) {
 	}
 }
 
-// GetInstancePositions 获取所有实例的位置
-func GetInstancePositions(c *gin.Context) {
+// GetInstancesPositions 获取所有实例的位置
+func GetInstancesPositions(c *gin.Context) {
+	// 1. 如果还没有创建星座实例 -> 那么就直接进行错误的返回
 	if constellation.ConstellationInstance == nil {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "down",

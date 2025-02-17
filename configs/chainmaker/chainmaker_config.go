@@ -19,6 +19,6 @@ type ChainMakerConfig struct {
 	// 一些路径相关的配置
 	ChainMakerGoProjectPath string `mapstructure:"chainmaker_go_project_path"`
 	ChainMakerBuild         string `mapstructure:"chainmaker_build"`
-	CryptoGenProjectPath    string `mapstructure:"crypto_gen_path"`
 	TemplatesFilePath       string `mapstructure:"templates_file_path"`
+	CryptoGenProjectPath    string // $ChainMakerGoProjectPath/tools/chainmaker-cryptogen
 }

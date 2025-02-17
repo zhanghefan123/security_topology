@@ -11,7 +11,7 @@ var postRoutes = map[string]gin.HandlerFunc{
 	"/stopTxRateTest":  apis.StopTxRateTestRequest,  // contract 相关
 
 	"/getConstellationState": apis.GetConstellationState, // (constellation 相关)
-	"/getInstancePositions":  apis.GetInstancePositions,  // (constellation 相关)
+	"/getInstancePositions":  apis.GetInstancesPositions, // (constellation 相关)
 	"/startConstellation":    apis.StartConstellation,    // (constellation 相关)
 	"/stopConstellation":     apis.StopConstellation,     // (constellation 相关)
 

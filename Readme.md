@@ -55,6 +55,7 @@
 
 # 4. 构建镜像的详细步骤
 
+- [0] 进入 chainmaker/tools/chainmaker-cryptogen/ 然后执行 make 操作
 - [1] 调整 cmd/build.sh 之中的内容, 利用本机的 go 路径进行 build
 - [2] 调整 resources/configuration.yml 之中的 chainmaker_go_project_path 以及 crypto_gen_path
 - [3] bash build.sh 进行构建

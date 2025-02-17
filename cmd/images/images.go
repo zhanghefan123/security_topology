@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"os"
-	"os/exec"
+	"path/filepath"
 	"strings"
 	"zhanghefan123/security_topology/cmd/tools"
 	"zhanghefan123/security_topology/cmd/variables"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/logger"
+	"zhanghefan123/security_topology/modules/utils/dir"
+	"zhanghefan123/security_topology/modules/utils/execute"
 )
 
 var (
@@ -44,7 +46,7 @@ func CreateImagesCmd() *cobra.Command {
 // correctnessCheck 正确性检查
 func correctnessCheck() error {
 	// 判断是否支持相应的镜像
-	if _, ok := variables.ExistedImages[variables.UserSelectedImage]; !ok {
+	if _, ok := variables.AvailableImages[variables.UserSelectedImage]; !ok {
 		return fmt.Errorf("not supported image")
 	}
 
@@ -64,12 +66,79 @@ func correctnessCheck() error {
 		return fmt.Errorf("image %s is already built", variables.UserSelectedImage)
 	}
 
-	// 如果是所有镜像, 只能是重建
-	if (variables.UserSelectedImage == variables.AllImages) && (variables.UserSelectedOperation != variables.OperationRebuild) {
-		return fmt.Errorf("only could rebuild all images")
+	// 如果是所有镜像, 只能是重建或者删除
+	if (variables.UserSelectedImage == variables.AllImages) && (variables.UserSelectedOperation == variables.OperationBuild) {
+		return fmt.Errorf("does not support build for all images")
 	}
 
 	return nil
+}
+
+// buildImageForChainMaker 为 chainmaker 进行镜像的构建
+/*
+# ---------------------------- zeusnet 添加的代码 ----------------------------
+第一步
+# zeusnet add code: 添加一个预构建的镜像 (用来添加依赖的 go文件)
+previous-go-build:
+rm -rf build/ data/ log/ bin/
+docker build -t chainmaker-go -f ./DOCKER/Dockerfile_go .
+
+第二步
+# zeusnet add code: 构建最终的镜像
+final_image:
+docker build -t chainmaker -f ./DOCKER/Dockerfile_final .
+docker tag chainmaker chainmaker:${VERSION}
+# ---------------------------- zeusnet 添加的代码 ----------------------------
+*/
+func buildImageForChainMakerEnv() error {
+	chainMakerGoProjectPath := configs.TopConfiguration.ChainMakerConfig.ChainMakerGoProjectPath
+	err := dir.WithContextManager(chainMakerGoProjectPath, func() error {
+		// 1. remove dirs
+		removedDirectories := []string{
+			filepath.Join(chainMakerGoProjectPath, "/build/"),
+			filepath.Join(chainMakerGoProjectPath, "/data/"),
+			filepath.Join(chainMakerGoProjectPath, "/log/"),
+			filepath.Join(chainMakerGoProjectPath, "/bin/"),
+		}
+		for _, removedDir := range removedDirectories {
+			err := os.RemoveAll(removedDir)
+			if err != nil {
+				return fmt.Errorf("fail to remove dir %v", err)
+			}
+		}
+
+		// 2. execute command to build chainmaker-go (go environment for chainmaker) (param1 -> image name) (param2 -> docker file name)
+		commandStr := fmt.Sprintf("build -t %s -f ./DOCKER/%s .", variables.ImageNameChainMakerEnv, "Dockerfile_chainmaker_env")
+		err := execute.Command("docker", strings.Split(commandStr, " "))
+		if err != nil {
+			return fmt.Errorf("fail to build chainmaker-env (go environment for chainmaker)")
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	} else {
+		return nil
+	}
+}
+
+// buildImageForChainMaker 进行 chainmaker 镜像的构建
+func buildImageForChainMaker() error {
+	chainMakerGoProjectPath := configs.TopConfiguration.ChainMakerConfig.ChainMakerGoProjectPath
+	err := dir.WithContextManager(chainMakerGoProjectPath, func() error {
+		// 1. execute command to build chainmaker (param1 -> image name) (param2 -> docker file name)
+		commandStr := fmt.Sprintf("build -t %s -f ./DOCKER/%s .", variables.ImageNameChainMaker, "Dockerfile_chainmaker")
+		err := execute.Command("docker", strings.Split(commandStr, " "))
+		if err != nil {
+			return fmt.Errorf("fail to build chainmaker")
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("build image for chainmaker failed")
+	} else {
+		return nil
+	}
 }
 
 // buildImage 构建镜像
@@ -77,56 +146,52 @@ func buildImage(userSelectedImage string) error {
 
 	var commandStr string
 
-	realTimePositionDir := configs.TopConfiguration.PathConfig.RealTimePositionDir
-
-	// 1. 区分不同的镜像, 创建 build 命令
-	if userSelectedImage == variables.ImageNamePosition {
-		commandStr = fmt.Sprintf("build -t %s:latest -f ../../%s/Dockerfile ../../%s/",
-			userSelectedImage, realTimePositionDir, realTimePositionDir)
-		fmt.Println(commandStr)
+	// chainmaker image need special process
+	if userSelectedImage == variables.ImageNameChainMakerEnv {
+		err := buildImageForChainMakerEnv()
+		if err != nil {
+			return fmt.Errorf("fail to build chainmaker")
+		}
+		return nil
+	} else if userSelectedImage == variables.ImageNameChainMaker {
+		// 1. call build chainmaker image function
+		err := buildImageForChainMaker()
+		if err != nil {
+			return fmt.Errorf("fail to build chainmaker image")
+		}
+		return nil
 	} else {
+		// 1. 进行镜像构建命令的生成, 参数1 -> 镜像名称, 参数2->镜像的位置, 参数3->相对路径
 		commandStr = fmt.Sprintf("build -t %s:latest -f ../images/%s/Dockerfile ../images/%s/",
 			userSelectedImage, userSelectedImage, userSelectedImage)
-		fmt.Println(commandStr)
+		err := execute.Command("docker", strings.Split(commandStr, " "))
+		// 2.运行命令并检查是否有错误
+		if err != nil {
+			return fmt.Errorf("build image %s failed: %v", userSelectedImage, err)
+		}
+		// 3. 如果没有错误, 输出结果
+		cmdImagesLogger.Infof("build image %s successfully", userSelectedImage)
+		return nil
 	}
-
-	cmd := exec.Command("docker", strings.Split(commandStr, " ")...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	// 2.运行命令并检查是否有错误
-	err := cmd.Run()
-	if err != nil {
-		return fmt.Errorf("build image %s failed: %v", userSelectedImage, err)
-	}
-
-	// 3. 如果没有错误, 输出结果
-	cmdImagesLogger.Infof("build image %s successfully", userSelectedImage)
-	return nil
 }
 
 // removeImage 进行镜像的删除
-func removeImage(userSelectedImage string) error {
+func removeImage(imageName string) error {
 	// 判断是否存在
-	if ok := variables.ExistedImages[variables.UserSelectedImage]; !ok {
+	if ok := variables.ExistedImages[imageName]; !ok {
 		cmdImagesLogger.Infof("image %s is not built", variables.UserSelectedImage)
 		return nil
 	}
 
 	// 1. 创建命令
-	commandStr := fmt.Sprintf("rmi %s", userSelectedImage)
-	cmd := exec.Command("docker", strings.Split(commandStr, " ")...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
+	commandStr := fmt.Sprintf("rmi %s", imageName)
+	err := execute.Command("docker", strings.Split(commandStr, " "))
 	// 2. 运行命令并检查是否有错误
-	err := cmd.Run()
 	if err != nil {
-		return fmt.Errorf("remove image %s failed: %w", userSelectedImage, err)
+		return fmt.Errorf("remove image %s failed: %w", imageName, err)
 	}
-
 	// 3. 日志输出
-	cmdImagesLogger.Infof("remove image %s successfully", userSelectedImage)
+	cmdImagesLogger.Infof("remove image %s successfully", imageName)
 	return nil
 }
 
@@ -136,22 +201,40 @@ func core() error {
 
 	// 进行所有的镜像的重建
 	if userSelectedImage == variables.AllImages {
-		// 进行所有的镜像的删除
-		for _, image := range variables.ImagesInBuildOrder {
-			// 判断这些镜像是否存在
-			if exist, ok := variables.ExistedImages[image]; ok && exist {
-				err := removeImage(image)
-				if err != nil {
-					return fmt.Errorf("remove image %s failed: %v", image, err)
+		switch variables.UserSelectedOperation {
+		case variables.OperationRemove:
+			for _, image := range variables.ImagesInBuildOrder {
+				fmt.Println("remove image", image)
+				// 判断是否存在
+				if exist, ok := variables.ExistedImages[image]; ok && exist {
+					err := removeImage(image)
+					if err != nil {
+						return fmt.Errorf("remove image %s failed: %v", image, err)
+					}
+				} else {
+					fmt.Printf("image %s not exist\n", image)
 				}
 			}
-		}
-		// 按照指定的顺序进行镜像的生成
-		for _, image := range variables.ImagesInBuildOrder {
-			err := buildImage(image)
-			if err != nil {
-				return fmt.Errorf("build image %s failed: %v", image, err)
+		case variables.OperationRebuild:
+			// 进行所有的镜像的删除
+			for _, image := range variables.ImagesInBuildOrder {
+				// 判断这些镜像是否存在
+				if exist, ok := variables.ExistedImages[image]; ok && exist {
+					err := removeImage(image)
+					if err != nil {
+						return fmt.Errorf("remove image %s failed: %v", image, err)
+					}
+				}
 			}
+			// 按照指定的顺序进行镜像的生成
+			for _, image := range variables.ImagesInBuildOrder {
+				err := buildImage(image)
+				if err != nil {
+					return fmt.Errorf("build image %s failed: %v", image, err)
+				}
+			}
+		case variables.OperationBuild:
+			return fmt.Errorf("build image %s is not built", userSelectedImage)
 		}
 		return nil
 	} else {

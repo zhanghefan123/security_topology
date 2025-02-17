@@ -8,3 +8,6 @@
 [submodule "images/lir_node"]
 	path = images/lir_node
 	url = https://github.com/zhanghefan123/lir_node.git
+[submodule "images/realtime_position"]
+	path = images/realtime_position
+	url = https://github.com/zhanghefan123/realtime_position.git

@@ -10,13 +10,8 @@ import (
 
 // InitializeExistedImages 进行状态的重置
 func InitializeExistedImages() {
-	variables.ExistedImages = map[string]bool{
-		variables.ImageUbuntuWithSoftware: false,
-		variables.ImagePythonEnv:          false,
-		variables.ImageGoEnv:              false,
-		variables.ImageNormalSatellite:    false,
-		variables.ImageNameEtcd:           false,
-		variables.ImageNamePosition:       false,
+	for image, _ := range variables.ExistedImages {
+		variables.ExistedImages[image] = false
 	}
 }
 
@@ -59,6 +54,8 @@ func RetrieveStatus() error {
 			imageName := differentParts[0]
 			if _, ok := variables.ExistedImages[imageName]; ok {
 				variables.ExistedImages[imageName] = true
+			} else {
+				fmt.Println("image name", imageName, "not in the map")
 			}
 		}
 	}

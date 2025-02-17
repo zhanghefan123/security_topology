@@ -86,11 +86,11 @@ func (p *ChainMakerPrepare) InitializePathMapping() error {
 	p.pathMapping[Resources] = configs.TopConfiguration.PathConfig.ResourcesPath
 	p.pathMapping[ChainMakerBuild] = chainMakerBuildPath
 	p.pathMapping[Templates] = templatesFilePath
-	p.pathMapping[BuildConfig] = path.Join(chainMakerBuildPath, "config")
-	p.pathMapping[BuildCryptoConfig] = path.Join(chainMakerBuildPath, "crypto-config")
-	p.pathMapping[TestData] = path.Join(chainMakerGoProjectPath, "tools/cmc/testdata")
-	p.pathMapping[MultiNode] = path.Join(chainMakerGoProjectPath, "scripts/docker/multi_node")
-	p.pathMapping[ChainMakerCryptoGenBin] = path.Join(chainMakerCryptoGenProjectPath, "bin/chainmaker-cryptogen")
+	p.pathMapping[BuildConfig] = filepath.Join(chainMakerBuildPath, "config")
+	p.pathMapping[BuildCryptoConfig] = filepath.Join(chainMakerBuildPath, "crypto-config")
+	p.pathMapping[TestData] = filepath.Join(chainMakerGoProjectPath, "tools/cmc/testdata")
+	p.pathMapping[MultiNode] = filepath.Join(chainMakerGoProjectPath, "scripts/docker/multi_node")
+	p.pathMapping[ChainMakerCryptoGenBin] = filepath.Join(chainMakerCryptoGenProjectPath, "bin/chainmaker-cryptogen")
 	p.pathMapping[CryptoConfigOldFileName] = "crypto_config_template.yml"
 	p.pathMapping[CryptoConfigNewFileName] = "./crypto_config.yml"
 	p.pathMapping[PKCS11OldFileName] = "pkcs11_keys.yml"
