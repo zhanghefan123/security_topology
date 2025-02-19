@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/vishvananda/netlink"
+	"github.com/vishvananda/netns"
 	"go.etcd.io/etcd/client/v3"
 	"gonum.org/v1/gonum/graph/simple"
+	"runtime"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/intf"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
@@ -81,6 +83,160 @@ func (absLink *AbstractLink) GenerateVethPair() error {
 	} else {
 		return nil
 	}
+}
+
+// RemoveVethPair 进行 veth pair 的删除
+func (absLink *AbstractLink) RemoveVethPair() error {
+	// 拿到源接口的名称
+	sourceIfName := absLink.SourceInterface.IfName
+	// 获取 veth
+	veth, err := netlink.LinkByName(sourceIfName)
+	// 进行删除
+	if err != nil {
+		return fmt.Errorf("failed to find veth pair: %v", err)
+	}
+	err = netlink.LinkDel(veth)
+	if err != nil {
+		return fmt.Errorf("failed to delete veth pair: %w", err)
+	}
+	// 如果没有任何错误就可以进行直接的返回
+	return nil
+}
+
+// SetVethNamespaceAndAddr 进行 veth 命名空间以及地址的设置
+func (absLink *AbstractLink) SetVethNamespaceAndAddr() error {
+	// 1. 获取环境的 namespace, 最终需要回到原始的环境
+	hostNetNs, err := netns.Get()
+	if err != nil {
+		return fmt.Errorf("netns.Get() failed: %w", err)
+	}
+	defer func(ns netns.NsHandle) {
+		nsSetErr := netns.Set(ns)
+		if err == nil {
+			err = nsSetErr
+		}
+	}(hostNetNs)
+
+	// 2. 获取源和目的的普通节点
+	sourceNormalNode, err := absLink.SourceNode.GetNormalNodeFromAbstractNode()
+	if err != nil {
+		return fmt.Errorf("get source normal node failed: %v", err)
+	}
+	targetNormalNode, err := absLink.TargetNode.GetNormalNodeFromAbstractNode()
+	if err != nil {
+		return fmt.Errorf("get target normal node failed: %v", err)
+	}
+
+	// 3. 获取源目 pid
+	sourcePid := sourceNormalNode.Pid
+	targetPid := targetNormalNode.Pid
+
+	// 4. 获取 netns
+	sourceNetNs, err := netns.GetFromPid(sourcePid)
+	defer func(netNs *netns.NsHandle) {
+		nsCloseErr := netNs.Close()
+		if err == nil {
+			err = nsCloseErr
+		}
+	}(&sourceNetNs)
+	if err != nil {
+		return fmt.Errorf("netns.Get() failed: %w", err)
+	}
+
+	targetNetNs, err := netns.GetFromPid(targetPid)
+	defer func(netNs *netns.NsHandle) {
+		nsCloseErr := netNs.Close()
+		if err == nil {
+			err = nsCloseErr
+		}
+	}(&targetNetNs)
+	if err != nil {
+		return fmt.Errorf("netns.Get() failed: %w", err)
+	}
+
+	// 5. 将源接口设置到命名空间之中
+	// ---------------------------------------------------------------------
+	// 5.1 find veth by name
+	sourceVeth, err := netlink.LinkByName(absLink.SourceInterface.IfName)
+	if err != nil {
+		return fmt.Errorf("get link by name failed: %v", err)
+	}
+	// 5.2 set veth into namespace
+	if err = netlink.LinkSetNsFd(sourceVeth, int(sourceNetNs)); err != nil {
+		return fmt.Errorf("netlink.LinkSetNsFd(sourceVeth, int(sourceNetNs)) failed: %v", err)
+	}
+	// ---------------------------------------------------------------------
+
+	// 6. 将目的接口设置到命名空间
+	// ---------------------------------------------------------------------
+	// 6.1 find veth by name
+	targetVeth, err := netlink.LinkByName(absLink.TargetInterface.IfName)
+	if err != nil {
+		return fmt.Errorf("get link by name failed: %v", err)
+	}
+	// 6.2 set veth into namespace
+	if err = netlink.LinkSetNsFd(targetVeth, int(targetNetNs)); err != nil {
+		return fmt.Errorf("netlink.LinkSetNsFd(targetVeth, int(targetNetNs)) failed: %v", err)
+	}
+	// ---------------------------------------------------------------------
+
+	runtime.LockOSThread()
+
+	// 7. 切换到源节点的网络命名空间 (启动接口, 设置 ipv4 地址, 设置 ipv6 地址)
+	// ---------------------------------------------------------------------
+	if err = netns.Set(sourceNetNs); err != nil {
+		return fmt.Errorf("netns.Set(sourceNetNs) failed: %v", err)
+	}
+	err = netlink.LinkSetUp(sourceVeth)
+	if err != nil {
+		return fmt.Errorf("netlink.LinkSetUp(sourceVeth) failed: %v", err)
+	}
+	ifName := sourceVeth.Attrs().Name
+
+	// 8. 设置 ipv4 地址
+	ipv4Addr := sourceNormalNode.IfNameToInterfaceMap[ifName].SourceIpv4Addr
+	ipv4, _ := netlink.ParseAddr(ipv4Addr)
+	if err = netlink.AddrAdd(sourceVeth, ipv4); err != nil {
+		return fmt.Errorf("netlink.AddrAdd(ipv4) failed: %v", err)
+	}
+
+	// 9. 设置 ipv6 地址
+	ipv6Addr := sourceNormalNode.IfNameToInterfaceMap[ifName].SourceIpv6Addr
+	ipv6, _ := netlink.ParseAddr(ipv6Addr)
+	if err = netlink.AddrAdd(sourceVeth, ipv6); err != nil {
+		fmt.Printf("netlink.AddrAdd(%s) failed: %v", ipv6, err)
+		return fmt.Errorf("netlink.AddrAdd(%s) failed: %w", ipv6, err)
+	}
+	// ---------------------------------------------------------------------
+
+	// 10. 切换到目的节点的网络命名空间 (启动接口, 设置 ipv4 地址, 设置 ipv6 地址)
+	// ---------------------------------------------------------------------
+	if err = netns.Set(targetNetNs); err != nil {
+		return fmt.Errorf("netns.Set(targetNetNs) failed: %v", err)
+	}
+	err = netlink.LinkSetUp(targetVeth)
+	if err != nil {
+		return fmt.Errorf("netlink.LinkSetUp(targetVeth) failed: %v", err)
+	}
+	ifName = targetVeth.Attrs().Name
+
+	ipv4Addr = targetNormalNode.IfNameToInterfaceMap[ifName].SourceIpv4Addr
+	ipv4, _ = netlink.ParseAddr(ipv4Addr)
+	if err = netlink.AddrAdd(targetVeth, ipv4); err != nil {
+		return fmt.Errorf("netlink.AddrAdd(ipv4) failed: %v", err)
+	}
+
+	ipv6Addr = targetNormalNode.IfNameToInterfaceMap[ifName].SourceIpv6Addr
+	ipv6, _ = netlink.ParseAddr(ipv6Addr)
+	if err = netlink.AddrAdd(targetVeth, ipv6); err != nil {
+		fmt.Printf("netlink.AddrAdd(%s) failed: %v", ipv6, err)
+		return fmt.Errorf("netlink.AddrAdd(%s) failed: %w", ipv6, err)
+	}
+	// ---------------------------------------------------------------------
+
+	runtime.UnlockOSThread()
+
+	return nil
 }
 
 // StoreToEtcd 将链路信息存储到 Etcd 之中

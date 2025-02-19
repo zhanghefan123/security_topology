@@ -11,6 +11,7 @@ import (
 	"zhanghefan123/security_topology/api/linux_tc_api"
 	"zhanghefan123/security_topology/api/multithread"
 	"zhanghefan123/security_topology/configs"
+	"zhanghefan123/security_topology/modules/entities/abstract_entities/intf"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/ground_station"
@@ -390,16 +391,55 @@ func (c *Constellation) StartUpdateDelayService() error {
 					pbGSL := &posPbLink.Link{}
 					// 将 etcd 的值进行反序列化
 					protobuf.MustUnmarshal(event.Kv.Value, pbGSL)
-					// 获取源容器的 containerName
+					// 进行地面站的获取
 					groundStation := c.GroundStations[pbGSL.SourceNodeId-1]
+					// 进行卫星的获取
 					satellite := c.NormalSatellites[pbGSL.TargetNodeId-1]
-					abstractSatellite := c.SatelliteAbstractNodes[pbGSL.TargetNodeId-1]
-					// 拿到相应的 abstractLink
-					abstractGSL := c.AllGroundSatelliteLinksMap[groundStation.ContainerName]
-					// 根据 pbGSL 进行更新
-					abstractGSL.TargetNodeId = satellite.Id
-					abstractGSL.TargetContainerName = satellite.ContainerName
-					abstractGSL.TargetNode = abstractSatellite
+					// 判断是否地面站的连接卫星发生了变化
+					if groundStation.ConnectedSatellite == "" {
+						// 不用进行旧的链路的拆除
+
+						// 直接进行设置
+						// --------------------------------------------------------------------
+						abstractSatellite := c.SatelliteAbstractNodes[pbGSL.TargetNodeId-1]
+						abstractGSL := c.AllGroundSatelliteLinksMap[groundStation.ContainerName]
+						abstractGSL.TargetNodeId = satellite.Id
+						abstractGSL.TargetContainerName = satellite.ContainerName
+						abstractGSL.TargetNode = abstractSatellite
+						// --------------------------------------------------------------------
+
+						// 进行新的链路的建立
+						// --------------------------------------------------------------------
+						// step 1 生成 veth pair
+						groundInterface := groundStation.Interfaces[0]
+						satelliteIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(satellite.Type), satellite.Id, 1)
+						satelliteInterface := intf.NewNetworkInterface(satellite.Ifidx, satelliteIfName,
+							groundInterface.TargetIpv4Addr, groundInterface.TargetIpv6Addr,
+							groundInterface.SourceIpv4Addr, groundInterface.SourceIpv6Addr,
+							-1) // link identifier 主要是用于 LiR 链路标识之中的
+						abstractGSL.TargetInterface = satelliteInterface
+						err := abstractGSL.GenerateVethPair()
+						if err != nil {
+							fmt.Printf("error in generate gsl veth pair %v\n", err)
+						}
+						// step 2 设置 veth 命名空间以及addr
+						_ = abstractGSL.SetVethNamespaceAndAddr()
+						// --------------------------------------------------------------------
+
+					} else if groundStation.ConnectedSatellite != satellite.ContainerName {
+						// step1: 进行旧的链路的拆除
+						abstractGSL := c.AllGroundSatelliteLinksMap[groundStation.ContainerName]
+						_ := abstractGSL.RemoveVethPair()
+
+						// step2: 实际上发生了变化, 进行更新
+						abstractSatellite := c.SatelliteAbstractNodes[pbGSL.TargetNodeId-1]
+						abstractGSL.TargetNodeId = satellite.Id
+						abstractGSL.TargetContainerName = satellite.ContainerName
+						abstractGSL.TargetNode = abstractSatellite
+
+						// step3: 设置 veth 命名空间以及 addr
+						_ = abstractGSL.SetVethNamespaceAndAddr()
+					}
 				}()
 			}
 		}

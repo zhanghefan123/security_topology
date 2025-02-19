@@ -219,17 +219,28 @@ func (c *Constellation) GenerateGSLs() error {
 	// 主要逻辑
 	// ------------------------------------------------------------
 	// 进行所有的地面站的遍历
+	currentISLsNum := len(c.AllSatelliteLinks)
 	for _, groundStation := range c.GroundStations {
 		linkType := types.NetworkLinkType_GroundSatelliteLink
 		sourceNodeType := types.NetworkNodeType_GroundStation
 		targetNodeType := types.NetworkNodeType_NormalSatellite
 		groundAbstractNode := c.GroundStationAbstractNodes[groundStation.Id-1]
+		ipv4SubNet := c.Ipv4SubNets[currentISLsNum+len(c.AllGroundSatelliteLinks)]
+		ipv6SubNet := c.Ipv6SubNets[currentISLsNum+len(c.AllGroundSatelliteLinks)]
+		groundStation.ConnectedIpv4SubnetList = append(groundStation.ConnectedIpv4SubnetList, ipv4SubNet.String())
+		groundStation.ConnectedIpv6SubnetList = append(groundStation.ConnectedIpv6SubnetList, ipv6SubNet.String())
+		groundIpv4Addr, satelliteIpv4Addr := network.GenerateTwoAddrsFromIpv4Subnet(ipv4SubNet) // 提取ipv4第一个和第二个地址
+		groundIpv6Addr, satelliteIpv6Addr := network.GenerateTwoAddrsFromIpv6Subnet(ipv6SubNet)
+		groundIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(groundStation.Type), groundStation.Id, groundStation.Ifidx)
+		groundIntf := intf.NewNetworkInterface(groundStation.Ifidx, groundIfName, groundIpv4Addr, groundIpv6Addr, satelliteIpv4Addr, satelliteIpv6Addr, -1) // 创建地面站接口
+		groundStation.IfNameToInterfaceMap[groundIfName] = groundIntf
+		groundStation.Interfaces = append(groundStation.Interfaces, groundIntf)
 		// 注意下面的这个 link (targetNodeID, targetContainerName, sourceInterface, targetInterface, targetAbstractNode) 没有填充
 		abstractGSL := link.NewAbstractLink(linkType,
 			groundStation.Id, sourceNodeType, targetNodeType,
 			groundStation.Id, -1,
 			groundStation.ContainerName, "",
-			&intf.NetworkInterface{}, &intf.NetworkInterface{},
+			groundIntf, &intf.NetworkInterface{},
 			groundAbstractNode, nil,
 			configs.TopConfiguration.ConstellationConfig.GSLBandwidth,
 			ConstellationInstance.ConstellationGraph,
