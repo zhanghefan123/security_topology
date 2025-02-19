@@ -13,25 +13,27 @@ import (
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
+	"zhanghefan123/security_topology/modules/entities/real_entities/ground_station"
 	"zhanghefan123/security_topology/modules/entities/real_entities/position_info"
 	"zhanghefan123/security_topology/modules/entities/real_entities/satellites"
 	"zhanghefan123/security_topology/modules/entities/real_entities/services/etcd"
 	"zhanghefan123/security_topology/modules/entities/real_entities/services/position"
 	"zhanghefan123/security_topology/modules/entities/types"
 	"zhanghefan123/security_topology/modules/utils/protobuf"
+	posPbLink "zhanghefan123/security_topology/services/position/protobuf/link"
 	posPbNode "zhanghefan123/security_topology/services/position/protobuf/node"
 )
 
 const (
-	GenerateSatelliteLinks   = "GenerateSatelliteLinks"
-	StartSatelliteContainers = "StartSatelliteContainers"
-	SetVethNameSpaces        = "SetVethNameSpaces"
-	StartEtcdService         = "StartEtcdService"
-	StoreToEtcd              = "StoreToEtcd"
-
-	CreateServiceContext    = "CreateServiceContext"
-	StartPositionService    = "StartPositionService"
-	StartUpdateDelayService = "StartUpdateDelayService"
+	GenerateSatelliteLinks       = "GenerateSatelliteLinks"
+	StartSatelliteContainers     = "StartSatelliteContainers"
+	StartGroundStationContainers = "StartGroundStationContainers"
+	SetVethNameSpaces            = "SetVethNameSpaces"
+	StartEtcdService             = "StartEtcdService"
+	StoreToEtcd                  = "StoreToEtcd"
+	CreateServiceContext         = "CreateServiceContext"
+	StartPositionService         = "StartPositionService"
+	StartUpdateDelayService      = "StartUpdateDelayService"
 )
 
 type StartFunction func() error
@@ -49,12 +51,13 @@ func (c *Constellation) Start() error {
 	startSteps := []map[string]StartModule{
 		{GenerateSatelliteLinks: StartModule{true, c.GenerateSatelliteVethPairs}},                    // step1 先创建 veth pair 然后改变链路的命名空间
 		{StartSatelliteContainers: StartModule{true, c.StartSatelliteContainers}},                    // step2 一定要在 step1 之后，因为创建了容器后才有命名空间
-		{SetVethNameSpaces: StartModule{true, c.SetVethNamespaces}},                                  // step3 一定要在 step2 之后，因为创建了容器才能设置 veth 的 namespace
-		{StartEtcdService: StartModule{true, c.StartEtcdService}},                                    // step4 进行 etcd 服务的启动
-		{StoreToEtcd: StartModule{true, c.StoreToEtcd}},                                              // step5 一定要在 step4 之后，因为创建了 etcd 服务才能进行存
-		{CreateServiceContext: StartModule{true, c.CreateServiceContext}},                            // step6 创建服务上下文
-		{StartPositionService: StartModule{enablePositionService, c.StartPositionService}},           // step7 启动位置 position
-		{StartUpdateDelayService: StartModule{enableUpdatedDelayService, c.StartUpdateDelayService}}, // step8 开启监听的服务
+		{StartGroundStationContainers: StartModule{true, c.StartGroundStationContainers}},            // step3 进行地面站容器的创建
+		{SetVethNameSpaces: StartModule{true, c.SetVethNamespaces}},                                  // step4 一定要在 step2 之后，因为创建了容器才能设置 veth 的 namespace
+		{StartEtcdService: StartModule{true, c.StartEtcdService}},                                    // step5 进行 etcd 服务的启动
+		{StoreToEtcd: StartModule{true, c.StoreToEtcd}},                                              // step6 一定要在 step4 之后，因为创建了 etcd 服务才能进行存
+		{CreateServiceContext: StartModule{true, c.CreateServiceContext}},                            // step7 创建服务上下文
+		{StartPositionService: StartModule{enablePositionService, c.StartPositionService}},           // step8 启动位置 position
+		{StartUpdateDelayService: StartModule{enableUpdatedDelayService, c.StartUpdateDelayService}}, // step9 开启监听的服务
 	}
 	err := c.startSteps(startSteps)
 	if err != nil {
@@ -121,7 +124,7 @@ func (c *Constellation) StartSatelliteContainers() error {
 		constellationLogger.Infof("StartSatelliteContainers is already running")
 		return nil
 	}
-	description := fmt.Sprintf("%20s", "start satellites")
+	description := fmt.Sprintf("%20s", "start containers")
 	var taskFunc multithread.TaskFunc[*node.AbstractNode] = func(node *node.AbstractNode) error {
 		err := container_api.CreateContainer(c.client, node)
 		if err != nil {
@@ -135,9 +138,32 @@ func (c *Constellation) StartSatelliteContainers() error {
 	}
 
 	c.systemStartSteps[StartSatelliteContainers] = struct{}{}
-	constellationLogger.Infof("execute start satellite containers")
+	constellationLogger.Infof("execute start containers")
 
-	return multithread.RunInMultiThread(description, taskFunc, c.AllAbstractNodes)
+	return multithread.RunInMultiThread(description, taskFunc, c.SatelliteAbstractNodes)
+}
+
+// StartGroundStationContainers 启动地面站容器
+func (c *Constellation) StartGroundStationContainers() error {
+	if _, ok := c.systemInitSteps[StartGroundStationContainers]; ok {
+		constellationLogger.Infof("StartGroundStationContainers is already running")
+		return nil
+	}
+	description := fmt.Sprintf("%20s", "start ground station containers")
+	var taskFunc multithread.TaskFunc[*node.AbstractNode] = func(node *node.AbstractNode) error {
+		err := container_api.CreateContainer(c.client, node)
+		if err != nil {
+			return err
+		}
+		err = container_api.StartContainer(c.client, node)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	c.systemInitSteps[StartGroundStationContainers] = struct{}{}
+	constellationLogger.Infof("execute start ground station containers")
+	return multithread.RunInMultiThread(description, taskFunc, c.GroundStationAbstractNodes)
 }
 
 // SetVethNamespaces 设置 veth 命名空间
@@ -163,7 +189,7 @@ func (c *Constellation) SetVethNamespaces() error {
 	c.systemStartSteps[SetVethNameSpaces] = struct{}{}
 	constellationLogger.Infof("execute set veth namespaces")
 
-	return multithread.RunInMultiThread(description, taskFunc, c.AllAbstractNodes)
+	return multithread.RunInMultiThread(description, taskFunc, c.SatelliteAbstractNodes)
 }
 
 // StartEtcdService 开启 etcd 服务
@@ -213,9 +239,11 @@ func (c *Constellation) StoreToEtcd() (err error) {
 	}
 
 	waitGroup := sync.WaitGroup{}
-	waitGroup.Add(2)
+	// 存在两个子任务
+	waitGroup.Add(3)
+	// 第一个子任务: 进行星座链路的存储
 	go func() {
-		defer waitGroup.Done()
+		defer waitGroup.Done() // 最终记录一下任务做完了
 		for _, satelliteLink := range c.AllSatelliteLinks {
 			err = satelliteLink.StoreToEtcd(c.etcdClient)
 			if err != nil {
@@ -224,18 +252,40 @@ func (c *Constellation) StoreToEtcd() (err error) {
 			}
 		}
 	}()
+	// 第二个子任务: 进行卫星节点的存储
 	go func() {
+		// 最终记录一下任务做完了
 		defer waitGroup.Done()
-		for _, sat := range c.AllAbstractNodes {
-			if sat.Type == types.NetworkNodeType_NormalSatellite {
-				normalSat, _ := sat.ActualNode.(*satellites.NormalSatellite)
+		for _, absNode := range c.SatelliteAbstractNodes {
+			if absNode.Type == types.NetworkNodeType_NormalSatellite {
+				// 如果节点为普通卫星
+				normalSat, _ := absNode.ActualNode.(*satellites.NormalSatellite)
 				err = normalSat.StoreToEtcd(c.etcdClient)
-			} else if sat.Type == types.NetworkNodeType_NormalSatellite {
-				consensusSat, _ := sat.ActualNode.(*satellites.ConsensusSatellite)
+			} else if absNode.Type == types.NetworkNodeType_ConsensusSatellite {
+				// 如果节点为共识卫星
+				consensusSat, _ := absNode.ActualNode.(*satellites.ConsensusSatellite)
 				err = consensusSat.StoreToEtcd(c.etcdClient)
+			} else {
+				err = fmt.Errorf("unsupported node type")
 			}
 			if err != nil {
 				err = fmt.Errorf("store ISL to etcd error %w", err)
+				return
+			}
+		}
+	}()
+	// 第三个子任务: 进行地面站节点的存储
+	go func() {
+		defer waitGroup.Done()
+		for _, absNode := range c.GroundStationAbstractNodes {
+			if absNode.Type == types.NetworkNodeType_GroundStation {
+				groundStation, _ := absNode.ActualNode.(*ground_station.GroundStation)
+				err = groundStation.StoreToEtcd(c.etcdClient)
+			} else {
+				err = fmt.Errorf("unsupported node type")
+			}
+			if err != nil {
+				err = fmt.Errorf("store GroundStation to etcd error %w", err)
 				return
 			}
 		}
@@ -273,14 +323,16 @@ func (c *Constellation) StartPositionService() error {
 	etcdListenAddr := configs.TopConfiguration.NetworkConfig.LocalNetworkAddress            // etcd 监听地址
 	etcdClientPort := etcdConfig.ClientPort                                                 // etcd 客户端口
 	etcdISLsPrefix := etcdConfig.EtcdPrefix.ISLsPrefix                                      // etcd isl 的前缀
+	etcdGSLsPrefix := etcdConfig.EtcdPrefix.GSLsPrefix                                      // etcd gsl 的前缀
 	etcdSatellitesPrefix := etcdConfig.EtcdPrefix.SatellitesPrefix                          // etcd satellite 的前缀
+	etcdGroundStationsPrefix := etcdConfig.EtcdPrefix.GroundStationsPrefix                  // etcd GroundStations 的前缀
 	constellationStartTime := configs.TopConfiguration.ConstellationConfig.StartTime        // 星座启动时间
 	updateInterval := configs.TopConfiguration.ServicesConfig.PositionUpdateConfig.Interval // 更新时间间隔
 
 	// 2. 根据配置创建节点
 	positionService := position.NewPositionService(types.NetworkNodeStatus_Logic,
 		etcdListenAddr, etcdClientPort,
-		etcdISLsPrefix, etcdSatellitesPrefix,
+		etcdISLsPrefix, etcdGSLsPrefix, etcdSatellitesPrefix, etcdGroundStationsPrefix,
 		constellationStartTime, updateInterval)
 
 	// 3. 创建抽象节点
@@ -313,8 +365,49 @@ func (c *Constellation) StartUpdateDelayService() error {
 		constellationLogger.Infof("StartUpdateDelayService is already running")
 		return nil
 	}
-	// 开启一个线程，准备不断的进行更新事件的获取
+	// 由于地面站位置始终不变, 所以不用进行周期性的更新, 直接设置就可以了
+	for _, groundStation := range c.GroundStations {
+		c.ContainerNameToPosition[groundStation.ContainerName] = &position_info.Position{
+			NodeType:  types.NetworkNodeType_GroundStation.String(), // 节点类型
+			Latitude:  float64(groundStation.Latitude),              // 纬度
+			Longitude: float64(groundStation.Longitude),             // 经度
+			Altitude:  0,                                            // 高度
+		}
+	}
+
+	// 开启一个线程, 不断进行更新事件的获取 (gsls 更新事件)
 	go func() {
+		// 创建一个监听键值对更新事件的 channel
+		watchChan := c.etcdClient.Watch(
+			c.serviceContext,
+			configs.TopConfiguration.ServicesConfig.EtcdConfig.EtcdPrefix.GSLsPrefix,
+			clientv3.WithPrefix(),
+		)
+		for response := range watchChan {
+			for _, event := range response.Events {
+				go func() {
+					// 创建 protobuf Node
+					pbGSL := &posPbLink.Link{}
+					// 将 etcd 的值进行反序列化
+					protobuf.MustUnmarshal(event.Kv.Value, pbGSL)
+					// 获取源容器的 containerName
+					groundStation := c.GroundStations[pbGSL.SourceNodeId-1]
+					satellite := c.NormalSatellites[pbGSL.TargetNodeId-1]
+					abstractSatellite := c.SatelliteAbstractNodes[pbGSL.TargetNodeId-1]
+					// 拿到相应的 abstractLink
+					abstractGSL := c.AllGroundSatelliteLinksMap[groundStation.ContainerName]
+					// 根据 pbGSL 进行更新
+					abstractGSL.TargetNodeId = satellite.Id
+					abstractGSL.TargetContainerName = satellite.ContainerName
+					abstractGSL.TargetNode = abstractSatellite
+				}()
+			}
+		}
+	}()
+
+	// 开启一个线程，准备不断的进行更新事件的获取 (卫星更新事件)
+	go func() {
+		// 创建一个监听键值对更新事件的 channel
 		watchChan := c.etcdClient.Watch(
 			c.serviceContext,
 			configs.TopConfiguration.ServicesConfig.EtcdConfig.EtcdPrefix.SatellitesPrefix,
@@ -333,9 +426,10 @@ func (c *Constellation) StartUpdateDelayService() error {
 					containerName := sat.ContainerName
 					// 进行位置的设置
 					c.ContainerNameToPosition[containerName] = &position_info.Position{
-						Latitude:  float64(sat.Latitude),
-						Longitude: float64(sat.Longitude),
-						Altitude:  float64(sat.Altitude),
+						NodeType:  types.NetworkNodeType_NormalSatellite.String(), // 节点类型
+						Latitude:  float64(sat.Latitude),                          // 纬度
+						Longitude: float64(sat.Longitude),                         // 经度
+						Altitude:  float64(sat.Altitude),                          // 高度
 					}
 					// 创建接口数组
 					interfaces := make([]string, len(sat.InterfaceDelay))
@@ -352,7 +446,7 @@ func (c *Constellation) StartUpdateDelayService() error {
 						interfaces[index] = interfaceName
 						interfaceDelays[index] = interfaceDelay
 					}
-					// 忽略错误
+					// 忽略错误 -> 这里会进行标红的原因就是 linux 下才有这个 api
 					_ = linux_tc_api.SetInterfacesDelay(int(satPid), interfaces, interfaceDelays)
 				}()
 			}

@@ -15,14 +15,14 @@ import (
 )
 
 type AbstractLink struct {
-	Type                types.NetworkLinkType `json:"-"`              // 链路的类型
-	Id                  int                   `json:"id"`             // 链路 id
-	SourceNodeType      types.NetworkNodeType `json:"-"`              // 源节点类型
-	TargetNodeType      types.NetworkNodeType `json:"-"`              // 目的节点类型
-	SourceNodeId        int                   `json:"source_node_id"` // 源节点 id
-	TargetNodeId        int                   `json:"target_node_id"` // 目的节点 id
-	SourceContainerName string
-	TargetContainerName string
+	Type                types.NetworkLinkType  `json:"-"`              // 链路的类型
+	Id                  int                    `json:"id"`             // 链路 id
+	SourceNodeType      types.NetworkNodeType  `json:"-"`              // 源节点类型
+	TargetNodeType      types.NetworkNodeType  `json:"-"`              // 目的节点类型
+	SourceNodeId        int                    `json:"source_node_id"` // 源节点 id
+	TargetNodeId        int                    `json:"target_node_id"` // 目的节点 id
+	SourceContainerName string                 // 源容器的名称
+	TargetContainerName string                 // 目的容器的名称
 	SourceInterface     *intf.NetworkInterface `json:"-"` // 源接口
 	TargetInterface     *intf.NetworkInterface `json:"-"` // 目的接口
 	SourceNode          *node.AbstractNode     `json:"-"` // 源节点
@@ -40,11 +40,15 @@ func NewAbstractLink(typ types.NetworkLinkType, id int,
 	graphTmp *simple.DirectedGraph) *AbstractLink {
 
 	// 进行星座拓扑的边的添加 (注意这是有向图, 需要进行双向的链路的添加)
-	// 在这里进行了双向的链路的添加
-	orderEdge := graphTmp.NewEdge(sourceNode, targetNode)
-	graphTmp.SetEdge(orderEdge)
-	reverseOrderEdge := graphTmp.NewEdge(targetNode, sourceNode)
-	graphTmp.SetEdge(reverseOrderEdge)
+	// 在这里进行了双向的链路的添加 -> 为的是方便 LiR
+	// ---------------------------------------------------------
+	if types.NetworkLinkType_GroundSatelliteLink != typ {
+		orderEdge := graphTmp.NewEdge(sourceNode, targetNode)
+		graphTmp.SetEdge(orderEdge)
+		reverseOrderEdge := graphTmp.NewEdge(targetNode, sourceNode)
+		graphTmp.SetEdge(reverseOrderEdge)
+	}
+	// ---------------------------------------------------------
 
 	return &AbstractLink{
 		Type:                typ,

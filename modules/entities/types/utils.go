@@ -6,6 +6,8 @@ import "fmt"
 func GetPrefix(typ NetworkNodeType) string {
 	if typ == NetworkNodeType_NormalSatellite {
 		return "ns"
+	} else if typ == NetworkNodeType_GroundStation {
+		return "gs"
 	} else if typ == NetworkNodeType_ConsensusSatellite {
 		return "cs"
 	} else if typ == NetworkNodeType_EtcdService {

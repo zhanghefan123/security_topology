@@ -10,6 +10,7 @@ import (
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
+	"zhanghefan123/security_topology/modules/entities/real_entities/ground_station"
 	"zhanghefan123/security_topology/modules/entities/real_entities/position_info"
 	"zhanghefan123/security_topology/modules/entities/real_entities/satellites"
 	"zhanghefan123/security_topology/modules/entities/real_entities/services/etcd"
@@ -25,8 +26,16 @@ var (
 
 // Parameters -星座参数
 type Parameters struct {
-	OrbitNumber       int `json:"orbit_number"`        // 轨道数量
-	SatellitePerOrbit int `json:"satellite_per_orbit"` // 每轨道卫星数量
+	OrbitNumber          int                       `json:"orbit_number"`        // 轨道数量
+	SatellitePerOrbit    int                       `json:"satellite_per_orbit"` // 每轨道卫星数量
+	GroundStationsParams []GroundStationParameters `json:"ground_stations"`     // 选择的地面站
+}
+
+// GroundStationParameters - 地面站参数
+type GroundStationParameters struct {
+	Name      string  `json:"name"`      // 地面站的名称
+	Longitude float32 `json:"longitude"` // 经度
+	Latitude  float32 `json:"latitude"`  // 纬度
 }
 
 // SatelliteParameters 卫星参数
@@ -38,23 +47,30 @@ type SatelliteParameters struct {
 
 // Constellation 星座
 type Constellation struct {
-	*Parameters                                                // 星座基本参数
-	*SatelliteParameters                                       // 卫星基本参数
-	client                  *docker.Client                     // 用来创建、停止、开启容器的客户端
-	etcdClient              *clientv3.Client                   // etcd client 用于存取监听键值对
-	startTime               time.Time                          // 星座的启动时间
-	Ipv4SubNets             []iplib.Net4                       // ipv4 子网
-	Ipv6SubNets             []iplib.Net6                       // ipv6 子网
-	NormalSatellites        []*satellites.NormalSatellite      // 所有的普通卫星
-	ConsensusSatellites     []*satellites.ConsensusSatellite   // 所有的共识卫星
-	AllAbstractNodes        []*node.AbstractNode               // 所有的 abstract nodes
+	*Parameters                           // 星座基本参数
+	*SatelliteParameters                  // 卫星基本参数
+	client               *docker.Client   // 用来创建、停止、开启容器的客户端
+	etcdClient           *clientv3.Client // etcd client 用于存取监听键值对
+	startTime            time.Time        // 星座的启动时间
+	Ipv4SubNets          []iplib.Net4     // ipv4 子网
+	Ipv6SubNets          []iplib.Net6     // ipv6 子网
+
+	GroundStations      []*ground_station.GroundStation  // 所有的地面站
+	NormalSatellites    []*satellites.NormalSatellite    // 所有的普通卫星
+	ConsensusSatellites []*satellites.ConsensusSatellite // 所有的共识卫星
+
+	SatelliteAbstractNodes     []*node.AbstractNode // 卫星对应的抽象节点
+	GroundStationAbstractNodes []*node.AbstractNode // 地面对应的抽象节点
+
 	ContainerNameToPosition map[string]*position_info.Position // 所有节点的位置
 	ConstellationGraph      *simple.DirectedGraph              // 有向图
 
-	AllSatelliteLinks        []*link.AbstractLink                     // 所有的卫星链路
-	AllSatelliteLinksMap     map[string]map[string]*link.AbstractLink // map[source][target]*link.AbstractLink // 创建链路映射
-	InterOrbitSatelliteLinks []*link.AbstractLink                     // 所有轨间链路
-	IntraOrbitSatelliteLinks []*link.AbstractLink                     // 所有轨内链路
+	AllGroundSatelliteLinks    []*link.AbstractLink                     // 所有的星地链路
+	AllSatelliteLinks          []*link.AbstractLink                     // 所有的卫星链路
+	AllGroundSatelliteLinksMap map[string]*link.AbstractLink            // 创建星地链路映射
+	AllSatelliteLinksMap       map[string]map[string]*link.AbstractLink // 创建链路映射
+	InterOrbitSatelliteLinks   []*link.AbstractLink                     // 所有轨间链路
+	IntraOrbitSatelliteLinks   []*link.AbstractLink                     // 所有轨内链路
 
 	systemInitSteps  map[string]struct{} // 系统初始化步骤
 	systemStartSteps map[string]struct{} // 系统启动步骤
@@ -70,15 +86,10 @@ type Constellation struct {
 	NetworkInterfaces int // 网络接口的数量 -> 用来表征链路标识
 }
 
-// NewConstellation 创建一个新的空的星座
-func NewConstellation(client *docker.Client, etcdClient *clientv3.Client, startTime time.Time) *Constellation {
-	orbitNumber := configs.TopConfiguration.ConstellationConfig.OrbitNumber
-	satellitePerOrbit := configs.TopConfiguration.ConstellationConfig.SatellitePerOrbit
+// NewConstellation 创建一个新的星座实例
+func NewConstellation(client *docker.Client, etcdClient *clientv3.Client, startTime time.Time, constellationParameters *Parameters) *Constellation {
 	constellation := &Constellation{
-		Parameters: &Parameters{
-			OrbitNumber:       orbitNumber,
-			SatellitePerOrbit: satellitePerOrbit,
-		},
+		Parameters: constellationParameters,
 		SatelliteParameters: &SatelliteParameters{
 			SatelliteType:    types.NetworkNodeType(configs.TopConfiguration.ConstellationConfig.SatelliteConfig.Type),
 			SatelliteRPCPort: configs.TopConfiguration.ConstellationConfig.SatelliteConfig.RPCPort,
@@ -89,7 +100,7 @@ func NewConstellation(client *docker.Client, etcdClient *clientv3.Client, startT
 		startTime:               startTime,
 		NormalSatellites:        make([]*satellites.NormalSatellite, 0),
 		ConsensusSatellites:     make([]*satellites.ConsensusSatellite, 0),
-		AllAbstractNodes:        make([]*node.AbstractNode, 0),
+		SatelliteAbstractNodes:  make([]*node.AbstractNode, 0),
 		ContainerNameToPosition: make(map[string]*position_info.Position),
 		ConstellationGraph:      simple.NewDirectedGraph(),
 
@@ -98,7 +109,11 @@ func NewConstellation(client *docker.Client, etcdClient *clientv3.Client, startT
 		systemInitSteps:          make(map[string]struct{}),
 		systemStartSteps:         make(map[string]struct{}),
 		systemStopSteps:          make(map[string]struct{}),
-		AllSatelliteLinksMap:     make(map[string]map[string]*link.AbstractLink),
+
+		AllSatelliteLinks:          make([]*link.AbstractLink, 0),
+		AllGroundSatelliteLinks:    make([]*link.AbstractLink, 0),
+		AllSatelliteLinksMap:       make(map[string]map[string]*link.AbstractLink),
+		AllGroundSatelliteLinksMap: make(map[string]*link.AbstractLink),
 
 		NetworkInterfaces: 0,
 	}

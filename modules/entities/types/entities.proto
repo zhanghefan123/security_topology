@@ -21,11 +21,13 @@ enum NetworkNodeType {
   MaliciousNode = 8;
   LirNode = 9;
   Entrance = 10;
+  GroundStation = 11;
 }
 
 enum NetworkLinkType {
   IntraOrbitSatelliteLink = 0;
   InterOrbitSatelliteLink = 1;
-  AccessLink = 2;
-  BackboneLink = 3;
+  GroundSatelliteLink = 2;
+  AccessLink = 3;
+  BackboneLink = 4;
 }

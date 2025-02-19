@@ -21,10 +21,10 @@ type NormalSatellite struct {
 // NewNormalSatellite 创建普通卫星
 func NewNormalSatellite(nodeId, orbitId, indexInOrbit int, tle []string) *NormalSatellite {
 	// 当前的类型
-	satType := types.NetworkNodeType_NormalSatellite
+	nodeType := types.NetworkNodeType_NormalSatellite
 	// 创建普通卫星
 	sat := &NormalSatellite{
-		NormalNode:   normal_node.NewNormalNode(types.NetworkNodeType_NormalSatellite, nodeId, fmt.Sprintf("%s-%d", satType.String(), nodeId)),
+		NormalNode:   normal_node.NewNormalNode(nodeType, nodeId, fmt.Sprintf("%s-%d", nodeType.String(), nodeId)),
 		OrbitId:      orbitId,
 		IndexInOrbit: indexInOrbit,
 		Tle:          tle,
@@ -32,7 +32,7 @@ func NewNormalSatellite(nodeId, orbitId, indexInOrbit int, tle []string) *Normal
 	return sat
 }
 
-// StoreToEtcd 将节点信息存储到 etcd 之中
+// StoreToEtcd 将卫星信息存储到 etcd 之中
 func (normalSatellite *NormalSatellite) StoreToEtcd(etcdClient *clientv3.Client) error {
 	normalPbSatellite := &pbNode.Node{
 		Type:           pbNode.NodeType_NODE_TYPE_SATELLITE,

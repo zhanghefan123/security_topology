@@ -7,6 +7,7 @@ import (
 	"os/exec"
 )
 
+// CopyFrrConfigurationFile 进行 FRR 配置文件的拷贝
 func CopyFrrConfigurationFile() {
 	containerName := os.Getenv("CONTAINER_NAME")
 
@@ -24,6 +25,7 @@ func CopyFrrConfigurationFile() {
 	}
 }
 
+// StartFrr 执行启动 frr 的命令
 func StartFrr() {
 	cmd := exec.Command("service", "frr", "start")
 	output, err := cmd.CombinedOutput()
@@ -33,6 +35,7 @@ func StartFrr() {
 	fmt.Println(string(output))
 }
 
+// Start 拷贝 frr + 启动 frr
 func Start() {
 	enableFrr := os.Getenv("ENABLE_FRR")
 	if enableFrr == "true" {

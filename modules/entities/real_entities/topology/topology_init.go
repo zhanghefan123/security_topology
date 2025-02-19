@@ -33,7 +33,7 @@ const (
 	GenerateChainMakerConfig              = "GenerateChainMakerConfig"
 	GenerateNodes                         = "GenerateNodes"                         // 生成节点
 	GenerateSubnets                       = "GenerateSubnets"                       // 创建子网
-	GenerateLinks                         = "GenerateLinks"                         // 生成链路
+	GenerateLinks                         = "GenerateISLs"                          // 生成链路
 	GenerateFrrConfigurationFiles         = "GenerateFrrConfigurationFiles"         // 生成 frr 配置
 	GenerateAddressMapping                = "GenerateAddressMapping"                // 生成容器名 -> 地址的映射
 	GeneratePortMapping                   = "GeneratePortMapping"                   // 生成容器名 -> 端口的映射

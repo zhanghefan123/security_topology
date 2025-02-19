@@ -10,21 +10,23 @@ import (
 	"zhanghefan123/security_topology/modules/entities/types"
 )
 
-// CreatePositionService 创建位置更新/延迟更新服务
-func CreatePositionService(client *docker.Client, positionService *position.PositionService) error {
+// CreateRealTimePositionService 创建位置更新/延迟更新服务
+func CreateRealTimePositionService(client *docker.Client, positionService *position.PositionService) error {
 	// 1. 检查状态
 	if positionService.Status != types.NetworkNodeStatus_Logic {
 		return fmt.Errorf("position service status is %s", positionService.Status)
 	}
 
-	ContainerName := "position_service"
+	ContainerName := "realtime_position"
 
 	// 2. 创建环境变量
 	envs := []string{
 		fmt.Sprintf("%s=%s", "ETCD_LISTEN_ADDR", positionService.EtcdListenAddr),
 		fmt.Sprintf("%s=%d", "ETCD_CLIENT_PORT", positionService.EtcdClientPort),
 		fmt.Sprintf("%s=%s", "ETCD_ISLS_PREFIX", positionService.EtcdISLsPrefix),
+		fmt.Sprintf("%s=%s", "ETCD_GSLS_PREFIX", positionService.EtcdGSLsPrefix),
 		fmt.Sprintf("%s=%s", "ETCD_SATELLITES_PREFIX", positionService.EtcdSatellitesPrefix),
+		fmt.Sprintf("%s=%s", "ETCD_GROUND_STATIONS_PREFIX", positionService.EtcdGroundStationsPrefix),
 		fmt.Sprintf("%s=%s", "CONSTELLATION_START_TIME", positionService.ConstellationStartTime),
 		fmt.Sprintf("%s=%d", "UPDATE_INTERVAL", positionService.UpdateInterval),
 	}

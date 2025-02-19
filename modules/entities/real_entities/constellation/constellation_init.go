@@ -10,6 +10,7 @@ import (
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/intf"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
+	"zhanghefan123/security_topology/modules/entities/real_entities/ground_station"
 	"zhanghefan123/security_topology/modules/entities/real_entities/satellites"
 	"zhanghefan123/security_topology/modules/entities/types"
 	"zhanghefan123/security_topology/modules/utils/network"
@@ -18,8 +19,10 @@ import (
 
 const (
 	GenerateSatellites             = "GenerateSatellites"             // 生成卫星
+	GenerateGroundStations         = "GenerateGroundStations"         // 生成地面站
 	GenerateSubnets                = "GenerateIPv4Subnets"            // 创建子网
-	GenerateLinks                  = "GenerateLinks"                  // 生成链路
+	GenerateISLs                   = "GenerateISLs"                   // 生成星间链路
+	GenerateGSLs                   = "GenerateGSLs"                   // 生成星地链路
 	GenerateFrrConfigurationFiles  = "GenerateFrrConfigurationFiles"  // 生成 frr 配置
 	GeneratePeerIdAndPrivateKey    = "GeneratePeerIdAndPrivateKey"    // 生成 peerId 以及私钥
 	CalculateAndWriteSegmentRoutes = "CalculateAndWriteSegmentRoutes" // 进行段路由的计算
@@ -39,8 +42,10 @@ func (c *Constellation) Init() error {
 
 	initSteps := []map[string]InitModule{
 		{GenerateSatellites: InitModule{true, c.GenerateSatellites}},
+		{GenerateGroundStations: InitModule{true, c.GenerateGroundStations}},
 		{GenerateSubnets: InitModule{true, c.GenerateSubnets}},
-		{GenerateLinks: InitModule{true, c.GenerateLinks}},
+		{GenerateISLs: InitModule{true, c.GenerateISLs}},
+		{GenerateGSLs: InitModule{true, c.GenerateGSLs}},
 		{GenerateFrrConfigurationFiles: InitModule{true, c.GenerateFrrConfigurationFiles}},
 		{GeneratePeerIdAndPrivateKey: InitModule{true, c.GeneratePeerIdAndPrivateKey}},
 		{CalculateAndWriteSegmentRoutes: InitModule{enableSRv6, c.CalculateAndWriteSegmentRoutes}},
@@ -124,7 +129,7 @@ func (c *Constellation) GenerateSatellites() error {
 				// 创建抽象节点
 				normalSatelliteAbstract := node.NewAbstractNode(normalSatellite.Type, normalSatellite, ConstellationInstance.ConstellationGraph)
 				// 将 satellite 放到 allAbstractNodes 之中
-				c.AllAbstractNodes = append(c.AllAbstractNodes, normalSatelliteAbstract)
+				c.SatelliteAbstractNodes = append(c.SatelliteAbstractNodes, normalSatelliteAbstract)
 			} else if c.SatelliteType == types.NetworkNodeType_ConsensusSatellite { // 2. 如果是生成共识卫星
 				// 创建共识卫星
 				consensusSatellite := satellites.NewConsensusSatellite(nodeId+1, orbitId, indexInOrbit, c.SatelliteRPCPort, c.SatelliteP2PPort, tle)
@@ -133,7 +138,7 @@ func (c *Constellation) GenerateSatellites() error {
 				// 创建抽象节点
 				consensusSatelliteAbstract := node.NewAbstractNode(consensusSatellite.Type, consensusSatellite, ConstellationInstance.ConstellationGraph)
 				// 将 satellite 放到 allAbstractNodes 之中
-				c.AllAbstractNodes = append(c.AllAbstractNodes, consensusSatelliteAbstract)
+				c.SatelliteAbstractNodes = append(c.SatelliteAbstractNodes, consensusSatelliteAbstract)
 			} else {
 				return fmt.Errorf("not supported network node type")
 			}
@@ -144,6 +149,34 @@ func (c *Constellation) GenerateSatellites() error {
 	c.systemInitSteps[GenerateSatellites] = struct{}{}
 	constellationLogger.Infof("generate satellites")
 
+	return nil
+}
+
+// GenerateGroundStations 进行地面站的生成
+func (c *Constellation) GenerateGroundStations() error {
+	if _, ok := c.systemInitSteps[GenerateGroundStations]; ok {
+		constellationLogger.Infof("already generate groundstations")
+		return nil
+	}
+
+	// 进行所有的地面站的遍历进行节点的添加
+	// ------------------------------------------------------------------------------------------
+	for index, groundStationParam := range c.Parameters.GroundStationsParams {
+		// 进行地面站实例的创建
+		groundStationInstance := ground_station.NewGroundStation(index+1,
+			groundStationParam.Longitude,
+			groundStationParam.Latitude)
+		// 向地面站列表之中进行添加
+		c.GroundStations = append(c.GroundStations, groundStationInstance)
+		// 创建抽象节点
+		groundStationAbstract := node.NewAbstractNode(groundStationInstance.Type, groundStationInstance, ConstellationInstance.ConstellationGraph)
+		// 将节点存放到 abstractNodes 之中
+		c.GroundStationAbstractNodes = append(c.GroundStationAbstractNodes, groundStationAbstract)
+	}
+	// ------------------------------------------------------------------------------------------
+
+	c.systemInitSteps[GenerateGroundStations] = struct{}{}
+	constellationLogger.Infof("generate ground stations")
 	return nil
 }
 
@@ -176,39 +209,74 @@ func (c *Constellation) GenerateSubnets() error {
 	return nil
 }
 
-// GenerateLinks 进行链路的生成
-func (c *Constellation) GenerateLinks() error {
-	if _, ok := c.systemInitSteps[GenerateLinks]; ok {
-		constellationLogger.Infof("already generate links")
+// GenerateGSLs 进行星地链路的生成
+func (c *Constellation) GenerateGSLs() error {
+	if _, ok := c.systemInitSteps[GenerateGSLs]; ok {
+		constellationLogger.Infof("already generate GSLs")
+		return nil
+	}
+
+	// 主要逻辑
+	// ------------------------------------------------------------
+	// 进行所有的地面站的遍历
+	for _, groundStation := range c.GroundStations {
+		linkType := types.NetworkLinkType_GroundSatelliteLink
+		sourceNodeType := types.NetworkNodeType_GroundStation
+		targetNodeType := types.NetworkNodeType_NormalSatellite
+		groundAbstractNode := c.GroundStationAbstractNodes[groundStation.Id-1]
+		// 注意下面的这个 link (targetNodeID, targetContainerName, sourceInterface, targetInterface, targetAbstractNode) 没有填充
+		abstractGSL := link.NewAbstractLink(linkType,
+			groundStation.Id, sourceNodeType, targetNodeType,
+			groundStation.Id, -1,
+			groundStation.ContainerName, "",
+			&intf.NetworkInterface{}, &intf.NetworkInterface{},
+			groundAbstractNode, nil,
+			configs.TopConfiguration.ConstellationConfig.GSLBandwidth,
+			ConstellationInstance.ConstellationGraph,
+		)
+		c.AllGroundSatelliteLinks = append(c.AllGroundSatelliteLinks, abstractGSL)
+		c.AllGroundSatelliteLinksMap[groundStation.ContainerName] = abstractGSL
+	}
+	// ------------------------------------------------------------
+
+	c.systemInitSteps[GenerateGSLs] = struct{}{}
+	constellationLogger.Infof("generate GSLs")
+	return nil
+}
+
+// GenerateISLs 进行星间链路的生成
+func (c *Constellation) GenerateISLs() error {
+	if _, ok := c.systemInitSteps[GenerateISLs]; ok {
+		constellationLogger.Infof("already generate ISLs")
 		return nil
 	}
 
 	if c.SatelliteType == types.NetworkNodeType_NormalSatellite {
-		c.generateLinksForNormalSatellite()
+		c.generateISLsForNormalSatellite()
 	} else if c.SatelliteType == types.NetworkNodeType_ConsensusSatellite {
-		c.generateLinksForConsensusSatellites()
+		c.generateISLsForConsensusSatellites()
 	} else {
 		return fmt.Errorf("not supported network node type")
 	}
 
-	c.systemInitSteps[GenerateLinks] = struct{}{}
-	constellationLogger.Infof("generate links")
+	c.systemInitSteps[GenerateISLs] = struct{}{}
+	constellationLogger.Infof("generate ISLs")
 	return nil
 }
 
 // GenerateLinksForNormalSatellite 为共识卫星生成链路
-func (c *Constellation) generateLinksForConsensusSatellites() {
+func (c *Constellation) generateISLsForConsensusSatellites() {
 	for index, sat := range c.ConsensusSatellites {
 		satReal := sat
 		// <---------------- 生成同轨道的星间链路 ---------------->
 		sourceSat := satReal
-		sourceAbstract := c.AllAbstractNodes[index]
+		sourceAbstract := c.SatelliteAbstractNodes[index]
 		sourceOrbitId := sourceSat.OrbitId
 		targetOrbitId := sourceOrbitId
 		targetIndexInOrbit := (sourceSat.IndexInOrbit + 1) % c.SatellitePerOrbit
 		targetSatId := targetOrbitId*c.SatellitePerOrbit + targetIndexInOrbit
 		targetSat := c.ConsensusSatellites[targetSatId] // 目的节点的抽象标识
-		targetAbstract := c.AllAbstractNodes[targetSatId]
+		targetAbstract := c.SatelliteAbstractNodes[targetSatId]
 		if reflect.DeepEqual(sourceSat, targetSat) {
 			continue
 		} else {
@@ -239,7 +307,9 @@ func (c *Constellation) generateLinksForConsensusSatellites() {
 				sourceSat.Id, targetSat.Id,
 				sourceSat.ContainerName, targetSat.ContainerName,
 				sourceIntf, targetIntf,
-				sourceAbstract, targetAbstract, configs.TopConfiguration.ConstellationConfig.ISLBandwidth, ConstellationInstance.ConstellationGraph)
+				sourceAbstract, targetAbstract,
+				configs.TopConfiguration.ConstellationConfig.ISLBandwidth,
+				ConstellationInstance.ConstellationGraph)
 			sourceSat.Ifidx++                                                 // 接口索引变化
 			targetSat.Ifidx++                                                 // 接口索引变化
 			c.AllSatelliteLinks = append(c.AllSatelliteLinks, intraOrbitLink) // 添加到所有链路集合
@@ -256,7 +326,7 @@ func (c *Constellation) generateLinksForConsensusSatellites() {
 			targetIndexInOrbit = sourceSat.IndexInOrbit
 			targetSatId = targetOrbitId*c.SatellitePerOrbit + targetIndexInOrbit
 			targetSat = c.ConsensusSatellites[targetSatId]
-			targetAbstract = c.AllAbstractNodes[targetSatId]
+			targetAbstract = c.SatelliteAbstractNodes[targetSatId]
 			currentLinkNums := len(c.AllSatelliteLinks)                                                                                                                // 当前链路数量
 			linkId := currentLinkNums + 1                                                                                                                              // 当前链路数量 + 1 -> 链路 id
 			linkType := types.NetworkLinkType_InterOrbitSatelliteLink                                                                                                  // 链路类型
@@ -298,26 +368,30 @@ func (c *Constellation) generateLinksForConsensusSatellites() {
 	}
 }
 
+// Generate
+
 // GenerateLinksForNormalSatellite 为普通卫星生成链路
-func (c *Constellation) generateLinksForNormalSatellite() {
+func (c *Constellation) generateISLsForNormalSatellite() {
 	for index, sat := range c.NormalSatellites {
 		satReal := sat
 		// <---------------- 生成同轨道的星间链路 ---------------->
 		sourceSat := satReal
-		sourceAbstract := c.AllAbstractNodes[index]
+		sourceAbstract := c.SatelliteAbstractNodes[index]
 		sourceOrbitId := sourceSat.OrbitId
 		targetOrbitId := sourceOrbitId
 		targetIndexInOrbit := (sourceSat.IndexInOrbit + 1) % c.SatellitePerOrbit
 		targetSatId := targetOrbitId*c.SatellitePerOrbit + targetIndexInOrbit
 		targetSat := c.NormalSatellites[targetSatId] // 目的节点的抽象标识
-		targetAbstract := c.AllAbstractNodes[targetSatId]
+		targetAbstract := c.SatelliteAbstractNodes[targetSatId]
 		if reflect.DeepEqual(sourceSat, targetSat) {
 			continue
 		} else {
-			currentLinkNums := len(c.AllSatelliteLinks)                                                                                                                // 当前链路数量
-			linkId := currentLinkNums + 1                                                                                                                              // 当前链路数量 + 1 -> 链路 id
-			linkType := types.NetworkLinkType_IntraOrbitSatelliteLink                                                                                                  // 链路类型
-			nodeType := types.NetworkNodeType_NormalSatellite                                                                                                          // 节点类型
+			currentLinkNums := len(c.AllSatelliteLinks)               // 当前链路数量
+			linkId := currentLinkNums + 1                             // 当前链路数量 + 1 -> 链路 id
+			linkType := types.NetworkLinkType_IntraOrbitSatelliteLink // 链路类型
+			nodeType := types.NetworkNodeType_NormalSatellite
+			// link 相关的内容
+			// ------------------------------------------------------------------------------------------------
 			ipv4SubNet := c.Ipv4SubNets[currentLinkNums]                                                                                                               // 获取当前ipv4 子网
 			ipv6SubNet := c.Ipv6SubNets[currentLinkNums]                                                                                                               // 获取当前 ipv6 子网
 			sourceSat.ConnectedIpv4SubnetList = append(sourceSat.ConnectedIpv4SubnetList, ipv4SubNet.String())                                                         // 卫星添加ipv4子网
@@ -335,7 +409,8 @@ func (c *Constellation) generateLinksForNormalSatellite() {
 			sourceSat.IfNameToInterfaceMap[sourceIfName] = sourceIntf                                                                                                  // 设置源卫星地址
 			sourceSat.Interfaces = append(sourceSat.Interfaces, sourceIntf)                                                                                            // 添加接口
 			targetSat.IfNameToInterfaceMap[targetIfName] = targetIntf                                                                                                  // 设置目的卫星地址
-			targetSat.Interfaces = append(targetSat.Interfaces, targetIntf)                                                                                            // 添加接口
+			targetSat.Interfaces = append(targetSat.Interfaces, targetIntf)
+			// ------------------------------------------------------------------------------------------------
 			intraOrbitLink := link.NewAbstractLink(linkType, linkId,
 				nodeType, nodeType,
 				sourceSat.Id, targetSat.Id,
@@ -359,7 +434,7 @@ func (c *Constellation) generateLinksForNormalSatellite() {
 			targetIndexInOrbit = sourceSat.IndexInOrbit
 			targetSatId = targetOrbitId*c.SatellitePerOrbit + targetIndexInOrbit
 			targetSat = c.NormalSatellites[targetSatId]
-			targetAbstract = c.AllAbstractNodes[targetSatId]
+			targetAbstract = c.SatelliteAbstractNodes[targetSatId]
 			currentLinkNums := len(c.AllSatelliteLinks)                                                                                                                // 当前链路数量
 			linkId := currentLinkNums + 1                                                                                                                              // 当前链路数量 + 1 -> 链路 id
 			linkType := types.NetworkLinkType_InterOrbitSatelliteLink                                                                                                  // 链路类型
@@ -409,7 +484,7 @@ func (c *Constellation) GenerateFrrConfigurationFiles() error {
 		return nil
 	}
 
-	for _, abstractNode := range c.AllAbstractNodes {
+	for _, abstractNode := range c.SatelliteAbstractNodes {
 		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
 		if err != nil {
 			return fmt.Errorf("cannot convert abstract node to normal node")
@@ -443,7 +518,7 @@ func (c *Constellation) GeneratePeerIdAndPrivateKey() error {
 		return nil
 	}
 
-	for _, abstractNode := range c.AllAbstractNodes {
+	for _, abstractNode := range c.SatelliteAbstractNodes {
 		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
 		if err != nil {
 			return fmt.Errorf("cannot convert abstract node to normal node")
@@ -466,7 +541,7 @@ func (c *Constellation) CalculateAndWriteSegmentRoutes() error {
 		return nil
 	}
 
-	for _, abstractNode := range c.AllAbstractNodes {
+	for _, abstractNode := range c.SatelliteAbstractNodes {
 		err := route.CalculateAndWriteSegmentRoute(abstractNode, &(c.AllSatelliteLinksMap), ConstellationInstance.ConstellationGraph)
 		if err != nil {
 			return fmt.Errorf("calculate route failed: %w", err)

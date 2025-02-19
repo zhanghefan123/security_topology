@@ -1,4 +1,3 @@
-# the first stage
 FROM go_env:latest
 
 COPY ./normal_satellite /normal_satellite

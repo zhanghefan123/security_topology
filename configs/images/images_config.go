@@ -2,6 +2,7 @@ package images
 
 type ImagesConfig struct {
 	NormalSatelliteImageName    string `mapstructure:"normal_satellite_image_name"`
+	GroundStationImageName      string `mapstructure:"ground_station_image_name"`
 	ConsensusSatelliteImageName string `mapstructure:"consensus_satellite_image_name"`
 	EtcdServiceImageName        string `mapstructure:"etcd_service_image_name"`
 	PositionServiceImageName    string `mapstructure:"position_service_image_name"`

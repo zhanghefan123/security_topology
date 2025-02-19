@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"zhanghefan123/security_topology/cmd/constellation"
 	"zhanghefan123/security_topology/cmd/http_service"
 	"zhanghefan123/security_topology/cmd/images"
 	"zhanghefan123/security_topology/cmd/root"
@@ -21,11 +20,11 @@ func main() {
 	}
 	rootCmd := root.CreateRootCmd()
 	httpServiceCmd := http_service.CreateHttpServiceCmd()
-	constellationCmd := constellation.CreateConstellationCmd()
+	// constellationCmd := constellation.CreateConstellationCmd() 这个命令已经被淘汰了
 	imagesCmd := images.CreateImagesCmd()
 	testCmd := test.CreateTestCommand()
 	rootCmd.AddCommand(httpServiceCmd)
-	rootCmd.AddCommand(constellationCmd)
+	// rootCmd.AddCommand(constellationCmd) 这个命令已经被淘汰了
 	rootCmd.AddCommand(imagesCmd)
 	rootCmd.AddCommand(testCmd)
 	err = rootCmd.Execute()

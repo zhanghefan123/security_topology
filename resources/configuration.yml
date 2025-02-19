@@ -2,9 +2,9 @@ network_config:
   base_v4_network_address: 192.168.0.0/16
   base_v6_network_address: 2001:db8:1234:5678::/112
   http_listen_port: 8080
-  enable_frr: true # 这里设置成为false是不想要影响接口的接收速率
+  enable_frr: false # 这里设置成为false是不想要影响接口的接收速率
   ospf_version: ospfv2
-  enable_srv6: false
+  enable_srv6: true
 
 consensus_config:
   consensus_protocol: pbft
@@ -15,14 +15,13 @@ consensus_config:
 #  NetworkNodeType_ConsensusSatellite NetworkNodeType = 1
 
 constellation_config:
-  orbit_number: 1
-  satellite_per_orbit: 11
   start_time: 2024|4|9|14|43|0 # 星座的启动时间
   satellite_config:
     type: 0
     p2p_port: 11300
     rpc_port: 12300
   isl_bandwidth: 10 # mbps 为单位
+  gsl_bandwidth: 10 # mbps 为单位
 
 chain_maker_config:
   enabled: true
@@ -45,6 +44,7 @@ chain_maker_config:
 
 images_config:
   normal_satellite_image_name: "normal_satellite"
+  ground_station_image_name: "ground_station"
   consensus_satellite_image_name: "consensus_satellite"
   router_image_name: "router"
   normal_node_image_name: "normal_node"
@@ -74,7 +74,9 @@ services_config:
     etcd_name: "etcd_service"
     etcd_prefix:
         satellites_prefix: "/security_topology/satellites"
+        ground_stations_prefix: "/security_topology/gnds"
         isls_prefix: "/security_topology/isls"
+        gsls_prefix: "/security_topology/gsls"
 
   position_update_config:
     interval: 1

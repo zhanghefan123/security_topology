@@ -9,6 +9,7 @@ const (
 	ImageNameRealTimePosition   = "realtime_position"
 	ImageNameRouter             = "router"
 	ImageNameNormalNode         = "normal_node"
+	ImageNameGroundStation      = "ground_station"
 	ImageNameConsensusNode      = "consensus_node"
 	ImageNameMaliciousNode      = "malicious_node"
 	ImageNameLiRNode            = "lir_node"
@@ -19,7 +20,7 @@ const (
 
 // 基于官方镜像的镜像 -> etcd_service
 // 基于 ubuntu_with_software  的镜像 -> python_env, go_env, chainmaker_env
-// 基于 go_env 的镜像 -> normal_satellite, router, consensus_node, normal_node
+// 基于 go_env 的镜像 -> normal_satellite, router, consensus_node, normal_node, ground_station
 // 基于 python_env 的镜像 -> lir_node, malicious_node, realtime_position
 // 基于 chainmaker_env 的镜像 -> chainmaker
 
@@ -36,7 +37,7 @@ var (
 		ImageNameEtcd,
 		ImageNameUbuntuWithSoftware,
 		ImageNamePythonEnv, ImageNameGoEnv, ImageNameChainMakerEnv,
-		ImageNameNormalNode, ImageNameRouter, ImageNameConsensusNode, ImageNameNormalSatellite, ImageNameChainMaker,
+		ImageNameNormalNode, ImageNameGroundStation, ImageNameRouter, ImageNameConsensusNode, ImageNameNormalSatellite, ImageNameChainMaker,
 		ImageNameMaliciousNode, ImageNameLiRNode, ImageNameRealTimePosition,
 	}
 	AvailableOperations = map[string]interface{}{
@@ -52,6 +53,7 @@ var (
 		ImageNameGoEnv:              struct{}{},
 		ImageNameChainMakerEnv:      struct{}{},
 
+		ImageNameGroundStation:   struct{}{},
 		ImageNameNormalNode:      struct{}{},
 		ImageNameRouter:          struct{}{},
 		ImageNameConsensusNode:   struct{}{},
@@ -74,6 +76,7 @@ var (
 		ImageNameGoEnv:              false,
 		ImageNameChainMakerEnv:      false,
 
+		ImageNameGroundStation:   false,
 		ImageNameNormalNode:      false,
 		ImageNameRouter:          false,
 		ImageNameConsensusNode:   false,

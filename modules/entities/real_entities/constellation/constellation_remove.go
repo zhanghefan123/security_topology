@@ -14,13 +14,15 @@ import (
 )
 
 const (
-	StopSatelliteContainers   = "StopSatelliteContainers"
-	RemoveSatelliteContainers = "RemoveSatelliteContainers"
-	RemoveLinks               = "RemoveLinks"
-	RemoveConfigurationFiles  = "RemoveConfigurationFiles"
-	RemoveEtcdService         = "RemoveEtcdService"
-	RemovePositionService     = "RemovePositionService"
-	StopLocalServices         = "StopLocalServices"
+	StopSatelliteContainers       = "StopSatelliteContainers"
+	StopGroundStationContainers   = "StopGroundStationContainers"
+	RemoveSatelliteContainers     = "RemoveSatelliteContainers"
+	RemoveGroundStationContainers = "RemoveGroundStationContainers"
+	RemoveLinks                   = "RemoveLinks"
+	RemoveConfigurationFiles      = "RemoveConfigurationFiles"
+	RemoveEtcdService             = "RemoveEtcdService"
+	RemovePositionService         = "RemovePositionService"
+	StopLocalServices             = "StopLocalServices"
 )
 
 type RemoveFunction func() error
@@ -38,7 +40,9 @@ func (c *Constellation) Remove() error {
 
 	removeSteps := []map[string]RemoveModule{
 		{StopSatelliteContainers: RemoveModule{true, c.StopSatelliteContainers}},
+		{StopGroundStationContainers: RemoveModule{true, c.StopGroundStationContainers}},
 		{RemoveSatelliteContainers: RemoveModule{true, c.RemoveSatelliteContainers}},
+		{RemoveGroundStationContainers: RemoveModule{true, c.RemoveGroundStationContainers}},
 		{RemoveLinks: RemoveModule{true, c.RemoveLinks}},
 		{RemoveConfigurationFiles: RemoveModule{true, c.RemoveConfigurationFiles}},
 		{RemoveEtcdService: RemoveModule{true, c.RemoveEtcdService}},
@@ -83,14 +87,14 @@ func (c *Constellation) removeSteps(removeSteps []map[string]RemoveModule) (err 
 	return
 }
 
-// StopSatelliteContainers 进行容器的停止
+// StopSatelliteContainers 进行卫星容器的停止
 func (c *Constellation) StopSatelliteContainers() error {
 	if _, ok := c.systemStopSteps[StopSatelliteContainers]; ok {
-		constellationLogger.Infof("already execute stop satellite containers")
+		constellationLogger.Infof("already execute stop containers")
 		return nil
 	}
 
-	description := fmt.Sprintf("%20s", "stop satellites")
+	description := fmt.Sprintf("%20s", "stop containers")
 	var taskFunc multithread.TaskFunc[*node.AbstractNode] = func(node *node.AbstractNode) error {
 		err := container_api.StopContainer(c.client, node)
 		if err != nil {
@@ -100,19 +104,38 @@ func (c *Constellation) StopSatelliteContainers() error {
 	}
 
 	c.systemStopSteps[StopSatelliteContainers] = struct{}{}
-	constellationLogger.Infof("execute stop satellite containers")
+	constellationLogger.Infof("execute stop containers")
 
-	return multithread.RunInMultiThread(description, taskFunc, c.AllAbstractNodes)
+	return multithread.RunInMultiThread(description, taskFunc, c.SatelliteAbstractNodes)
 }
 
-// RemoveSatelliteContainers 进行容器的删除
-func (c *Constellation) RemoveSatelliteContainers() error {
-	if _, ok := c.systemStopSteps[RemoveSatelliteContainers]; ok {
-		constellationLogger.Infof("already execute remove satellite containers")
+// StopGroundStationContainers 进行地面站容器的停止
+func (c *Constellation) StopGroundStationContainers() error {
+	if _, ok := c.systemStopSteps[StopGroundStationContainers]; ok {
+		constellationLogger.Infof("already execute stop ground station containers")
 		return nil
 	}
 
-	description := fmt.Sprintf("%20s", "remove satellites")
+	description := fmt.Sprintf("%20s", "stop ground station containers")
+	var taskFunc multithread.TaskFunc[*node.AbstractNode] = func(node *node.AbstractNode) error {
+		err := container_api.StopContainer(c.client, node)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	return multithread.RunInMultiThread(description, taskFunc, c.GroundStationAbstractNodes)
+}
+
+// RemoveSatelliteContainers 进行卫星容器的删除
+func (c *Constellation) RemoveSatelliteContainers() error {
+	if _, ok := c.systemStopSteps[RemoveSatelliteContainers]; ok {
+		constellationLogger.Infof("already execute remove containers")
+		return nil
+	}
+
+	description := fmt.Sprintf("%20s", "remove satellite containers")
 	var taskFunc multithread.TaskFunc[*node.AbstractNode] = func(node *node.AbstractNode) error {
 		err := container_api.RemoveContainer(c.client, node)
 		if err != nil {
@@ -124,7 +147,30 @@ func (c *Constellation) RemoveSatelliteContainers() error {
 	c.systemStopSteps[RemoveSatelliteContainers] = struct{}{}
 	constellationLogger.Infof("execute remove satellite containers")
 
-	return multithread.RunInMultiThread(description, taskFunc, c.AllAbstractNodes)
+	return multithread.RunInMultiThread(description, taskFunc, c.SatelliteAbstractNodes)
+}
+
+// RemoveGroundStationContainers 进行地面站容器的删除
+func (c *Constellation) RemoveGroundStationContainers() error {
+	if _, ok := c.systemStopSteps[RemoveGroundStationContainers]; ok {
+		constellationLogger.Infof("already execute remove ground station containers")
+		return nil
+	}
+
+	description := fmt.Sprintf("%20s", "remove ground station containers")
+	var taskFunc multithread.TaskFunc[*node.AbstractNode] = func(node *node.AbstractNode) error {
+		err := container_api.RemoveContainer(c.client, node)
+		if err != nil {
+			fmt.Printf("error: %v", err)
+			return err
+		}
+		return nil
+	}
+
+	c.systemStopSteps[RemoveGroundStationContainers] = struct{}{}
+	constellationLogger.Infof("execute remove ground station containers")
+
+	return multithread.RunInMultiThread(description, taskFunc, c.GroundStationAbstractNodes)
 }
 
 // RemoveLinks 进行链路的删除

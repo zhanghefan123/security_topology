@@ -5,6 +5,7 @@ import (
 	docker "github.com/docker/docker/client"
 	"zhanghefan123/security_topology/api/container_api/create_apis"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
+	"zhanghefan123/security_topology/modules/entities/real_entities/ground_station"
 	"zhanghefan123/security_topology/modules/entities/real_entities/nodes"
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/satellites"
@@ -23,6 +24,12 @@ func CreateContainer(client *docker.Client, node *node.AbstractNode) error {
 		if err != nil {
 			return fmt.Errorf("createNormalSatellite err: %w", err)
 		}
+	case types.NetworkNodeType_GroundStation:
+		gnd, _ := node.ActualNode.(*ground_station.GroundStation)
+		err = create_apis.CreateGroundStation(client, gnd)
+		if err != nil {
+			return fmt.Errorf("createGroundStation err: %w", err)
+		}
 	case types.NetworkNodeType_ConsensusSatellite:
 		sat, _ := node.ActualNode.(*satellites.ConsensusSatellite)
 		err = create_apis.CreateConsensusSatellite(client, sat)
@@ -37,7 +44,7 @@ func CreateContainer(client *docker.Client, node *node.AbstractNode) error {
 		}
 	case types.NetworkNodeType_PositionService:
 		positionService, _ := node.ActualNode.(*position.PositionService)
-		err = create_apis.CreatePositionService(client, positionService)
+		err = create_apis.CreateRealTimePositionService(client, positionService)
 		if err != nil {
 			return fmt.Errorf("createPositionService err: %w", err)
 		}

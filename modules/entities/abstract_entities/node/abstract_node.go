@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/simple"
+	"zhanghefan123/security_topology/modules/entities/real_entities/ground_station"
 	"zhanghefan123/security_topology/modules/entities/real_entities/nodes"
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/satellites"
@@ -43,6 +44,10 @@ func (abstractNode *AbstractNode) GetNormalNodeFromAbstractNode() (*normal_node.
 	case types.NetworkNodeType_NormalSatellite:
 		if normalSat, ok := abstractNode.ActualNode.(*satellites.NormalSatellite); ok {
 			return normalSat.NormalNode, nil
+		}
+	case types.NetworkNodeType_GroundStation:
+		if groundStation, ok := abstractNode.ActualNode.(*ground_station.GroundStation); ok {
+			return groundStation.NormalNode, nil
 		}
 	case types.NetworkNodeType_ConsensusSatellite:
 		if consensusSat, ok := abstractNode.ActualNode.(*satellites.ConsensusSatellite); ok {

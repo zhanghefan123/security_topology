@@ -41,17 +41,30 @@ func GetInstancesPositions(c *gin.Context) {
 		return
 	}
 
-	links := map[int][]string{}
-
-	for _, link := range constellation.ConstellationInstance.AllSatelliteLinks {
-		links[link.Id] = make([]string, 0)
-		links[link.Id] = append(links[link.Id], link.SourceContainerName)
-		links[link.Id] = append(links[link.Id], link.TargetContainerName)
+	// 进行星间链路的整合
+	// -----------------------------------------------------------------------------
+	isls := map[int][]string{}
+	for _, isl := range constellation.ConstellationInstance.AllSatelliteLinks {
+		isls[isl.Id] = make([]string, 0)
+		isls[isl.Id] = append(isls[isl.Id], isl.SourceContainerName)
+		isls[isl.Id] = append(isls[isl.Id], isl.TargetContainerName)
 	}
+	// -----------------------------------------------------------------------------
+
+	// 进行星地链路的整合
+	// -----------------------------------------------------------------------------
+	gsls := map[int][]string{}
+	for _, gsl := range constellation.ConstellationInstance.AllGroundSatelliteLinks {
+		gsls[gsl.Id] = make([]string, 0)
+		gsls[gsl.Id] = append(gsls[gsl.Id], gsl.SourceContainerName)
+		gsls[gsl.Id] = append(gsls[gsl.Id], gsl.TargetContainerName)
+	}
+	// -----------------------------------------------------------------------------
 
 	c.JSON(http.StatusOK, gin.H{
 		"positions": constellation.ConstellationInstance.ContainerNameToPosition,
-		"links":     links,
+		"isls":      isls,
+		"gsls":      gsls,
 	})
 }
 
@@ -76,7 +89,20 @@ func StartConstellation(c *gin.Context) {
 		})
 		return
 	}
-	//
+
+	// 看是否能进行成功的绑定 -> 将反序列化的参数打印一下
+	// -------------------------------------------------------------------------------
+	fmt.Printf("orbitNumber: %d | satellitePerOrbit: %d\n",
+		constellationParams.OrbitNumber,
+		constellationParams.SatellitePerOrbit)
+	for _, groundStationParam := range constellationParams.GroundStationsParams {
+		fmt.Printf("ground station name: %s | longitude: %f | latitude: %f\n",
+			groundStationParam.Name,
+			groundStationParam.Longitude,
+			groundStationParam.Latitude)
+	}
+	// -------------------------------------------------------------------------------
+
 	// 处理逻辑 -> 应该只需要更新卫星数量和每个轨道的卫星数量即可
 	err = startConstellationInner(constellationParams)
 	if err != nil {
@@ -96,32 +122,37 @@ func StartConstellation(c *gin.Context) {
 
 // startConstellationInner 实际的启动星座的逻辑
 func startConstellationInner(constellationParams *constellation.Parameters) error {
-	var err error // 创建错误
+	// 创建错误
+	var err error
+	// 创建 docker 客户端
 	var dockerClient *docker.Client
 	// 初始化本地配置
 	err = configs.InitLocalConfig()
+	// 看是否存在错误
 	if err != nil {
+		// 如果错误存在, 就进行返回
 		return fmt.Errorf("init local config err: %v", err)
 	}
 	// 初始化 dockerClient
 	dockerClient, err = client.NewDockerClient() // 创建新的 docker client
 	if err != nil {
+		// 如果存在错误就进行返回
 		return fmt.Errorf("create docker client err: %v", err)
 	}
 	// 初始化 etcdClient
 	listenAddr := configs.TopConfiguration.NetworkConfig.LocalNetworkAddress
 	listenPort := configs.TopConfiguration.ServicesConfig.EtcdConfig.ClientPort
 	etcdClient, err := etcd_api.NewEtcdClient(listenAddr, listenPort)
+	// 获取星座启动时间
 	startTime := configs.TopConfiguration.ConstellationConfig.GoStartTime
-	// 替换掉启动的卫星数量, 以及每个轨道的卫星数量
-	configs.TopConfiguration.ConstellationConfig.OrbitNumber = constellationParams.OrbitNumber
-	configs.TopConfiguration.ConstellationConfig.SatellitePerOrbit = constellationParams.SatellitePerOrbit
 	// 创建星座实例
-	constellation.ConstellationInstance = constellation.NewConstellation(dockerClient, etcdClient, startTime) // 创建一个星座, 使用的参数是 dockerClient
-	err = constellation.ConstellationInstance.Init()                                                          // 进行星座的初始化
+	constellation.ConstellationInstance = constellation.NewConstellation(dockerClient, etcdClient, startTime, constellationParams)
+	// 进行星座的初始化
+	err = constellation.ConstellationInstance.Init()
 	if err != nil {
 		return fmt.Errorf("init constellation err: %w", err)
 	}
+	// 进行星座的启动
 	err = constellation.ConstellationInstance.Start()
 	if err != nil {
 		return fmt.Errorf("start constellation err: %w", err)
