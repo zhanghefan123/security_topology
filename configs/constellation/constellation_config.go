@@ -18,4 +18,5 @@ type ConstellationConfig struct {
 	ISLBandwidth           int             `mapstructure:"isl_bandwidth"`
 	GSLBandwidth           int             `mapstructure:"gsl_bandwidth"`
 	SatelliteAvailableGSLs int             `mapstructure:"satellite_available_gsls"`
+	TimeStepKey            string          `mapstructure:"time_step_key"`
 }

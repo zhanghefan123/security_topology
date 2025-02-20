@@ -87,19 +87,97 @@ func (absLink *AbstractLink) GenerateVethPair() error {
 
 // RemoveVethPair 进行 veth pair 的删除
 func (absLink *AbstractLink) RemoveVethPair() error {
-	// 拿到源接口的名称
-	sourceIfName := absLink.SourceInterface.IfName
-	// 获取 veth
-	veth, err := netlink.LinkByName(sourceIfName)
-	// 进行删除
+	// 直接根据预先存储的 veth 进行删除
+	//err := netlink.LinkDel(*absLink.SourceInterface.Veth)
+	//if err != nil {
+	//	return fmt.Errorf("failed to delete veth pair: %w", err)
+	//}
+	//err = netlink.LinkDel(*absLink.TargetInterface.Veth)
+	//if err != nil {
+	//	fmt.Println("target veth already been removed")
+	//}
+	//return nil
+
+	// 1. 获取环境的 namespace, 最终需要回到原始的环境
+	hostNetNs, err := netns.Get()
 	if err != nil {
-		return nil // 这可能不是错误 (可能是发生了重复的删除)
+		return fmt.Errorf("netns.Get() failed: %w", err)
 	}
-	err = netlink.LinkDel(veth)
+	defer func(ns netns.NsHandle) {
+		nsSetErr := netns.Set(ns)
+		if err == nil {
+			err = nsSetErr
+		}
+	}(hostNetNs)
+
+	// 需要进入到容器的命名空间之中进行删除
+	//sourceIfName := absLink.SourceInterface.IfName
+	//targetIfName := absLink.TargetInterface.IfName
+	// 获取 normalNodes
+	sourceNormalNode, err := absLink.SourceNode.GetNormalNodeFromAbstractNode()
+	if err != nil {
+		return fmt.Errorf("RemoveVethPair: failed to get normal node: %w", err)
+	}
+	//targetNormalNode, err := absLink.TargetNode.GetNormalNodeFromAbstractNode()
+	//if err != nil {
+	//	return fmt.Errorf("RemoveVethPair: failed to get normal node: %w", err)
+	//}
+
+	// 获取源目 pid
+	sourcePid := sourceNormalNode.Pid
+	//targetPid := targetNormalNode.Pid
+
+	// 获取源目 netns
+	// ---------------------------------------------------------------------
+	sourceNetNs, err := netns.GetFromPid(sourcePid)
+	defer func(netNs *netns.NsHandle) {
+		nsCloseErr := netNs.Close()
+		if err == nil {
+			err = nsCloseErr
+		}
+	}(&sourceNetNs)
+	if err != nil {
+		return fmt.Errorf("netns.Get() failed: %w", err)
+	}
+
+	//targetNetNs, err := netns.GetFromPid(targetPid)
+	//defer func(netNs *netns.NsHandle) {
+	//	nsCloseErr := netNs.Close()
+	//	if err == nil {
+	//		err = nsCloseErr
+	//	}
+	//}(&targetNetNs)
+	//if err != nil {
+	//	return fmt.Errorf("netns.Get() failed: %w", err)
+	//}
+	// ---------------------------------------------------------------------
+
+	// 6. 切换到源命名空间进行 veth 的删除 -> 其实相当于删除了对侧的veth
+	runtime.LockOSThread()
+	if err = netns.Set(sourceNetNs); err != nil {
+		return fmt.Errorf("netns.Set(sourceNetNs) failed: %v", err)
+	}
+	err = netlink.LinkDel(*absLink.SourceInterface.Veth)
 	if err != nil {
 		return fmt.Errorf("failed to delete veth pair: %w", err)
 	}
-	// 如果没有任何错误就可以进行直接的返回
+	runtime.UnlockOSThread()
+
+	// 7. 切换到目的节点命名空间进行 veth 的删除
+	//runtime.LockOSThread()
+	//if err = netns.Set(targetNetNs); err != nil {
+	//	return fmt.Errorf("netns.Set(sourceNetNs) failed: %v", err)
+	//}
+	//veth, err = netlink.LinkByName(targetIfName)
+	//fmt.Println(veth)
+	//if err != nil {
+	//	return nil // 这可能不是错误 (可能是发生了重复的删除)
+	//}
+	//err = netlink.LinkDel(veth)
+	//if err != nil {
+	//	return fmt.Errorf("failed to delete veth pair: %w", err)
+	//}
+	//runtime.UnlockOSThread()
 	return nil
 }
 
@@ -167,6 +245,8 @@ func (absLink *AbstractLink) SetVethNamespaceAndAddr() error {
 	if err = netlink.LinkSetNsFd(sourceVeth, int(sourceNetNs)); err != nil {
 		return fmt.Errorf("netlink.LinkSetNsFd(sourceVeth, int(sourceNetNs)) failed: %v", err)
 	}
+	// 5.3 set into interface
+	absLink.SourceInterface.Veth = &sourceVeth
 	// ---------------------------------------------------------------------
 
 	// 6. 将目的接口设置到命名空间
@@ -180,6 +260,8 @@ func (absLink *AbstractLink) SetVethNamespaceAndAddr() error {
 	if err = netlink.LinkSetNsFd(targetVeth, int(targetNetNs)); err != nil {
 		return fmt.Errorf("netlink.LinkSetNsFd(targetVeth, int(targetNetNs)) failed: %v", err)
 	}
+	// 6.3 set into interface
+	absLink.TargetInterface.Veth = &targetVeth
 	// ---------------------------------------------------------------------
 
 	runtime.LockOSThread()

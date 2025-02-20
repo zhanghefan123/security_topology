@@ -66,9 +66,6 @@ func CreateGroundStation(client *docker.Client, groundStation *ground_station.Gr
 		Env:   envs,
 	}
 
-	fmt.Println("GroundStationImageName: ", configs.TopConfiguration.ImagesConfig.GroundStationImageName)
-	fmt.Println(groundStation.ContainerName)
-
 	// 7. hostConfig
 	hostConfig := &container.HostConfig{
 		// 容器数据卷映射

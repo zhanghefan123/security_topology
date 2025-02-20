@@ -82,6 +82,9 @@ func (normalNode *NormalNode) SetVethNamespace() (err error) {
 		if err = netlink.LinkSetNsFd(veth, int(netNs)); err != nil {
 			return fmt.Errorf("netlink.LinkSetNsFd(%d) failed: %w", veth, err)
 		}
+		// 设置
+		networkInterface.Veth = &veth
+		// 添加到 veths 之中
 		veths = append(veths, veth)
 	}
 

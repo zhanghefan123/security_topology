@@ -1,10 +1,12 @@
 package apis
 
 import (
+	"context"
 	"fmt"
 	docker "github.com/docker/docker/client"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 	"zhanghefan123/security_topology/api/etcd_api"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/docker/client"
@@ -204,4 +206,32 @@ func stopConstellationInner() error {
 		return fmt.Errorf("stop constellation error: %w", err)
 	}
 	return nil
+}
+
+// ChangeTimeStamp 进行时间戳的改变
+func ChangeTimeStamp(c *gin.Context) {
+	timeStampParams := &constellation.TimeStampParameter{}
+	err := c.ShouldBindJSON(timeStampParams)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": fmt.Sprintf("bindjson err: %v", err),
+		})
+		return
+	}
+
+	// 将结果存储到 etcd 之中
+	timeStepKey := configs.TopConfiguration.ConstellationConfig.TimeStepKey
+	_, err = constellation.ConstellationInstance.EtcdClient.Put(context.Background(),
+		timeStepKey, strconv.Itoa(timeStampParams.TimeStep))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": fmt.Sprintf("store to etcd error: %v", err),
+		})
+		return
+	}
+
+	// 进行结果的返回
+	c.JSON(http.StatusOK, gin.H{
+		"message": "change time step successfully",
+	})
 }

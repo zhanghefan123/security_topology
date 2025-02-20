@@ -173,6 +173,7 @@ func (c *Constellation) SetVethNamespaces() error {
 		constellationLogger.Infof("SetVethNameSpaces is already running")
 		return nil
 	}
+
 	description := fmt.Sprintf("%20s", "set veth namespaces")
 	var taskFunc multithread.TaskFunc[*node.AbstractNode] = func(node *node.AbstractNode) error {
 		normalNode, err := node.GetNormalNodeFromAbstractNode()
@@ -240,8 +241,9 @@ func (c *Constellation) StoreToEtcd() (err error) {
 	}
 
 	waitGroup := sync.WaitGroup{}
-	// 存在两个子任务
+	// 存在3个子任务
 	waitGroup.Add(3)
+
 	// 第一个子任务: 进行星座链路的存储
 	go func() {
 		defer waitGroup.Done() // 最终记录一下任务做完了
@@ -253,6 +255,7 @@ func (c *Constellation) StoreToEtcd() (err error) {
 			}
 		}
 	}()
+
 	// 第二个子任务: 进行卫星节点的存储
 	go func() {
 		// 最终记录一下任务做完了
@@ -275,6 +278,7 @@ func (c *Constellation) StoreToEtcd() (err error) {
 			}
 		}
 	}()
+
 	// 第三个子任务: 进行地面站节点的存储
 	go func() {
 		defer waitGroup.Done()
@@ -292,6 +296,13 @@ func (c *Constellation) StoreToEtcd() (err error) {
 		}
 	}()
 	waitGroup.Wait()
+
+	// 最后还需要将 time_step 进行存储
+	timeStepKey := configs.TopConfiguration.ConstellationConfig.TimeStepKey
+	_, err = c.EtcdClient.Put(context.Background(), timeStepKey, strconv.Itoa(c.TimeStep))
+	if err != nil {
+		return fmt.Errorf("store time step to etcd error %w", err)
+	}
 
 	c.systemStartSteps[StoreToEtcd] = struct{}{}
 	constellationLogger.Infof("execute store to etcd")
@@ -367,7 +378,7 @@ func (c *Constellation) StartUpdateDelayService() error {
 		return nil
 	}
 
-	// 进行连接|位置|延迟的更i性能
+	// 进行连接|位置|延迟的更新
 	ConnectionPositionAndDelay(c)
 
 	c.systemStartSteps[StartUpdateDelayService] = struct{}{}
@@ -414,12 +425,15 @@ func handleGSLUpdate(c *Constellation) {
 				// 进行卫星的获取
 				satellite := c.NormalSatellites[pbGSL.TargetNodeId-1]
 				// 判断是否地面站的连接卫星发生了变化
-				if groundStation.ConnectedSatellite == "" {
+				if groundStation.ConnectedSatellite == nil {
 					establishNewGsl(c, pbGSL)
-				} else if groundStation.ConnectedSatellite != satellite.ContainerName {
+					fmt.Println("establishNewGsl")
+				} else if groundStation.ConnectedSatellite.ContainerName != satellite.ContainerName {
 					removeOldGslAndEstablishNewGsl(c, pbGSL)
+					fmt.Println("removeOldGslAndEstablishNewGsl")
 				} else {
 					// 情况3: 地面站连接卫星没变
+					fmt.Println("connected satellite not changed")
 				}
 			}()
 		}
@@ -430,6 +444,7 @@ func handleGSLUpdate(c *Constellation) {
 func establishNewGsl(c *Constellation, pbGSL *posPbLink.Link) {
 	satellite := c.NormalSatellites[pbGSL.TargetNodeId-1]
 	groundStation := c.GroundStations[pbGSL.SourceNodeId-1]
+	groundStation.ConnectedSatellite = satellite // 注意一定要进行设置
 	abstractSatellite := c.SatelliteAbstractNodes[pbGSL.TargetNodeId-1]
 	abstractGSL := c.AllGroundSatelliteLinksMap[groundStation.ContainerName]
 
@@ -444,7 +459,7 @@ func establishNewGsl(c *Constellation, pbGSL *posPbLink.Link) {
 	satelliteIface := intf.NewNetworkInterface(satellite.Ifidx, satelliteIfname,
 		groundIface.TargetIpv4Addr, groundIface.TargetIpv6Addr,
 		groundIface.SourceIpv4Addr, groundIface.SourceIpv6Addr,
-		-1)
+		-1, nil)
 	satellite.IfNameToInterfaceMap[satelliteIfname] = satelliteIface
 	abstractGSL.TargetInterface = satelliteIface
 
@@ -459,8 +474,10 @@ func establishNewGsl(c *Constellation, pbGSL *posPbLink.Link) {
 
 // removeOldGslAndEstablishNewGsl 断开旧的星地连接然后建立新的星地连接
 func removeOldGslAndEstablishNewGsl(c *Constellation, pbGSL *posPbLink.Link) {
+
 	groundStation := c.GroundStations[pbGSL.SourceNodeId-1]
 	satellite := c.NormalSatellites[pbGSL.TargetNodeId-1]
+	groundStation.ConnectedSatellite = satellite
 	abstractGSL := c.AllGroundSatelliteLinksMap[groundStation.ContainerName]
 	abstractSatellite := c.SatelliteAbstractNodes[pbGSL.TargetNodeId-1]
 
@@ -476,7 +493,7 @@ func removeOldGslAndEstablishNewGsl(c *Constellation, pbGSL *posPbLink.Link) {
 	satelliteIface := intf.NewNetworkInterface(satellite.Ifidx, satelliteIfname,
 		groundIface.TargetIpv4Addr, groundIface.TargetIpv6Addr,
 		groundIface.SourceIpv4Addr, groundIface.SourceIpv6Addr,
-		-1)
+		-1, nil)
 	satellite.IfNameToInterfaceMap[satelliteIfname] = satelliteIface
 	abstractGSL.TargetInterface = satelliteIface
 

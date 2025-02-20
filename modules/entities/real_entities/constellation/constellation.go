@@ -29,6 +29,12 @@ type Parameters struct {
 	OrbitNumber          int                       `json:"orbit_number"`        // 轨道数量
 	SatellitePerOrbit    int                       `json:"satellite_per_orbit"` // 每轨道卫星数量
 	GroundStationsParams []GroundStationParameters `json:"ground_stations"`     // 选择的地面站
+	TimeStep             int                       `json:"time_step"`           // 时间步长
+}
+
+// TimeStampParameter 时间步长参数
+type TimeStampParameter struct {
+	TimeStep int `json:"time_step"` // 时间步长
 }
 
 // GroundStationParameters - 地面站参数

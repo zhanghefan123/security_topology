@@ -23,6 +23,7 @@ constellation_config:
   isl_bandwidth: 10 # mbps 为单位
   gsl_bandwidth: 10 # mbps 为单位
   satellite_available_gsls: 2 # 卫星可用的地面链路数量
+  time_step_key: /config/time_step
 
 chain_maker_config:
   enabled: true
@@ -78,6 +79,7 @@ services_config:
         ground_stations_prefix: "/security_topology/gnds"
         isls_prefix: "/security_topology/isls"
         gsls_prefix: "/security_topology/gsls"
+
 
   position_update_config:
     interval: 1

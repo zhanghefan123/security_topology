@@ -30,6 +30,7 @@ func CreateRealTimePositionService(client *docker.Client, positionService *posit
 		fmt.Sprintf("%s=%s", "CONSTELLATION_START_TIME", positionService.ConstellationStartTime),
 		fmt.Sprintf("%s=%d", "UPDATE_INTERVAL", positionService.UpdateInterval),
 		fmt.Sprintf("%s=%d", "SATELLITE_AVAILABLE_GSLS", configs.TopConfiguration.ConstellationConfig.SatelliteAvailableGSLs),
+		fmt.Sprintf("%s=%s", "TIME_STEP_KEY", configs.TopConfiguration.ConstellationConfig.TimeStepKey),
 	}
 
 	// 3. 创建 containerConfig

@@ -6,6 +6,7 @@ import (
 	"go.etcd.io/etcd/client/v3"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
+	"zhanghefan123/security_topology/modules/entities/real_entities/satellites"
 	"zhanghefan123/security_topology/modules/entities/types"
 	"zhanghefan123/security_topology/modules/utils/protobuf"
 	pbNode "zhanghefan123/security_topology/services/update/protobuf/node"
@@ -14,10 +15,10 @@ import (
 // GroundStation 地面站
 type GroundStation struct {
 	*normal_node.NormalNode
-	Longitude          float32 //  经度信息
-	Latitude           float32 // 纬度信息
-	ConnectedSatellite string  // 之前连接的是哪一颗卫星
-	RealName           string  // 真实的地面站名称
+	Longitude          float32                     //  经度信息
+	Latitude           float32                     // 纬度信息
+	ConnectedSatellite *satellites.NormalSatellite // 之前连接的是哪一颗卫星
+	RealName           string                      // 真实的地面站名称
 }
 
 // NewGroundStation 创建新的地面站实例
@@ -29,7 +30,7 @@ func NewGroundStation(nodeId int, longitude, latitude float32, realName string) 
 		NormalNode:         normal_node.NewNormalNode(nodeType, nodeId, fmt.Sprintf("%s-%d", nodeType.String(), nodeId)),
 		Longitude:          longitude,
 		Latitude:           latitude,
-		ConnectedSatellite: "",
+		ConnectedSatellite: nil,
 		RealName:           realName,
 	}
 	// 将结果进行返回
@@ -50,7 +51,6 @@ func (groundStation *GroundStation) StoreToEtcd(etcdClient *clientv3.Client) err
 	groundStationInBytes := protobuf.MustMarshal(normalPbGroundStation)
 	etcdGroundStationPrefix := configs.TopConfiguration.ServicesConfig.EtcdConfig.EtcdPrefix.GroundStationsPrefix
 	groundStationKey := fmt.Sprintf("%s/%d", etcdGroundStationPrefix, groundStation.Id)
-	fmt.Println("groundStationKey:", groundStationKey)
 	_, err := etcdClient.Put(context.Background(), groundStationKey, string(groundStationInBytes))
 	if err != nil {
 		return fmt.Errorf("failed to store ground station into etcd: %w", err)
