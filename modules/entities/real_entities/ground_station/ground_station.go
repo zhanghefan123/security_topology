@@ -17,10 +17,11 @@ type GroundStation struct {
 	Longitude          float32 //  经度信息
 	Latitude           float32 // 纬度信息
 	ConnectedSatellite string  // 之前连接的是哪一颗卫星
+	RealName           string  // 真实的地面站名称
 }
 
 // NewGroundStation 创建新的地面站实例
-func NewGroundStation(nodeId int, longitude, latitude float32) *GroundStation {
+func NewGroundStation(nodeId int, longitude, latitude float32, realName string) *GroundStation {
 	// 当前的类型
 	nodeType := types.NetworkNodeType_GroundStation
 	// 创建地面站
@@ -29,6 +30,7 @@ func NewGroundStation(nodeId int, longitude, latitude float32) *GroundStation {
 		Longitude:          longitude,
 		Latitude:           latitude,
 		ConnectedSatellite: "",
+		RealName:           realName,
 	}
 	// 将结果进行返回
 	return groundStation

@@ -22,6 +22,7 @@ constellation_config:
     rpc_port: 12300
   isl_bandwidth: 10 # mbps 为单位
   gsl_bandwidth: 10 # mbps 为单位
+  satellite_available_gsls: 2 # 卫星可用的地面链路数量
 
 chain_maker_config:
   enabled: true

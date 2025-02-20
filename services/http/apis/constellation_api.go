@@ -18,9 +18,16 @@ func GetConstellationState(c *gin.Context) {
 			"state": "down",
 		})
 	} else {
-		constellationParams := map[string]int{
+		// 通过 groundStations 拿到所有的 groundStationContainerNames
+		groundStationRealNames := make([]string, 0)
+		for _, groundStation := range constellation.ConstellationInstance.GroundStations {
+			groundStationRealNames = append(groundStationRealNames, groundStation.RealName)
+		}
+
+		constellationParams := map[string]interface{}{
 			"orbit_number":        constellation.ConstellationInstance.OrbitNumber,
 			"satellite_per_orbit": constellation.ConstellationInstance.SatellitePerOrbit,
+			"ground_stations":     groundStationRealNames,
 		}
 
 		c.JSON(http.StatusOK, gin.H{

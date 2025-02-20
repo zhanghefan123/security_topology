@@ -76,8 +76,8 @@ type Link struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Type            LinkType `protobuf:"varint,1,opt,name=type,proto3,enum=LinkType" json:"type,omitempty"`
-	Id              int32    `protobuf:"varint,2,opt,name=id,proto3" json:"id,omitempty"`
+	Type LinkType `protobuf:"varint,1,opt,name=type,proto3,enum=LinkType" json:"type,omitempty"`
+	Id   int32    `protobuf:"varint,2,opt,name=id,proto3" json:"id,omitempty"`
 	SourceNodeId    int32    `protobuf:"varint,3,opt,name=source_node_id,json=sourceNodeId,proto3" json:"source_node_id,omitempty"`
 	TargetNodeId    int32    `protobuf:"varint,4,opt,name=target_node_id,json=targetNodeId,proto3" json:"target_node_id,omitempty"`
 	SourceIfaceName string   `protobuf:"bytes,5,opt,name=source_iface_name,json=sourceIfaceName,proto3" json:"source_iface_name,omitempty"`

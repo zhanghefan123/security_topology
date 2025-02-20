@@ -185,7 +185,7 @@ func (c *Constellation) RemoveLinks() error {
 		sourceIfName := link.SourceInterface.IfName
 		veth, err := netlink.LinkByName(sourceIfName)
 		if err != nil {
-			return err // 查找不到可能是已经删掉了
+			return nil // 查找不到可能是已经删掉了 (注意这里一定需要进行空的返回)
 		}
 		err = netlink.LinkDel(veth)
 		if err != nil {

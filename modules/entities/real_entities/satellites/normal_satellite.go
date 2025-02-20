@@ -13,9 +13,10 @@ import (
 
 type NormalSatellite struct {
 	*normal_node.NormalNode
-	OrbitId      int      // 轨道的编号
-	IndexInOrbit int      // 轨道内的编号
-	Tle          []string // TLE 位置信息
+	OrbitId      int          // 轨道的编号
+	IndexInOrbit int          // 轨道内的编号
+	Tle          []string     // TLE 位置信息
+	GSLifIdx     map[int]bool // GSL 索引号是否可用
 }
 
 // NewNormalSatellite 创建普通卫星
@@ -28,6 +29,11 @@ func NewNormalSatellite(nodeId, orbitId, indexInOrbit int, tle []string) *Normal
 		OrbitId:      orbitId,
 		IndexInOrbit: indexInOrbit,
 		Tle:          tle,
+		GSLifIdx:     map[int]bool{},
+	}
+	// 进行 GSLifIdx 的填充
+	for index := 0; index <= configs.TopConfiguration.ConstellationConfig.SatelliteAvailableGSLs; index++ {
+		sat.GSLifIdx[sat.Ifidx+index] = true
 	}
 	return sat
 }
@@ -41,6 +47,7 @@ func (normalSatellite *NormalSatellite) StoreToEtcd(etcdClient *clientv3.Client)
 		Pid:            int32(normalSatellite.Pid),
 		Tle:            normalSatellite.Tle,
 		InterfaceDelay: make([]string, 0),
+		IfIdx:          int32(normalSatellite.Ifidx),
 	}
 	satelliteInBytes := protobuf.MustMarshal(normalPbSatellite)
 	etcdSatellitesPrefix := configs.TopConfiguration.ServicesConfig.EtcdConfig.EtcdPrefix.SatellitesPrefix

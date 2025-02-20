@@ -7,6 +7,8 @@
 - 依赖：
 - [1] go 1.23.0 ｜ go 1.23.1
 - [2] sudo apt-get install build-essential
+- [3] 使用的 protoc 版本 v3.20.3 下载方式 wget https://github.com/protocolbuffers/protobuf/releases/download/v3.20.3/protoc-3.20.3-linux-x86_64.zip
+- [4] 使用的 protoc-gen-go 版本 v1.23.0 下载方式 go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.23.0
 
 # 3. 各个文件夹的功能
 - [1] api

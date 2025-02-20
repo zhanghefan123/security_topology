@@ -29,6 +29,7 @@ func CreateRealTimePositionService(client *docker.Client, positionService *posit
 		fmt.Sprintf("%s=%s", "ETCD_GROUND_STATIONS_PREFIX", positionService.EtcdGroundStationsPrefix),
 		fmt.Sprintf("%s=%s", "CONSTELLATION_START_TIME", positionService.ConstellationStartTime),
 		fmt.Sprintf("%s=%d", "UPDATE_INTERVAL", positionService.UpdateInterval),
+		fmt.Sprintf("%s=%d", "SATELLITE_AVAILABLE_GSLS", configs.TopConfiguration.ConstellationConfig.SatelliteAvailableGSLs),
 	}
 
 	// 3. 创建 containerConfig

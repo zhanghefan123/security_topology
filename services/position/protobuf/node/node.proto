@@ -17,4 +17,5 @@ message Node {
     float latitude = 7;
     float longitude = 8;
     float altitude = 9;
+    int32 ifIdx = 10;
 }

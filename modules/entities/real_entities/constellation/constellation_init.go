@@ -165,7 +165,8 @@ func (c *Constellation) GenerateGroundStations() error {
 		// 进行地面站实例的创建
 		groundStationInstance := ground_station.NewGroundStation(index+1,
 			groundStationParam.Longitude,
-			groundStationParam.Latitude)
+			groundStationParam.Latitude,
+			groundStationParam.Name)
 		// 向地面站列表之中进行添加
 		c.GroundStations = append(c.GroundStations, groundStationInstance)
 		// 创建抽象节点
