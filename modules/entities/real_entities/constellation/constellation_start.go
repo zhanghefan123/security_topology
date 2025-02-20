@@ -11,6 +11,7 @@ import (
 	"zhanghefan123/security_topology/api/linux_tc_api"
 	"zhanghefan123/security_topology/api/multithread"
 	"zhanghefan123/security_topology/configs"
+	"zhanghefan123/security_topology/modules/entities/abstract_entities/intf"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/ground_station"
@@ -20,8 +21,8 @@ import (
 	"zhanghefan123/security_topology/modules/entities/real_entities/services/position"
 	"zhanghefan123/security_topology/modules/entities/types"
 	"zhanghefan123/security_topology/modules/utils/protobuf"
-	posPbLink "zhanghefan123/security_topology/services/position/protobuf/link"
-	posPbNode "zhanghefan123/security_topology/services/position/protobuf/node"
+	posPbLink "zhanghefan123/security_topology/services/update/protobuf/link"
+	posPbNode "zhanghefan123/security_topology/services/update/protobuf/node"
 )
 
 const (
@@ -245,7 +246,7 @@ func (c *Constellation) StoreToEtcd() (err error) {
 	go func() {
 		defer waitGroup.Done() // 最终记录一下任务做完了
 		for _, satelliteLink := range c.AllSatelliteLinks {
-			err = satelliteLink.StoreToEtcd(c.etcdClient)
+			err = satelliteLink.StoreToEtcd(c.EtcdClient)
 			if err != nil {
 				err = fmt.Errorf("store ISL to etcd error %w", err)
 				return
@@ -260,11 +261,11 @@ func (c *Constellation) StoreToEtcd() (err error) {
 			if absNode.Type == types.NetworkNodeType_NormalSatellite {
 				// 如果节点为普通卫星
 				normalSat, _ := absNode.ActualNode.(*satellites.NormalSatellite)
-				err = normalSat.StoreToEtcd(c.etcdClient)
+				err = normalSat.StoreToEtcd(c.EtcdClient)
 			} else if absNode.Type == types.NetworkNodeType_ConsensusSatellite {
 				// 如果节点为共识卫星
 				consensusSat, _ := absNode.ActualNode.(*satellites.ConsensusSatellite)
-				err = consensusSat.StoreToEtcd(c.etcdClient)
+				err = consensusSat.StoreToEtcd(c.EtcdClient)
 			} else {
 				err = fmt.Errorf("unsupported node type")
 			}
@@ -280,7 +281,7 @@ func (c *Constellation) StoreToEtcd() (err error) {
 		for _, absNode := range c.GroundStationAbstractNodes {
 			if absNode.Type == types.NetworkNodeType_GroundStation {
 				groundStation, _ := absNode.ActualNode.(*ground_station.GroundStation)
-				err = groundStation.StoreToEtcd(c.etcdClient)
+				err = groundStation.StoreToEtcd(c.EtcdClient)
 			} else {
 				err = fmt.Errorf("unsupported node type")
 			}
@@ -304,7 +305,7 @@ func (c *Constellation) CreateServiceContext() (err error) {
 		constellationLogger.Infof("CreateServiceContext is already running")
 		return nil
 	}
-	c.serviceContext, c.serviceContextCancelFunc = context.WithCancel(context.Background())
+	c.ServiceContext, c.serviceContextCancelFunc = context.WithCancel(context.Background())
 
 	c.systemStartSteps[CreateServiceContext] = struct{}{}
 	constellationLogger.Infof("execute create context")
@@ -366,7 +367,17 @@ func (c *Constellation) StartUpdateDelayService() error {
 		return nil
 	}
 
-	// 由于地面站位置始终不变, 所以不用进行周期性的更新, 直接设置就可以了
+	// 进行连接|位置|延迟的更i性能
+	ConnectionPositionAndDelay(c)
+
+	c.systemStartSteps[StartUpdateDelayService] = struct{}{}
+	constellationLogger.Infof("execute update delay service")
+	return nil
+}
+
+// ConnectionPositionAndDelay 进行位置和延迟的更新
+func ConnectionPositionAndDelay(c *Constellation) {
+	// step1: 将地面站的位置信息放到 ContainerNameToPosition
 	for _, groundStation := range c.GroundStations {
 		c.ContainerNameToPosition[groundStation.ContainerName] = &position_info.Position{
 			NodeType:  types.NetworkNodeType_GroundStation.String(), // 节点类型
@@ -376,135 +387,152 @@ func (c *Constellation) StartUpdateDelayService() error {
 		}
 	}
 
-	// 开启一个线程, 不断进行更新事件的获取 (gsls 更新事件)
-	go func() {
-		// 创建一个监听键值对更新事件的 channel
-		watchChan := c.etcdClient.Watch(
-			c.serviceContext,
-			configs.TopConfiguration.ServicesConfig.EtcdConfig.EtcdPrefix.GSLsPrefix,
-			clientv3.WithPrefix(),
-		)
-		for response := range watchChan {
-			for _, event := range response.Events {
-				go func() {
-					// 创建 protobuf Node
-					pbGSL := &posPbLink.Link{}
-					// 将 etcd 的值进行反序列化
-					protobuf.MustUnmarshal(event.Kv.Value, pbGSL)
-					// 进行地面站的获取
-					groundStation := c.GroundStations[pbGSL.SourceNodeId-1]
-					// 进行卫星的获取
-					satellite := c.NormalSatellites[pbGSL.TargetNodeId-1]
-					// 判断是否地面站的连接卫星发生了变化
-					if groundStation.ConnectedSatellite == "" {
-						// 情况1: 地面站之前没有连接过卫星
+	// step2: 进行 gsl 变化事件的监听
+	go handleGSLUpdate(c)
 
-						// 直接进行设置
-						// --------------------------------------------------------------------
-						abstractSatellite := c.SatelliteAbstractNodes[pbGSL.TargetNodeId-1]
-						abstractGSL := c.AllGroundSatelliteLinksMap[groundStation.ContainerName]
-						abstractGSL.TargetNodeId = satellite.Id
-						abstractGSL.TargetContainerName = satellite.ContainerName
-						abstractGSL.TargetNode = abstractSatellite
-						// --------------------------------------------------------------------
+	// step3: 进行卫星变化事件的监听
+	go handleSatellitesUpdate(c)
+}
 
-						// 进行新的链路的建立
-						// --------------------------------------------------------------------
-						// step 1 生成 veth pair
-						/*
-							groundInterface := groundStation.Interfaces[0]
-							satelliteIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(satellite.Type), satellite.Id, 1)
-							satelliteInterface := intf.NewNetworkInterface(satellite.Ifidx, satelliteIfName,
-								groundInterface.TargetIpv4Addr, groundInterface.TargetIpv6Addr,
-								groundInterface.SourceIpv4Addr, groundInterface.SourceIpv6Addr,
-								-1) // link identifier 主要是用于 LiR 链路标识之中的
-							abstractGSL.TargetInterface = satelliteInterface
-							err := abstractGSL.GenerateVethPair()
-							if err != nil {
-								fmt.Printf("error in generate gsl veth pair %v\n", err)
-							}
-							// step 2 设置 veth 命名空间以及addr
-							_ = abstractGSL.SetVethNamespaceAndAddr()
-						*/
-						// --------------------------------------------------------------------
-
-					} else if groundStation.ConnectedSatellite != satellite.ContainerName {
-						// 情况2: 地面站换了卫星
-
-						// step1: 进行旧的链路的拆除
-						abstractGSL := c.AllGroundSatelliteLinksMap[groundStation.ContainerName]
-						/*
-							_ = abstractGSL.RemoveVethPair()
-						*/
-
-						// step2: 实际上发生了变化, 进行更新
-						abstractSatellite := c.SatelliteAbstractNodes[pbGSL.TargetNodeId-1]
-						abstractGSL.TargetNodeId = satellite.Id
-						abstractGSL.TargetContainerName = satellite.ContainerName
-						abstractGSL.TargetNode = abstractSatellite
-
-						// step3: 设置 veth 命名空间以及 addr
-						/*
-							_ = abstractGSL.SetVethNamespaceAndAddr()
-						*/
-					} else {
-						// 情况3: 地面站连接卫星没变
-					}
-				}()
-			}
+// handleGSLUpdate 进行 GSL 变化事件的监听
+func handleGSLUpdate(c *Constellation) {
+	// 创建一个监听键值对更新事件的 channel
+	watchChan := c.EtcdClient.Watch(
+		c.ServiceContext,
+		configs.TopConfiguration.ServicesConfig.EtcdConfig.EtcdPrefix.GSLsPrefix,
+		clientv3.WithPrefix(),
+	)
+	for response := range watchChan {
+		for _, event := range response.Events {
+			go func() {
+				// 创建 protobuf Node
+				pbGSL := &posPbLink.Link{}
+				// 将 etcd 的值进行反序列化
+				protobuf.MustUnmarshal(event.Kv.Value, pbGSL)
+				// 进行地面站的获取
+				groundStation := c.GroundStations[pbGSL.SourceNodeId-1]
+				// 进行卫星的获取
+				satellite := c.NormalSatellites[pbGSL.TargetNodeId-1]
+				// 判断是否地面站的连接卫星发生了变化
+				if groundStation.ConnectedSatellite == "" {
+					establishNewGsl(c, pbGSL)
+				} else if groundStation.ConnectedSatellite != satellite.ContainerName {
+					removeOldGslAndEstablishNewGsl(c, pbGSL)
+				} else {
+					// 情况3: 地面站连接卫星没变
+				}
+			}()
 		}
-	}()
+	}
+}
 
-	// 开启一个线程，准备不断的进行更新事件的获取 (卫星更新事件)
-	go func() {
-		// 创建一个监听键值对更新事件的 channel
-		watchChan := c.etcdClient.Watch(
-			c.serviceContext,
-			configs.TopConfiguration.ServicesConfig.EtcdConfig.EtcdPrefix.SatellitesPrefix,
-			clientv3.WithPrefix(),
-		)
-		for response := range watchChan {
-			for _, event := range response.Events {
-				go func() {
-					// 创建 protobuf Node
-					sat := &posPbNode.Node{}
-					// 将 etcd 的值进行反序列化
-					protobuf.MustUnmarshal(event.Kv.Value, sat)
-					// 获取卫星容器的 pid
-					satPid := sat.Pid
-					// 获取卫星容器名
-					containerName := sat.ContainerName
-					// 进行位置的设置
-					c.ContainerNameToPosition[containerName] = &position_info.Position{
-						NodeType:  types.NetworkNodeType_NormalSatellite.String(), // 节点类型
-						Latitude:  float64(sat.Latitude),                          // 纬度
-						Longitude: float64(sat.Longitude),                         // 经度
-						Altitude:  float64(sat.Altitude),                          // 高度
-					}
-					// 创建接口数组
-					interfaces := make([]string, len(sat.InterfaceDelay))
-					// 创建延迟数组
-					interfaceDelays := make([]float64, len(sat.InterfaceDelay))
-					for index, interfaceAndDelayStr := range sat.InterfaceDelay {
-						// InterfaceDelay 存储的是 Interface (str) -> Delay (float) 的映射
-						interfaceAndDelay := strings.Split(interfaceAndDelayStr, ":")
-						// 获取接口名称
-						interfaceName := interfaceAndDelay[0]
-						// 获取延迟
-						interfaceDelay, _ := strconv.ParseFloat(interfaceAndDelay[1], 64)
-						// 存放到切片之中
-						interfaces[index] = interfaceName
-						interfaceDelays[index] = interfaceDelay
-					}
-					// 忽略错误 -> 这里会进行标红的原因就是 linux 下才有这个 api
-					_ = linux_tc_api.SetInterfacesDelay(int(satPid), interfaces, interfaceDelays)
-				}()
-			}
+// establishNewGsl 进行新的 GSL 的建立
+func establishNewGsl(c *Constellation, pbGSL *posPbLink.Link) {
+	satellite := c.NormalSatellites[pbGSL.TargetNodeId-1]
+	groundStation := c.GroundStations[pbGSL.SourceNodeId-1]
+	abstractSatellite := c.SatelliteAbstractNodes[pbGSL.TargetNodeId-1]
+	abstractGSL := c.AllGroundSatelliteLinksMap[groundStation.ContainerName]
+
+	// 更新 abstractGSL
+	abstractGSL.TargetNodeId = satellite.Id
+	abstractGSL.TargetContainerName = satellite.ContainerName
+	abstractGSL.TargetNode = abstractSatellite
+
+	// 创建 satellite interface 并更新 abstractGSL
+	satelliteIfname := pbGSL.TargetIfaceName
+	groundIface := groundStation.Interfaces[0]
+	satelliteIface := intf.NewNetworkInterface(satellite.Ifidx, satelliteIfname,
+		groundIface.TargetIpv4Addr, groundIface.TargetIpv6Addr,
+		groundIface.SourceIpv4Addr, groundIface.SourceIpv6Addr,
+		-1)
+	satellite.IfNameToInterfaceMap[satelliteIfname] = satelliteIface
+	abstractGSL.TargetInterface = satelliteIface
+
+	// 进行 veth pair 生成以及命名空间设置, 地址分配
+	err := abstractGSL.GenerateVethPair()
+	if err != nil {
+		fmt.Printf("error in generate gsl veth pair %v\n", err)
+	}
+	// step 2 设置 veth 命名空间以及addr
+	_ = abstractGSL.SetVethNamespaceAndAddr()
+}
+
+// removeOldGslAndEstablishNewGsl 断开旧的星地连接然后建立新的星地连接
+func removeOldGslAndEstablishNewGsl(c *Constellation, pbGSL *posPbLink.Link) {
+	groundStation := c.GroundStations[pbGSL.SourceNodeId-1]
+	satellite := c.NormalSatellites[pbGSL.TargetNodeId-1]
+	abstractGSL := c.AllGroundSatelliteLinksMap[groundStation.ContainerName]
+	abstractSatellite := c.SatelliteAbstractNodes[pbGSL.TargetNodeId-1]
+
+	_ = abstractGSL.RemoveVethPair()
+	delete(satellite.IfNameToInterfaceMap, abstractGSL.TargetInterface.IfName)
+
+	abstractGSL.TargetNodeId = satellite.Id
+	abstractGSL.TargetContainerName = satellite.ContainerName
+	abstractGSL.TargetNode = abstractSatellite
+
+	satelliteIfname := pbGSL.TargetIfaceName
+	groundIface := groundStation.Interfaces[0]
+	satelliteIface := intf.NewNetworkInterface(satellite.Ifidx, satelliteIfname,
+		groundIface.TargetIpv4Addr, groundIface.TargetIpv6Addr,
+		groundIface.SourceIpv4Addr, groundIface.SourceIpv6Addr,
+		-1)
+	satellite.IfNameToInterfaceMap[satelliteIfname] = satelliteIface
+	abstractGSL.TargetInterface = satelliteIface
+
+	// 进行 veth pair 生成以及命名空间设置, 地址分配
+	err := abstractGSL.GenerateVethPair()
+	if err != nil {
+		fmt.Printf("error in generate gsl veth pair %v\n", err)
+	}
+	// step 2 设置 veth 命名空间以及addr
+	_ = abstractGSL.SetVethNamespaceAndAddr()
+}
+
+// handleSatellitesUpdate 进行卫星变化事件的监听
+func handleSatellitesUpdate(c *Constellation) {
+	// 创建一个监听键值对更新事件的 channel
+	watchChan := c.EtcdClient.Watch(
+		c.ServiceContext,
+		configs.TopConfiguration.ServicesConfig.EtcdConfig.EtcdPrefix.SatellitesPrefix,
+		clientv3.WithPrefix(),
+	)
+	for response := range watchChan {
+		for _, event := range response.Events {
+			go func() {
+				// 创建 protobuf Node
+				sat := &posPbNode.Node{}
+				// 将 etcd 的值进行反序列化
+				protobuf.MustUnmarshal(event.Kv.Value, sat)
+				// 获取卫星容器的 pid
+				satPid := sat.Pid
+				// 获取卫星容器名
+				containerName := sat.ContainerName
+				// 进行位置的设置
+				c.ContainerNameToPosition[containerName] = &position_info.Position{
+					NodeType:  types.NetworkNodeType_NormalSatellite.String(), // 节点类型
+					Latitude:  float64(sat.Latitude),                          // 纬度
+					Longitude: float64(sat.Longitude),                         // 经度
+					Altitude:  float64(sat.Altitude),                          // 高度
+				}
+				// 创建接口数组
+				interfaces := make([]string, len(sat.InterfaceDelay))
+				// 创建延迟数组
+				interfaceDelays := make([]float64, len(sat.InterfaceDelay))
+				for index, interfaceAndDelayStr := range sat.InterfaceDelay {
+					// InterfaceDelay 存储的是 Interface (str) -> Delay (float) 的映射
+					interfaceAndDelay := strings.Split(interfaceAndDelayStr, ":")
+					// 获取接口名称
+					interfaceName := interfaceAndDelay[0]
+					// 获取延迟
+					interfaceDelay, _ := strconv.ParseFloat(interfaceAndDelay[1], 64)
+					// 存放到切片之中
+					interfaces[index] = interfaceName
+					interfaceDelays[index] = interfaceDelay
+				}
+				// 忽略错误 -> 这里会进行标红的原因就是 linux 下才有这个 api
+				_ = linux_tc_api.SetInterfacesDelay(int(satPid), interfaces, interfaceDelays)
+			}()
 		}
-		constellationLogger.Infof("local update delay service exit")
-	}()
-
-	c.systemStartSteps[StartUpdateDelayService] = struct{}{}
-	constellationLogger.Infof("execute update delay service")
-	return nil
+	}
 }

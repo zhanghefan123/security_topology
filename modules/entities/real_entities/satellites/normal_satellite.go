@@ -8,15 +8,14 @@ import (
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/entities/types"
 	"zhanghefan123/security_topology/modules/utils/protobuf"
-	pbNode "zhanghefan123/security_topology/services/position/protobuf/node"
+	pbNode "zhanghefan123/security_topology/services/update/protobuf/node"
 )
 
 type NormalSatellite struct {
 	*normal_node.NormalNode
-	OrbitId      int          // 轨道的编号
-	IndexInOrbit int          // 轨道内的编号
-	Tle          []string     // TLE 位置信息
-	GSLifIdx     map[int]bool // GSL 索引号是否可用
+	OrbitId      int      // 轨道的编号
+	IndexInOrbit int      // 轨道内的编号
+	Tle          []string // TLE 位置信息
 }
 
 // NewNormalSatellite 创建普通卫星
@@ -29,17 +28,15 @@ func NewNormalSatellite(nodeId, orbitId, indexInOrbit int, tle []string) *Normal
 		OrbitId:      orbitId,
 		IndexInOrbit: indexInOrbit,
 		Tle:          tle,
-		GSLifIdx:     map[int]bool{},
-	}
-	// 进行 GSLifIdx 的填充
-	for index := 0; index <= configs.TopConfiguration.ConstellationConfig.SatelliteAvailableGSLs; index++ {
-		sat.GSLifIdx[sat.Ifidx+index] = true
 	}
 	return sat
 }
 
 // StoreToEtcd 将卫星信息存储到 etcd 之中
 func (normalSatellite *NormalSatellite) StoreToEtcd(etcdClient *clientv3.Client) error {
+	// 卫星的下一个接口索引就是第一个 gsl 接口索引
+	nextGslIfIdx := normalSatellite.Ifidx
+
 	normalPbSatellite := &pbNode.Node{
 		Type:           pbNode.NodeType_NODE_TYPE_SATELLITE,
 		Id:             int32(normalSatellite.Id),
@@ -47,7 +44,7 @@ func (normalSatellite *NormalSatellite) StoreToEtcd(etcdClient *clientv3.Client)
 		Pid:            int32(normalSatellite.Pid),
 		Tle:            normalSatellite.Tle,
 		InterfaceDelay: make([]string, 0),
-		IfIdx:          int32(normalSatellite.Ifidx),
+		IfIdx:          int32(nextGslIfIdx),
 	}
 	satelliteInBytes := protobuf.MustMarshal(normalPbSatellite)
 	etcdSatellitesPrefix := configs.TopConfiguration.ServicesConfig.EtcdConfig.EtcdPrefix.SatellitesPrefix

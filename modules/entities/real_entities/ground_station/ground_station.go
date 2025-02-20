@@ -8,7 +8,7 @@ import (
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/entities/types"
 	"zhanghefan123/security_topology/modules/utils/protobuf"
-	pbNode "zhanghefan123/security_topology/services/position/protobuf/node"
+	pbNode "zhanghefan123/security_topology/services/update/protobuf/node"
 )
 
 // GroundStation 地面站

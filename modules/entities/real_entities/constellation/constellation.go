@@ -50,7 +50,7 @@ type Constellation struct {
 	*Parameters                           // 星座基本参数
 	*SatelliteParameters                  // 卫星基本参数
 	client               *docker.Client   // 用来创建、停止、开启容器的客户端
-	etcdClient           *clientv3.Client // etcd client 用于存取监听键值对
+	EtcdClient           *clientv3.Client // etcd client 用于存取监听键值对
 	startTime            time.Time        // 星座的启动时间
 	Ipv4SubNets          []iplib.Net4     // ipv4 子网
 	Ipv6SubNets          []iplib.Net6     // ipv6 子网
@@ -76,7 +76,7 @@ type Constellation struct {
 	systemStartSteps map[string]struct{} // 系统启动步骤
 	systemStopSteps  map[string]struct{} // 系统停止步骤
 
-	serviceContext           context.Context           // 服务上下文
+	ServiceContext           context.Context           // 服务上下文
 	serviceContextCancelFunc context.CancelFunc        // 服务上下文的取消函数
 	etcdService              *etcd.EtcdNode            // etcd 服务
 	abstractEtcdService      *node.AbstractNode        // 抽象 etcd 节点
@@ -96,7 +96,7 @@ func NewConstellation(client *docker.Client, etcdClient *clientv3.Client, startT
 			SatelliteP2PPort: configs.TopConfiguration.ConstellationConfig.SatelliteConfig.P2PPort,
 		},
 		client:                  client,
-		etcdClient:              etcdClient,
+		EtcdClient:              etcdClient,
 		startTime:               startTime,
 		NormalSatellites:        make([]*satellites.NormalSatellite, 0),
 		ConsensusSatellites:     make([]*satellites.ConsensusSatellite, 0),

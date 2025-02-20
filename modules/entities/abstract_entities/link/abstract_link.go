@@ -13,7 +13,7 @@ import (
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/types"
 	"zhanghefan123/security_topology/modules/utils/protobuf"
-	"zhanghefan123/security_topology/services/position/protobuf/link"
+	"zhanghefan123/security_topology/services/update/protobuf/link"
 )
 
 type AbstractLink struct {
@@ -93,7 +93,7 @@ func (absLink *AbstractLink) RemoveVethPair() error {
 	veth, err := netlink.LinkByName(sourceIfName)
 	// 进行删除
 	if err != nil {
-		return fmt.Errorf("failed to find veth pair: %v", err)
+		return nil // 这可能不是错误 (可能是发生了重复的删除)
 	}
 	err = netlink.LinkDel(veth)
 	if err != nil {
@@ -131,7 +131,8 @@ func (absLink *AbstractLink) SetVethNamespaceAndAddr() error {
 	sourcePid := sourceNormalNode.Pid
 	targetPid := targetNormalNode.Pid
 
-	// 4. 获取 netns
+	// 4. 获取源目 netns
+	// ---------------------------------------------------------------------
 	sourceNetNs, err := netns.GetFromPid(sourcePid)
 	defer func(netNs *netns.NsHandle) {
 		nsCloseErr := netNs.Close()
@@ -153,6 +154,7 @@ func (absLink *AbstractLink) SetVethNamespaceAndAddr() error {
 	if err != nil {
 		return fmt.Errorf("netns.Get() failed: %w", err)
 	}
+	// ---------------------------------------------------------------------
 
 	// 5. 将源接口设置到命名空间之中
 	// ---------------------------------------------------------------------
@@ -208,6 +210,10 @@ func (absLink *AbstractLink) SetVethNamespaceAndAddr() error {
 		return fmt.Errorf("netlink.AddrAdd(%s) failed: %w", ipv6, err)
 	}
 	// ---------------------------------------------------------------------
+
+	runtime.UnlockOSThread()
+
+	runtime.LockOSThread()
 
 	// 10. 切换到目的节点的网络命名空间 (启动接口, 设置 ipv4 地址, 设置 ipv6 地址)
 	// ---------------------------------------------------------------------
