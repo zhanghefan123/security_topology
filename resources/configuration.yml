@@ -23,7 +23,8 @@ constellation_config:
   isl_bandwidth: 10 # mbps 为单位
   gsl_bandwidth: 10 # mbps 为单位
   satellite_available_gsls: 2 # 卫星可用的地面链路数量
-  time_step_key: /config/time_step
+  minimum_elevation_angle: 5 # 最小的能够支持的仰角
+  time_step_key: /config/time_step  # time_step 对应的 key
 
 chain_maker_config:
   enabled: true
