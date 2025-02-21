@@ -1,6 +1,6 @@
 FROM go_env:latest
 
-COPY ./ground_station /ground_station
+COPY ground_station /ground_station
 
 RUN cd /ground_station && go mod tidy
 

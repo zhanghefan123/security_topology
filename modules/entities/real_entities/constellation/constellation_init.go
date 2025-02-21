@@ -496,6 +496,7 @@ func (c *Constellation) GenerateFrrConfigurationFiles() error {
 		return nil
 	}
 
+	// 为所有的卫星进行 frr 的生成
 	for _, abstractNode := range c.SatelliteAbstractNodes {
 		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
 		if err != nil {
@@ -503,13 +504,35 @@ func (c *Constellation) GenerateFrrConfigurationFiles() error {
 		}
 		ospfVersion := configs.TopConfiguration.NetworkConfig.OspfVersion
 		if ospfVersion == "ospfv2" {
-			// 生成 ospfv6 配置
+			// 生成 ospfv2 配置
 			err = normalNode.GenerateOspfV2FrrConfig()
 			if err != nil {
 				return fmt.Errorf("generate ospfv2 frr configuration files failed: %w", err)
 			}
 		} else if ospfVersion == "ospfv3" {
-			// 生成 ospfv6 配置
+			// 生成 ospfv3 配置
+			err = normalNode.GenerateOspfV3FrrConfig()
+			if err != nil {
+				return fmt.Errorf("generate ospfv3 frr configuration files failed: %w", err)
+			}
+		} else {
+			return fmt.Errorf("unsupported ospf version %s", ospfVersion)
+		}
+	}
+
+	// 为所有的地面站进行 frr 的生成
+	for _, abstractNode := range c.GroundStationAbstractNodes {
+		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
+		if err != nil {
+			return fmt.Errorf("cannot convert abstract node to normal node")
+		}
+		ospfVersion := configs.TopConfiguration.NetworkConfig.OspfVersion
+		if ospfVersion == "ospfv2" {
+			err = normalNode.GenerateOspfV2FrrConfigForGroundStation(len(c.SatelliteAbstractNodes))
+			if err != nil {
+				return fmt.Errorf("generate ospfv2 frr configuration files failed: %w", err)
+			}
+		} else if ospfVersion == "ospfv3" {
 			err = normalNode.GenerateOspfV3FrrConfig()
 			if err != nil {
 				return fmt.Errorf("generate ospfv3 frr configuration files failed: %w", err)

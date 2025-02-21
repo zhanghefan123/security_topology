@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"zhanghefan123/security/normal_satellite/modules/frr"
+	"zhanghefan123/security/normal_satellite/modules/interface_listener"
 	"zhanghefan123/security/normal_satellite/modules/srv6"
 )
 
@@ -16,6 +17,7 @@ func main() {
 	// 启动流程
 	// =======================================================
 	PrintExitLogo()
+	go interface_listener.MonitorInterface()
 	frr.Start()
 	srv6.Start()
 	// =======================================================
