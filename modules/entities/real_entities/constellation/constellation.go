@@ -26,10 +26,11 @@ var (
 
 // Parameters -星座参数
 type Parameters struct {
-	OrbitNumber          int                       `json:"orbit_number"`        // 轨道数量
-	SatellitePerOrbit    int                       `json:"satellite_per_orbit"` // 每轨道卫星数量
-	GroundStationsParams []GroundStationParameters `json:"ground_stations"`     // 选择的地面站
-	TimeStep             int                       `json:"time_step"`           // 时间步长
+	OrbitNumber           int                       `json:"orbit_number"`            // 轨道数量
+	SatellitePerOrbit     int                       `json:"satellite_per_orbit"`     // 每轨道卫星数量
+	GroundStationsParams  []GroundStationParameters `json:"ground_stations"`         // 选择的地面站
+	MinimumElevationAngle int                       `json:"minimum_elevation_angle"` // 最小的能够支持的仰角
+	TimeStep              int                       `json:"time_step"`               // 时间步长
 }
 
 // TimeStampParameter 时间步长参数

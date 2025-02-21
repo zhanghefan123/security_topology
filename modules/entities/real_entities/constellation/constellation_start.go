@@ -297,11 +297,18 @@ func (c *Constellation) StoreToEtcd() (err error) {
 	}()
 	waitGroup.Wait()
 
-	// 最后还需要将 time_step 进行存储
+	// 第四步: 存储 timeStepKey
 	timeStepKey := configs.TopConfiguration.ConstellationConfig.TimeStepKey
 	_, err = c.EtcdClient.Put(context.Background(), timeStepKey, strconv.Itoa(c.TimeStep))
 	if err != nil {
 		return fmt.Errorf("store time step to etcd error %w", err)
+	}
+
+	// 第五步: 存储 minimumElevationAngleKey
+	minimumElevationAngleKey := configs.TopConfiguration.ConstellationConfig.MinimumElevationAngleKey
+	_, err = c.EtcdClient.Put(context.Background(), minimumElevationAngleKey, strconv.Itoa(c.MinimumElevationAngle))
+	if err != nil {
+		return fmt.Errorf("store minimum elevation angle to etcd error %w", err)
 	}
 
 	c.systemStartSteps[StoreToEtcd] = struct{}{}

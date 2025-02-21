@@ -27,9 +27,11 @@ func GetConstellationState(c *gin.Context) {
 		}
 
 		constellationParams := map[string]interface{}{
-			"orbit_number":        constellation.ConstellationInstance.OrbitNumber,
-			"satellite_per_orbit": constellation.ConstellationInstance.SatellitePerOrbit,
-			"ground_stations":     groundStationRealNames,
+			"orbit_number":            constellation.ConstellationInstance.OrbitNumber,
+			"satellite_per_orbit":     constellation.ConstellationInstance.SatellitePerOrbit,
+			"ground_stations":         groundStationRealNames,
+			"minimum_elevation_angle": constellation.ConstellationInstance.MinimumElevationAngle,
+			"time_step":               constellation.ConstellationInstance.TimeStep,
 		}
 
 		c.JSON(http.StatusOK, gin.H{
