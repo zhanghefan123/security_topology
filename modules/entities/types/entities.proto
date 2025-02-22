@@ -11,17 +11,16 @@ enum NetworkNodeStatus {
 
 enum NetworkNodeType {
   NormalSatellite = 0;
-  ConsensusSatellite = 1;
-  EtcdService = 2;
-  PositionService = 3;
-  Router = 4;
-  NormalNode = 5;
-  ConsensusNode = 6;
-  ChainMakerNode = 7;
-  MaliciousNode = 8;
-  LirNode = 9;
-  Entrance = 10;
-  GroundStation = 11;
+  EtcdService = 1;
+  PositionService = 2;
+  Router = 3;
+  NormalNode = 4;
+  ConsensusNode = 5;
+  ChainMakerNode = 6;
+  MaliciousNode = 7;
+  LirNode = 8;
+  Entrance = 9;
+  GroundStation = 10;
 }
 
 enum NetworkLinkType {

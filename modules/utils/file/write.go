@@ -7,7 +7,7 @@ import (
 
 // WriteStringIntoFile 将 strings 写入到文件之中
 func WriteStringIntoFile(filePath string, content string) (err error) {
-	fileHandle, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0666)
+	fileHandle, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
 		return fmt.Errorf("WriteStringsIntoFile: %w", err)
 	}

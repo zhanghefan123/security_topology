@@ -130,15 +130,6 @@ func (c *Constellation) GenerateSatellites() error {
 				normalSatelliteAbstract := node.NewAbstractNode(normalSatellite.Type, normalSatellite, ConstellationInstance.ConstellationGraph)
 				// 将 satellite 放到 allAbstractNodes 之中
 				c.SatelliteAbstractNodes = append(c.SatelliteAbstractNodes, normalSatelliteAbstract)
-			} else if c.SatelliteType == types.NetworkNodeType_ConsensusSatellite { // 2. 如果是生成共识卫星
-				// 创建共识卫星
-				consensusSatellite := satellites.NewConsensusSatellite(nodeId+1, orbitId, indexInOrbit, c.SatelliteRPCPort, c.SatelliteP2PPort, tle)
-				// 添加卫星
-				c.ConsensusSatellites = append(c.ConsensusSatellites, consensusSatellite)
-				// 创建抽象节点
-				consensusSatelliteAbstract := node.NewAbstractNode(consensusSatellite.Type, consensusSatellite, ConstellationInstance.ConstellationGraph)
-				// 将 satellite 放到 allAbstractNodes 之中
-				c.SatelliteAbstractNodes = append(c.SatelliteAbstractNodes, consensusSatelliteAbstract)
 			} else {
 				return fmt.Errorf("not supported network node type")
 			}
@@ -265,8 +256,6 @@ func (c *Constellation) GenerateISLs() error {
 
 	if c.SatelliteType == types.NetworkNodeType_NormalSatellite {
 		c.generateISLsForNormalSatellite()
-	} else if c.SatelliteType == types.NetworkNodeType_ConsensusSatellite {
-		c.generateISLsForConsensusSatellites()
 	} else {
 		return fmt.Errorf("not supported network node type")
 	}
@@ -274,110 +263,6 @@ func (c *Constellation) GenerateISLs() error {
 	c.systemInitSteps[GenerateISLs] = struct{}{}
 	constellationLogger.Infof("generate ISLs")
 	return nil
-}
-
-// GenerateLinksForNormalSatellite 为共识卫星生成链路
-func (c *Constellation) generateISLsForConsensusSatellites() {
-	for index, sat := range c.ConsensusSatellites {
-		satReal := sat
-		// <---------------- 生成同轨道的星间链路 ---------------->
-		sourceSat := satReal
-		sourceAbstract := c.SatelliteAbstractNodes[index]
-		sourceOrbitId := sourceSat.OrbitId
-		targetOrbitId := sourceOrbitId
-		targetIndexInOrbit := (sourceSat.IndexInOrbit + 1) % c.SatellitePerOrbit
-		targetSatId := targetOrbitId*c.SatellitePerOrbit + targetIndexInOrbit
-		targetSat := c.ConsensusSatellites[targetSatId] // 目的节点的抽象标识
-		targetAbstract := c.SatelliteAbstractNodes[targetSatId]
-		if reflect.DeepEqual(sourceSat, targetSat) {
-			continue
-		} else {
-			currentLinkNums := len(c.AllSatelliteLinks)                                                                                                                     // 当前链路数量
-			linkId := currentLinkNums + 1                                                                                                                                   // 当前链路数量 + 1 -> 链路 id
-			linkType := types.NetworkLinkType_IntraOrbitSatelliteLink                                                                                                       // 链路类型
-			nodeType := types.NetworkNodeType_ConsensusSatellite                                                                                                            // 节点类型
-			ipv4SubNet := c.Ipv4SubNets[currentLinkNums]                                                                                                                    // 获取当前ipv4 子网
-			ipv6SubNet := c.Ipv6SubNets[currentLinkNums]                                                                                                                    // 获取当前 ipv6 子网
-			sourceSat.ConnectedIpv4SubnetList = append(sourceSat.ConnectedIpv4SubnetList, ipv4SubNet.String())                                                              // 卫星添加ipv4子网
-			targetSat.ConnectedIpv4SubnetList = append(targetSat.ConnectedIpv4SubnetList, ipv4SubNet.String())                                                              // 卫星添加ipv4子网
-			sourceSat.ConnectedIpv6SubnetList = append(sourceSat.ConnectedIpv6SubnetList, ipv6SubNet.String())                                                              // 卫星添加ipv6子网
-			targetSat.ConnectedIpv6SubnetList = append(targetSat.ConnectedIpv6SubnetList, ipv6SubNet.String())                                                              // 卫星添加ipv6子网
-			sourceIpv4Addr, targetIpv4Addr := network.GenerateTwoAddrsFromIpv4Subnet(ipv4SubNet)                                                                            // 提取ipv4第一个和第二个地址
-			sourceIpv6Addr, targetIpv6Addr := network.GenerateTwoAddrsFromIpv6Subnet(ipv6SubNet)                                                                            // 提取ipv6第一个和第二个地址
-			sourceIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), sourceSat.Id, sourceSat.Ifidx)                                                             // 源接口名
-			targetIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), targetSat.Id, targetSat.Ifidx)                                                             // 目的接口名
-			c.NetworkInterfaces += 1                                                                                                                                        // 接口数量 ++
-			sourceIntf := intf.NewNetworkInterface(sourceSat.Ifidx, sourceIfName, sourceIpv4Addr, sourceIpv6Addr, targetIpv4Addr, targetIpv6Addr, c.NetworkInterfaces, nil) // 创建第一个接口
-			c.NetworkInterfaces += 1                                                                                                                                        // 接口数量 ++
-			targetIntf := intf.NewNetworkInterface(targetSat.Ifidx, targetIfName, targetIpv4Addr, targetIpv6Addr, sourceIpv4Addr, sourceIpv6Addr, c.NetworkInterfaces, nil) // 创建第二个接口
-			sourceSat.IfNameToInterfaceMap[sourceIfName] = sourceIntf                                                                                                       // 设置源卫星地址
-			sourceSat.Interfaces = append(sourceSat.Interfaces, sourceIntf)                                                                                                 // 添加接口
-			targetSat.IfNameToInterfaceMap[targetIfName] = targetIntf                                                                                                       // 设置目的卫星地址
-			targetSat.Interfaces = append(targetSat.Interfaces, targetIntf)                                                                                                 // 添加接口
-			intraOrbitLink := link.NewAbstractLink(linkType, linkId,
-				nodeType, nodeType,
-				sourceSat.Id, targetSat.Id,
-				sourceSat.ContainerName, targetSat.ContainerName,
-				sourceIntf, targetIntf,
-				sourceAbstract, targetAbstract,
-				configs.TopConfiguration.ConstellationConfig.ISLBandwidth,
-				ConstellationInstance.ConstellationGraph)
-			sourceSat.Ifidx++                                                 // 接口索引变化
-			targetSat.Ifidx++                                                 // 接口索引变化
-			c.AllSatelliteLinks = append(c.AllSatelliteLinks, intraOrbitLink) // 添加到所有链路集合
-			if _, ok := c.AllSatelliteLinksMap[sourceSat.ContainerName]; !ok {
-				c.AllSatelliteLinksMap[sourceSat.ContainerName] = make(map[string]*link.AbstractLink)
-			}
-			c.AllSatelliteLinksMap[sourceSat.ContainerName][targetSat.ContainerName] = intraOrbitLink
-			c.IntraOrbitSatelliteLinks = append(c.IntraOrbitSatelliteLinks, intraOrbitLink) // 添加到轨内链路集合
-		}
-		// <---------------- 生成同轨道的星间链路 ---------------->
-		// <---------------- 生成异轨道的星间链路 ---------------->
-		targetOrbitId = sourceOrbitId + 1
-		if targetOrbitId < c.OrbitNumber {
-			targetIndexInOrbit = sourceSat.IndexInOrbit
-			targetSatId = targetOrbitId*c.SatellitePerOrbit + targetIndexInOrbit
-			targetSat = c.ConsensusSatellites[targetSatId]
-			targetAbstract = c.SatelliteAbstractNodes[targetSatId]
-			currentLinkNums := len(c.AllSatelliteLinks)                                                                                                                     // 当前链路数量
-			linkId := currentLinkNums + 1                                                                                                                                   // 当前链路数量 + 1 -> 链路 id
-			linkType := types.NetworkLinkType_InterOrbitSatelliteLink                                                                                                       // 链路类型
-			nodeType := types.NetworkNodeType_ConsensusSatellite                                                                                                            // 节点类型
-			ipv4SubNet := c.Ipv4SubNets[currentLinkNums]                                                                                                                    // 获取当前ipv4 子网
-			ipv6SubNet := c.Ipv6SubNets[currentLinkNums]                                                                                                                    // 获取当前 ipv6 子网
-			sourceSat.ConnectedIpv4SubnetList = append(sourceSat.ConnectedIpv4SubnetList, ipv4SubNet.String())                                                              // 卫星添加ipv4子网
-			targetSat.ConnectedIpv4SubnetList = append(targetSat.ConnectedIpv4SubnetList, ipv4SubNet.String())                                                              // 卫星添加ipv4子网
-			sourceSat.ConnectedIpv6SubnetList = append(sourceSat.ConnectedIpv6SubnetList, ipv6SubNet.String())                                                              // 卫星添加ipv6子网
-			targetSat.ConnectedIpv6SubnetList = append(targetSat.ConnectedIpv6SubnetList, ipv6SubNet.String())                                                              // 卫星添加ipv6子网
-			sourceIpv4Addr, targetIpv4Addr := network.GenerateTwoAddrsFromIpv4Subnet(ipv4SubNet)                                                                            // 提取ipv4第一个和第二个地址
-			sourceIpv6Addr, targetIpv6Addr := network.GenerateTwoAddrsFromIpv6Subnet(ipv6SubNet)                                                                            // 提取ipv6第一个和第二个地址
-			sourceIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), sourceSat.Id, sourceSat.Ifidx)                                                             // 源接口名
-			targetIfName := fmt.Sprintf("%s%d_idx%d", types.GetPrefix(nodeType), targetSat.Id, targetSat.Ifidx)                                                             // 目的接口名
-			c.NetworkInterfaces += 1                                                                                                                                        // 接口数量 ++
-			sourceIntf := intf.NewNetworkInterface(sourceSat.Ifidx, sourceIfName, sourceIpv4Addr, sourceIpv6Addr, targetIpv4Addr, targetIpv6Addr, c.NetworkInterfaces, nil) // 创建第一个接口
-			c.NetworkInterfaces += 1                                                                                                                                        // 接口数量 ++
-			targetIntf := intf.NewNetworkInterface(targetSat.Ifidx, targetIfName, targetIpv4Addr, targetIpv6Addr, sourceIpv4Addr, sourceIpv6Addr, c.NetworkInterfaces, nil) // 创建第二个接口
-			sourceSat.IfNameToInterfaceMap[sourceIfName] = sourceIntf                                                                                                       // 设置源卫星地址
-			sourceSat.Interfaces = append(sourceSat.Interfaces, sourceIntf)                                                                                                 // 添加接口
-			targetSat.IfNameToInterfaceMap[targetIfName] = targetIntf                                                                                                       // 设置目的卫星地址
-			targetSat.Interfaces = append(targetSat.Interfaces, targetIntf)                                                                                                 // 添加接口
-			interOrbitLink := link.NewAbstractLink(linkType, linkId,
-				nodeType, nodeType,
-				sourceSat.Id, targetSat.Id,
-				sourceSat.ContainerName, targetSat.ContainerName,
-				sourceIntf, targetIntf,
-				sourceAbstract, targetAbstract, configs.TopConfiguration.ConstellationConfig.ISLBandwidth, ConstellationInstance.ConstellationGraph)
-			sourceSat.Ifidx++                                                 // 接口索引变化
-			targetSat.Ifidx++                                                 // 接口索引变化
-			c.AllSatelliteLinks = append(c.AllSatelliteLinks, interOrbitLink) // 添加到所有链路集合
-			if _, ok := c.AllSatelliteLinksMap[sourceSat.ContainerName]; !ok {
-				c.AllSatelliteLinksMap[sourceSat.ContainerName] = make(map[string]*link.AbstractLink)
-			}
-			c.AllSatelliteLinksMap[sourceSat.ContainerName][targetSat.ContainerName] = interOrbitLink
-			c.InterOrbitSatelliteLinks = append(c.InterOrbitSatelliteLinks, interOrbitLink) // 添加到轨内链路集合
-		}
-		// <---------------- 生成异轨道的星间链路 ---------------->
-	}
 }
 
 // Generate
@@ -450,7 +335,7 @@ func (c *Constellation) generateISLsForNormalSatellite() {
 			currentLinkNums := len(c.AllSatelliteLinks)                                                                                                                     // 当前链路数量
 			linkId := currentLinkNums + 1                                                                                                                                   // 当前链路数量 + 1 -> 链路 id
 			linkType := types.NetworkLinkType_InterOrbitSatelliteLink                                                                                                       // 链路类型
-			nodeType := types.NetworkNodeType_ConsensusSatellite                                                                                                            // 节点类型
+			nodeType := types.NetworkNodeType_NormalSatellite                                                                                                               // 节点类型
 			ipv4SubNet := c.Ipv4SubNets[currentLinkNums]                                                                                                                    // 获取当前ipv4 子网
 			ipv6SubNet := c.Ipv6SubNets[currentLinkNums]                                                                                                                    // 获取当前 ipv6 子网
 			sourceSat.ConnectedIpv4SubnetList = append(sourceSat.ConnectedIpv4SubnetList, ipv4SubNet.String())                                                              // 卫星添加ipv4子网

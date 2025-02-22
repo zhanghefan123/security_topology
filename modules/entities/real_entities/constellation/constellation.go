@@ -62,9 +62,8 @@ type Constellation struct {
 	Ipv4SubNets          []iplib.Net4     // ipv4 子网
 	Ipv6SubNets          []iplib.Net6     // ipv6 子网
 
-	GroundStations      []*ground_station.GroundStation  // 所有的地面站
-	NormalSatellites    []*satellites.NormalSatellite    // 所有的普通卫星
-	ConsensusSatellites []*satellites.ConsensusSatellite // 所有的共识卫星
+	GroundStations   []*ground_station.GroundStation // 所有的地面站
+	NormalSatellites []*satellites.NormalSatellite   // 所有的普通卫星
 
 	SatelliteAbstractNodes     []*node.AbstractNode // 卫星对应的抽象节点
 	GroundStationAbstractNodes []*node.AbstractNode // 地面对应的抽象节点
@@ -106,7 +105,6 @@ func NewConstellation(client *docker.Client, etcdClient *clientv3.Client, startT
 		EtcdClient:              etcdClient,
 		startTime:               startTime,
 		NormalSatellites:        make([]*satellites.NormalSatellite, 0),
-		ConsensusSatellites:     make([]*satellites.ConsensusSatellite, 0),
 		SatelliteAbstractNodes:  make([]*node.AbstractNode, 0),
 		ContainerNameToPosition: make(map[string]*position_info.Position),
 		ConstellationGraph:      simple.NewDirectedGraph(),

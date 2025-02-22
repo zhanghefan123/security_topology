@@ -265,10 +265,6 @@ func (c *Constellation) StoreToEtcd() (err error) {
 				// 如果节点为普通卫星
 				normalSat, _ := absNode.ActualNode.(*satellites.NormalSatellite)
 				err = normalSat.StoreToEtcd(c.EtcdClient)
-			} else if absNode.Type == types.NetworkNodeType_ConsensusSatellite {
-				// 如果节点为共识卫星
-				consensusSat, _ := absNode.ActualNode.(*satellites.ConsensusSatellite)
-				err = consensusSat.StoreToEtcd(c.EtcdClient)
 			} else {
 				err = fmt.Errorf("unsupported node type")
 			}

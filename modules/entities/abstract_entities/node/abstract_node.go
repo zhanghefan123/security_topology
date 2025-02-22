@@ -49,10 +49,6 @@ func (abstractNode *AbstractNode) GetNormalNodeFromAbstractNode() (*normal_node.
 		if groundStation, ok := abstractNode.ActualNode.(*ground_station.GroundStation); ok {
 			return groundStation.NormalNode, nil
 		}
-	case types.NetworkNodeType_ConsensusSatellite:
-		if consensusSat, ok := abstractNode.ActualNode.(*satellites.ConsensusSatellite); ok {
-			return consensusSat.NormalNode, nil
-		}
 	case types.NetworkNodeType_EtcdService:
 		if etcdService, ok := abstractNode.ActualNode.(*etcd.EtcdNode); ok {
 			return etcdService.NormalNode, nil

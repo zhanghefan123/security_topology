@@ -10,6 +10,7 @@ import (
 	"os/exec"
 )
 
+// AddInterfaceIntoOspf 将接口添加到 OSPF 之中
 func AddInterfaceIntoOspf(newInterfaceName string) error {
 	fmt.Printf("Adding new interface to ospf %s\n", newInterfaceName)
 	networkCmd := exec.Command("vtysh",
@@ -31,6 +32,7 @@ func AddInterfaceIntoOspf(newInterfaceName string) error {
 	}
 }
 
+// RemoveInterfaceFromOSPF 将接口从 OSPF 之中移除
 func RemoveInterfaceFromOSPF(removedInterface string) error {
 	fmt.Printf("Removing interface from ospf %s\n", removedInterface)
 	networkCmd := exec.Command("vtysh",
@@ -49,6 +51,7 @@ func RemoveInterfaceFromOSPF(removedInterface string) error {
 	}
 }
 
+// MonitorInterface 进行接口的监听
 func MonitorInterface() {
 	// 所有存在的接口
 	existingInterfaces := make(map[string]struct{})

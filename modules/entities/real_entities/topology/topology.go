@@ -18,6 +18,11 @@ var (
 	topologyLogger   = logger.GetLogger(logger.ModuleTopology)
 )
 
+type TopologyParameters struct {
+	TopologyName        string `json:"topology_name"`
+	TopologyDescription string `json:"topology_description"`
+}
+
 type Topology struct {
 	client         *docker.Client
 	etcdClient     *clientv3.Client

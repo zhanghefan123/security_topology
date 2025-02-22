@@ -20,11 +20,6 @@ func (c *Constellation) Print(printType PrintType) {
 				prettyOutput := pretty.Sprint(satellite)
 				constellationLogger.Infof(prettyOutput)
 			}
-		} else if c.SatelliteType == types.NetworkNodeType_ConsensusSatellite {
-			for _, satellite := range c.ConsensusSatellites {
-				prettyOutput := pretty.Sprint(satellite)
-				constellationLogger.Infof(prettyOutput)
-			}
 		}
 
 	} else if printType == PrintType_Links {

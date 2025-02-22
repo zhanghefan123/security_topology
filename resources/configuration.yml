@@ -97,6 +97,7 @@ apps_config:
 resources_config:
   cpu_limit: 1
   memory_limit: 1
+  topologies_dir: "../resources/topologies/"
 
 path_validation_config:
   routing_table_type: 2 # 1 -> array based routing table | 2 -> hash based routing table

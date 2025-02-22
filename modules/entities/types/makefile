@@ -1,7 +1,5 @@
 linux: all gen
 
-windows: gen # 需要进行 protobuf 下载 https://github.com/protocolbuffers/protobuf/releases
-
 gen:
 	protoc --go_out=../types entities.proto
 

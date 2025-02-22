@@ -16,9 +16,11 @@ var postRoutes = map[string]gin.HandlerFunc{
 	"/stopConstellation":     apis.StopConstellation,     // (constellation 相关)
 	"/changeTimeStep":        apis.ChangeTimeStamp,       // (constellation 相关)
 
-	"/getTopologyState": apis.GetTopologyState, // (topology 相关)
-	"/startTopology":    apis.StartTopology,    // (topology 相关)
-	"/stopTopology":     apis.StopTopology,     // (topology 相关)
+	"/getTopologyState":       apis.GetTopologyState,       // (topology 相关)
+	"/startTopology":          apis.StartTopology,          // (topology 相关)
+	"/stopTopology":           apis.StopTopology,           // (topology 相关)
+	"/saveTopology":           apis.SaveTopology,           // (topology 相关)
+	"/getTopologyDescription": apis.GetTopologyDescription, // (topology 相关)
 
 	"/startWebShell": apis.StartWebShell, // webshell 相关
 	"/stopWebShell":  apis.StopWebShell,  // webshell 相关

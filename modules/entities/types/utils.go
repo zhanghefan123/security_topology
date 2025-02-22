@@ -8,8 +8,6 @@ func GetPrefix(typ NetworkNodeType) string {
 		return "ns"
 	} else if typ == NetworkNodeType_GroundStation {
 		return "gs"
-	} else if typ == NetworkNodeType_ConsensusSatellite {
-		return "cs"
 	} else if typ == NetworkNodeType_EtcdService {
 		return "es"
 	} else if typ == NetworkNodeType_PositionService {

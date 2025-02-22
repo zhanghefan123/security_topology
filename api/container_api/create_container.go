@@ -30,12 +30,6 @@ func CreateContainer(client *docker.Client, node *node.AbstractNode) error {
 		if err != nil {
 			return fmt.Errorf("createGroundStation err: %w", err)
 		}
-	case types.NetworkNodeType_ConsensusSatellite:
-		sat, _ := node.ActualNode.(*satellites.ConsensusSatellite)
-		err = create_apis.CreateConsensusSatellite(client, sat)
-		if err != nil {
-			return fmt.Errorf("createConsensusSatellite err: %w", err)
-		}
 	case types.NetworkNodeType_EtcdService:
 		etcdNode, _ := node.ActualNode.(*etcd.EtcdNode)
 		err = create_apis.CreateEtcdNode(client, etcdNode)
