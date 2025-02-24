@@ -34,11 +34,10 @@ line vty
 )
 
 // GenerateOspfV3FrrConfig 进行 frr 配置文件的生成
-func (normalNode *NormalNode) GenerateOspfV3FrrConfig() error {
+func (normalNode *NormalNode) GenerateOspfV3FrrConfig(routerId int) error {
 	finalConfigStr := ""
 
-	frrStartInfo := fmt.Sprintf(FrrV6StartInfo, normalNode.ContainerName, normalNode.Id, normalNode.Id,
-		normalNode.Id, normalNode.Id)
+	frrStartInfo := fmt.Sprintf(FrrV6StartInfo, normalNode.ContainerName, routerId, routerId, routerId, routerId)
 
 	finalConfigStr += frrStartInfo
 

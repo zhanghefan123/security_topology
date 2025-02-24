@@ -406,41 +406,9 @@ func ConnectionPositionAndDelay(c *Constellation) {
 
 	// step3: 进行卫星变化事件的监听
 	go handleSatellitesUpdate(c)
-}
 
-// handleGSLUpdate 进行 GSL 变化事件的监听
-func handleGSLUpdate(c *Constellation) {
-	// 创建一个监听键值对更新事件的 channel
-	watchChan := c.EtcdClient.Watch(
-		c.ServiceContext,
-		configs.TopConfiguration.ServicesConfig.EtcdConfig.EtcdPrefix.GSLsPrefix,
-		clientv3.WithPrefix(),
-	)
-	for response := range watchChan {
-		for _, event := range response.Events {
-			go func() {
-				// 创建 protobuf Node
-				pbGSL := &posPbLink.Link{}
-				// 将 etcd 的值进行反序列化
-				protobuf.MustUnmarshal(event.Kv.Value, pbGSL)
-				// 进行地面站的获取
-				groundStation := c.GroundStations[pbGSL.SourceNodeId-1]
-				// 进行卫星的获取
-				satellite := c.NormalSatellites[pbGSL.TargetNodeId-1]
-				// 判断是否地面站的连接卫星发生了变化
-				if groundStation.ConnectedSatellite == nil {
-					establishNewGsl(c, pbGSL)
-					fmt.Println("establishNewGsl")
-				} else if groundStation.ConnectedSatellite.ContainerName != satellite.ContainerName {
-					removeOldGslAndEstablishNewGsl(c, pbGSL)
-					fmt.Println("removeOldGslAndEstablishNewGsl")
-				} else {
-					// 情况3: 地面站连接卫星没变
-					fmt.Println("connected satellite not changed")
-				}
-			}()
-		}
-	}
+	// step4: 进行地面变化事件的监听
+
 }
 
 // establishNewGsl 进行新的 GSL 的建立
@@ -509,6 +477,50 @@ func removeOldGslAndEstablishNewGsl(c *Constellation, pbGSL *posPbLink.Link) {
 	_ = abstractGSL.SetVethNamespaceAndAddr()
 }
 
+// handleGSLUpdate 进行 GSL 变化事件的监听
+func handleGSLUpdate(c *Constellation) {
+	// 创建一个监听键值对更新事件的 channel
+	watchChan := c.EtcdClient.Watch(
+		c.ServiceContext,
+		configs.TopConfiguration.ServicesConfig.EtcdConfig.EtcdPrefix.GSLsPrefix,
+		clientv3.WithPrefix(),
+	)
+	for response := range watchChan {
+		for _, event := range response.Events {
+			go func() {
+				// 创建 protobuf Node
+				pbGSL := &posPbLink.Link{}
+				// 将 etcd 的值进行反序列化
+				protobuf.MustUnmarshal(event.Kv.Value, pbGSL)
+				// 存储链路的延迟
+				interfaceDelay := pbGSL.Delay
+				// 进行地面站的获取
+				groundStation := c.GroundStations[pbGSL.SourceNodeId-1]
+				// 进行卫星的获取
+				satellite := c.NormalSatellites[pbGSL.TargetNodeId-1]
+				// 判断是否地面站的连接卫星发生了变化
+				if groundStation.ConnectedSatellite == nil {
+					establishNewGsl(c, pbGSL)
+					fmt.Println("establishNewGsl")
+				} else if groundStation.ConnectedSatellite.ContainerName != satellite.ContainerName {
+					removeOldGslAndEstablishNewGsl(c, pbGSL)
+					fmt.Println("removeOldGslAndEstablishNewGsl")
+				} else {
+					// 情况3: 地面站连接卫星没变
+					fmt.Println("connected satellite not changed")
+				}
+
+				// 进行延迟的设置
+				interfaces := make([]string, 1)
+				interfaceDelays := make([]float64, 1)
+				interfaces[0] = groundStation.Interfaces[0].IfName
+				interfaceDelays[0] = float64(interfaceDelay)
+				_ = linux_tc_api.SetInterfacesDelay(groundStation.Pid, interfaces, interfaceDelays)
+			}()
+		}
+	}
+}
+
 // handleSatellitesUpdate 进行卫星变化事件的监听
 func handleSatellitesUpdate(c *Constellation) {
 	// 创建一个监听键值对更新事件的 channel
@@ -550,6 +562,7 @@ func handleSatellitesUpdate(c *Constellation) {
 					interfaces[index] = interfaceName
 					interfaceDelays[index] = interfaceDelay
 				}
+				//fmt.Println("interfaces and interfacedelays:", interfaces, interfaceDelays, satPid)
 				// 忽略错误 -> 这里会进行标红的原因就是 linux 下才有这个 api
 				_ = linux_tc_api.SetInterfacesDelay(int(satPid), interfaces, interfaceDelays)
 			}()

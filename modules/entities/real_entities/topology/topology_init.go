@@ -347,19 +347,20 @@ func (t *Topology) GenerateFrrConfigurationFiles() error {
 
 	selectedOspfVersion := configs.TopConfiguration.NetworkConfig.OspfVersion
 
-	for _, abstractNode := range t.AllAbstractNodes {
+	for index, abstractNode := range t.AllAbstractNodes {
+		routerId := index + 1
 		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
 		if err != nil {
 			return fmt.Errorf("unsupported ")
 		}
 		if selectedOspfVersion == "ospfv2" {
-			err = normalNode.GenerateOspfV2FrrConfig()
+			err = normalNode.GenerateOspfV2FrrConfig(routerId)
 			if err != nil {
 				return fmt.Errorf("generate ospfv2 frr configuration files failed, %s", err)
 			}
 		} else if selectedOspfVersion == "ospfv3" {
 			// 生成 ospfv3 配置
-			err = normalNode.GenerateOspfV3FrrConfig()
+			err = normalNode.GenerateOspfV3FrrConfig(routerId)
 			if err != nil {
 				return fmt.Errorf("generate ospfv3 frr configuration files failed, %s", err)
 			}

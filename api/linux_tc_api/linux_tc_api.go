@@ -76,6 +76,9 @@ func SetInterfacesDelay(containerPid int, interfaces []string, delays []float64)
 	for index := 0; index < len(interfaces); index++ {
 		var vethInterface netlink.Link
 		vethInterface, err = netlink.LinkByName(interfaces[index])
+		if vethInterface == nil {
+			fmt.Printf("(pid=%d) veth interface (name=%s) == nil\n", containerPid, interfaces[index])
+		}
 		if err != nil {
 			return fmt.Errorf("netlink.LinkByName(%s) failed: %w", interfaces[index], err)
 		}

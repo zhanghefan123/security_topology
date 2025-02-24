@@ -166,6 +166,7 @@ func (p *ChainMakerPrepare) GenerateCertsFiles() error {
 	mvCommand := exec.Command("cp", "-r", "./crypto-config", "./build/crypto-config")
 	err = mvCommand.Run()
 	if err != nil {
+		fmt.Printf("failed to copoy crypto-config: %v \n", err)
 		return fmt.Errorf("failed to copy crypto-config: %w", err)
 	}
 

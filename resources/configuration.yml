@@ -33,7 +33,7 @@ chain_maker_config:
   rpc_start_port: 12301
   http_start_port: 13301
   consensus_type: 1
-  log_level: ERROR
+  log_level: INFO
   vm_go_runtime_port: 32351
   vm_go_engine_port: 22351
   enable_broadcast_defence: false
