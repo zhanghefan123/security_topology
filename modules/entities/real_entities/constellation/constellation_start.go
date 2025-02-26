@@ -443,6 +443,15 @@ func establishNewGsl(c *Constellation, pbGSL *posPbLink.Link) {
 	_ = abstractGSL.SetVethNamespaceAndAddr()
 }
 
+// removeOldGsl 断开旧的星地连接
+func removeOldGsl(c *Constellation, pbGSL *posPbLink.Link) {
+	groundStation := c.GroundStations[pbGSL.SourceNodeId-1]
+	satellite := c.NormalSatellites[pbGSL.TargetNodeId-1]
+	abstractGSL := c.AllGroundSatelliteLinksMap[groundStation.ContainerName]
+	_ = abstractGSL.RemoveVethPair()
+	delete(satellite.IfNameToInterfaceMap, abstractGSL.TargetInterface.IfName)
+}
+
 // removeOldGslAndEstablishNewGsl 断开旧的星地连接然后建立新的星地连接
 func removeOldGslAndEstablishNewGsl(c *Constellation, pbGSL *posPbLink.Link) {
 
@@ -490,18 +499,31 @@ func handleGSLUpdate(c *Constellation) {
 			go func() {
 				// 创建 protobuf Node
 				pbGSL := &posPbLink.Link{}
-				// 将 etcd 的值进行反序列化
+				// 将 etcd 的值进行反序列化, 反序列化获取的才是对的
 				protobuf.MustUnmarshal(event.Kv.Value, pbGSL)
+				// linkId
+				linkId := pbGSL.Id
 				// 存储链路的延迟
 				interfaceDelay := pbGSL.Delay
 				// 进行地面站的获取
 				groundStation := c.GroundStations[pbGSL.SourceNodeId-1]
 				// 进行卫星的获取
 				satellite := c.NormalSatellites[pbGSL.TargetNodeId-1]
-				// 判断是否地面站的连接卫星发生了变化
+				// 进行 abstractLink 的获取
+				abstractGSL := c.AllGroundSatelliteLinksMap[groundStation.ContainerName]
+				abstractGSL.Status = true
+				// 进行linkId 的打印
+				fmt.Printf("LinkID = %d\n", linkId)
+				// 判断是否地面站的连接卫星发生了变化,
 				if groundStation.ConnectedSatellite == nil {
+					// 如果为空, 直接建立一条新的连接
 					establishNewGsl(c, pbGSL)
 					fmt.Println("establishNewGsl")
+				} else if -1 == linkId {
+					// 认为这条链路需要进行删除
+					abstractGSL.Status = false
+					removeOldGsl(c, pbGSL)
+					fmt.Println("link need to be delete")
 				} else if groundStation.ConnectedSatellite.ContainerName != satellite.ContainerName {
 					removeOldGslAndEstablishNewGsl(c, pbGSL)
 					fmt.Println("removeOldGslAndEstablishNewGsl")
@@ -531,22 +553,22 @@ func handleSatellitesUpdate(c *Constellation) {
 	)
 	for response := range watchChan {
 		for _, event := range response.Events {
+			// 创建 protobuf Node
+			sat := &posPbNode.Node{}
+			// 将 etcd 的值进行反序列化
+			protobuf.MustUnmarshal(event.Kv.Value, sat)
+			// 获取卫星容器的 pid
+			satPid := sat.Pid
+			// 获取卫星容器名
+			containerName := sat.ContainerName
+			// ContainerNameToPosition 可能会引起并发的修改
+			c.ContainerNameToPosition[containerName] = &position_info.Position{
+				NodeType:  types.NetworkNodeType_NormalSatellite.String(), // 节点类型
+				Latitude:  float64(sat.Latitude),                          // 纬度
+				Longitude: float64(sat.Longitude),                         // 经度
+				Altitude:  float64(sat.Altitude),                          // 高度
+			}
 			go func() {
-				// 创建 protobuf Node
-				sat := &posPbNode.Node{}
-				// 将 etcd 的值进行反序列化
-				protobuf.MustUnmarshal(event.Kv.Value, sat)
-				// 获取卫星容器的 pid
-				satPid := sat.Pid
-				// 获取卫星容器名
-				containerName := sat.ContainerName
-				// 进行位置的设置
-				c.ContainerNameToPosition[containerName] = &position_info.Position{
-					NodeType:  types.NetworkNodeType_NormalSatellite.String(), // 节点类型
-					Latitude:  float64(sat.Latitude),                          // 纬度
-					Longitude: float64(sat.Longitude),                         // 经度
-					Altitude:  float64(sat.Altitude),                          // 高度
-				}
 				// 创建接口数组
 				interfaces := make([]string, len(sat.InterfaceDelay))
 				// 创建延迟数组
@@ -563,7 +585,7 @@ func handleSatellitesUpdate(c *Constellation) {
 					interfaceDelays[index] = interfaceDelay
 				}
 				//fmt.Println("interfaces and interfacedelays:", interfaces, interfaceDelays, satPid)
-				// 忽略错误 -> 这里会进行标红的原因就是 linux 下才有这个 api
+				// 忽略错误 -> 这里会进行标红的原因就是 linux 下才有这个 api, set interface delay 的时候才进行修改
 				_ = linux_tc_api.SetInterfacesDelay(int(satPid), interfaces, interfaceDelays)
 			}()
 		}

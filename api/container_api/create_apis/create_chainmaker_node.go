@@ -81,6 +81,9 @@ func CreateChainMakerNode(client *docker.Client, chainMakerNode *nodes.Chainmake
 		fmt.Sprintf("%s=%f", "DDOS_WARNING_RATE", chainMakerConfig.DdosWarningRate),
 		fmt.Sprintf("%s=%t", "DIRECT_REMOVE", chainMakerConfig.DirectRemoveAttackedNode),
 		fmt.Sprintf("%s=%d", "BLOCKS_PER_PROPOSER", chainMakerConfig.BlocksPerProposer),
+		fmt.Sprintf("%s=%s", "ETCD_LISTEN_ADDR", configs.TopConfiguration.NetworkConfig.LocalNetworkAddress),
+		fmt.Sprintf("%s=%d", "ETCD_LISTEN_PORT", configs.TopConfiguration.ServicesConfig.EtcdConfig.ClientPort),
+		fmt.Sprintf("%s=%s", "START_DEFENCE_KEY", configs.TopConfiguration.ChainMakerConfig.StartDefenceKey),
 	}
 
 	// 6. 资源限制

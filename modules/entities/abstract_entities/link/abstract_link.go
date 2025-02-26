@@ -8,9 +8,11 @@ import (
 	"go.etcd.io/etcd/client/v3"
 	"gonum.org/v1/gonum/graph/simple"
 	"runtime"
+	"zhanghefan123/security_topology/api/linux_tc_api"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/intf"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
+	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/entities/types"
 	"zhanghefan123/security_topology/modules/utils/protobuf"
 	"zhanghefan123/security_topology/services/update/protobuf/link"
@@ -30,6 +32,7 @@ type AbstractLink struct {
 	SourceNode          *node.AbstractNode     `json:"-"` // 源节点
 	TargetNode          *node.AbstractNode     `json:"-"` // 目的节点
 	BandWidth           int                    `json:"-"` // 带宽
+	Status              bool                   `json:"-"` // 状态
 }
 
 func NewAbstractLink(typ types.NetworkLinkType, id int,
@@ -302,23 +305,25 @@ func (absLink *AbstractLink) StoreToEtcd(etcdClient *clientv3.Client) error {
 
 // SetLinkParams 设置链路属性
 func (absLink *AbstractLink) SetLinkParams() error {
-	//var err error
-	//var sourceNode, targetNode *normal_node.NormalNode
-	//sourceNode, err = absLink.SourceNode.GetNormalNodeFromAbstractNode()
-	//if err != nil {
-	//	return fmt.Errorf("failed to get source normal node: %w", err)
-	//}
-	//targetNode, err = absLink.TargetNode.GetNormalNodeFromAbstractNode()
-	//if err != nil {
-	//	return fmt.Errorf("failed to get target normal node: %w", err)
-	//}
-	// err = linux_tc_api.SetInterfaceBandwidth(absLink.SourceInterface, sourceNode.Pid, absLink.BandWidth)
-	//if err != nil {
-	//	return fmt.Errorf("failed to set link params: %w", err)
-	//}
-	//err = linux_tc_api.SetInterfaceBandwidth(absLink.TargetInterface, targetNode.Pid, absLink.BandWidth)
-	//if err != nil {
-	//	return fmt.Errorf("failed to set link params: %w", err)
-	//}
+	if absLink.BandWidth != linux_tc_api.LargeBandwidth {
+		var err error
+		var sourceNode, targetNode *normal_node.NormalNode
+		sourceNode, err = absLink.SourceNode.GetNormalNodeFromAbstractNode()
+		if err != nil {
+			return fmt.Errorf("failed to get source normal node: %w", err)
+		}
+		targetNode, err = absLink.TargetNode.GetNormalNodeFromAbstractNode()
+		if err != nil {
+			return fmt.Errorf("failed to get target normal node: %w", err)
+		}
+		err = linux_tc_api.SetInterfaceBandwidth(absLink.SourceInterface, sourceNode.Pid, absLink.BandWidth)
+		if err != nil {
+			return fmt.Errorf("failed to set link params: %w", err)
+		}
+		err = linux_tc_api.SetInterfaceBandwidth(absLink.TargetInterface, targetNode.Pid, absLink.BandWidth)
+		if err != nil {
+			return fmt.Errorf("failed to set link params: %w", err)
+		}
+	}
 	return nil
 }

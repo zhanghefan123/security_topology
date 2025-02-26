@@ -1,18 +1,24 @@
 package topology
 
 import (
+	"context"
 	"fmt"
 	"zhanghefan123/security_topology/api/container_api"
 	"zhanghefan123/security_topology/api/multithread"
+	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
+	"zhanghefan123/security_topology/modules/entities/real_entities/services/etcd"
+	"zhanghefan123/security_topology/modules/entities/types"
 )
 
 const (
+	StartEtcdService       = "StartEtcdService"
 	GenerateNodesVethPairs = "GenerateNodesVethPairs"
 	StartNodeContainers    = "StartNodeContainers"
 	SetVethNameSpaces      = "SetVethNameSpaces"
 	SetLinkParameters      = "SetLinkParameters"
+	StoreToEtcd            = "StoreToEtcd"
 )
 
 type StartFunction func() error
@@ -25,10 +31,12 @@ type StartModule struct {
 // Start 启动
 func (t *Topology) Start() error {
 	startSteps := []map[string]StartModule{
-		{GenerateNodesVethPairs: StartModule{true, t.GenerateNodesVethPairs}}, // step1 先创建 veth pair 然后改变链路的命名空间
-		{StartNodeContainers: StartModule{true, t.StartNodeContainers}},       // step2 一定要在 step1 之后，因为创建了容器后才有命名空间
-		{SetVethNameSpaces: StartModule{true, t.SetVethNamespaces}},           // step3 一定要在 step2 之后，因为创建了容器才能设置 veth 的 namespace
-		{SetLinkParameters: StartModule{true, t.SetLinkParameters}},           // step4 进行链路属性的设置
+		{StartEtcdService: StartModule{true, t.StartEtcdService}},
+		{StoreToEtcd: StartModule{true, t.StoreToEtcd}},                       // step1 将要存储的东西放到 etcd 之中
+		{GenerateNodesVethPairs: StartModule{true, t.GenerateNodesVethPairs}}, // step2 先创建 veth pair 然后改变链路的命名空间
+		{StartNodeContainers: StartModule{true, t.StartNodeContainers}},       // step3 一定要在 step1 之后，因为创建了容器后才有命名空间
+		{SetVethNameSpaces: StartModule{true, t.SetVethNamespaces}},           // step4 一定要在 step2 之后，因为创建了容器才能设置 veth 的 namespace
+		{SetLinkParameters: StartModule{true, t.SetLinkParameters}},           // step5 进行链路属性的设置
 	}
 	err := t.startSteps(startSteps)
 	if err != nil {
@@ -66,6 +74,45 @@ func (t *Topology) startSteps(startSteps []map[string]StartModule) (err error) {
 		}
 	}
 	return
+}
+
+// StartEtcdService 开启 etcd 服务
+func (t *Topology) StartEtcdService() error {
+	if _, ok := t.topologyStartSteps[StartEtcdService]; ok {
+		topologyLogger.Infof("StartEtcdService is already running")
+		return nil
+	}
+
+	// 1. 解析配置
+	etcdConfig := configs.TopConfiguration.ServicesConfig.EtcdConfig
+	clientPort := etcdConfig.ClientPort
+	peerPort := etcdConfig.PeerPort
+	dataDir := etcdConfig.DataDir
+	etcdName := etcdConfig.EtcdName
+
+	// 2. 根据配置创建节点
+	etcdService := etcd.NewEtcdNode(types.NetworkNodeStatus_Logic, clientPort, peerPort, dataDir, etcdName)
+
+	// 3. 配置
+	t.etcdService = etcdService
+
+	// 4. 创建抽象节点
+	t.abstractEtcdService = node.NewAbstractNode(types.NetworkNodeType_EtcdService, t.etcdService, nil)
+
+	// 5. 进行容器的创建和启动
+	err := container_api.CreateContainer(t.client, t.abstractEtcdService)
+	if err != nil {
+		return fmt.Errorf("create etcd container failed, %s", err.Error())
+	}
+	err = container_api.StartContainer(t.client, t.abstractEtcdService)
+	if err != nil {
+		return fmt.Errorf("start etcd container failed, %s", err.Error())
+	}
+
+	t.topologyStartSteps[StartEtcdService] = struct{}{}
+	topologyLogger.Infof("execute start etcd service")
+
+	return nil
 }
 
 // GenerateNodesVethPairs 进行节点之间的 veth pairs 的生成
@@ -161,4 +208,28 @@ func (t *Topology) SetLinkParameters() error {
 	t.topologyStartSteps[SetLinkParameters] = struct{}{}
 	topologyLogger.Infof("execute set link parameters")
 	return multithread.RunInMultiThread(description, taskFunc, t.Links)
+}
+
+func (t *Topology) StoreToEtcd() error {
+	if _, ok := t.topologyStartSteps[StoreToEtcd]; ok {
+		topologyLogger.Infof("StoreToEtcd is already running")
+		return nil
+	}
+
+	startDefenceKey := configs.TopConfiguration.ChainMakerConfig.StartDefenceKey
+	if t.TopologyParams.StartDefence {
+		_, err := t.EtcdClient.Put(context.Background(), startDefenceKey, "true")
+		if err != nil {
+			return fmt.Errorf("set start defence failed: %w", err)
+		}
+	} else {
+		_, err := t.EtcdClient.Put(context.Background(), startDefenceKey, "false")
+		if err != nil {
+			return fmt.Errorf("set start defence failed: %w", err)
+		}
+	}
+
+	t.topologyStartSteps[StoreToEtcd] = struct{}{}
+	topologyLogger.Infof("execute store to etcd")
+	return nil
 }

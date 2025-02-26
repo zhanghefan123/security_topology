@@ -16,6 +16,9 @@ type ChainMakerConfig struct {
 	BlocksPerProposer        int     `mapstructure:"blocks_per_proposer"`
 	DdosWarningRate          float64 `mapstructure:"ddos_warning_rate"`
 
+	// etcd keys
+	StartDefenceKey string `mapstructure:"start_defence_key"`
+
 	// 一些路径相关的配置
 	ChainMakerGoProjectPath string `mapstructure:"chainmaker_go_project_path"`
 	ChainMakerBuild         string `mapstructure:"chainmaker_build"`

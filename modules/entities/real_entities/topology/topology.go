@@ -9,6 +9,7 @@ import (
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/nodes"
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
+	"zhanghefan123/security_topology/modules/entities/real_entities/services/etcd"
 	"zhanghefan123/security_topology/modules/logger"
 	"zhanghefan123/security_topology/services/http/params"
 )
@@ -25,7 +26,7 @@ type TopologyParameters struct {
 
 type Topology struct {
 	client         *docker.Client
-	etcdClient     *clientv3.Client
+	EtcdClient     *clientv3.Client
 	TopologyParams *params.TopologyParams
 	Ipv4SubNets    []iplib.Net4
 	Ipv6SubNets    []iplib.Net6
@@ -38,6 +39,9 @@ type Topology struct {
 	MaliciousNodes  []*nodes.MaliciousNode
 	LirNodes        []*nodes.LiRNode
 	Entrances       []*nodes.Entrance
+
+	etcdService         *etcd.EtcdNode     // etcd 服务
+	abstractEtcdService *node.AbstractNode // 抽象 etcd 节点
 
 	RouterAbstractNodes     []*node.AbstractNode
 	NormalAbstractNodes     []*node.AbstractNode
@@ -63,7 +67,7 @@ type Topology struct {
 func NewTopology(client *docker.Client, etcdClient *clientv3.Client, params *params.TopologyParams) *Topology {
 	topology := &Topology{
 		client:         client,
-		etcdClient:     etcdClient,
+		EtcdClient:     etcdClient,
 		TopologyParams: params,
 		TopologyGraph:  simple.NewDirectedGraph(),
 

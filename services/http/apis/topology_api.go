@@ -1,6 +1,7 @@
 package apis
 
 import (
+	"context"
 	"fmt"
 	docker "github.com/docker/docker/client"
 	"github.com/gin-gonic/gin"
@@ -35,6 +36,52 @@ func GetAllTopologyNames() ([]string, error) {
 	}
 
 	return allTopologyNames, nil
+}
+
+// ChangeStartDefence 改变是否进行攻击
+func ChangeStartDefence(c *gin.Context) {
+	if topology.TopologyInstance == nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "topology not started",
+		})
+		return
+	}
+
+	// 准备进行参数的绑定
+	startDefenceParams := &params.StartDefenceParameter{}
+	err := c.ShouldBindJSON(startDefenceParams)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": fmt.Sprintf("bindjson err: %v", err),
+		})
+		return
+	}
+
+	// 进行参数的设置
+	topology.TopologyInstance.TopologyParams.StartDefence = startDefenceParams.StartDefence
+
+	// 设置到 etcd 之中
+	startDefenceKey := configs.TopConfiguration.ChainMakerConfig.StartDefenceKey
+	if startDefenceParams.StartDefence {
+		_, err = topology.TopologyInstance.EtcdClient.Put(context.Background(), startDefenceKey, "true")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": fmt.Sprintf("etcd put err: %v", err),
+			})
+		}
+	} else {
+		_, err = topology.TopologyInstance.EtcdClient.Put(context.Background(), startDefenceKey, "false")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": fmt.Sprintf("etcd put err: %v", err),
+			})
+		}
+	}
+
+	// 进行结果的返回
+	c.JSON(http.StatusOK, gin.H{
+		"message": "start_defence setting success",
+	})
 }
 
 // GetTopologyDescription 获取拓扑描述

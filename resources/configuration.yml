@@ -33,10 +33,10 @@ chain_maker_config:
   rpc_start_port: 12301
   http_start_port: 13301
   consensus_type: 1
-  log_level: INFO
+  log_level: ERROR
   vm_go_runtime_port: 32351
   vm_go_engine_port: 22351
-  enable_broadcast_defence: false
+  enable_broadcast_defence: true
   direct_remove_attacked_node: false
   speed_check: false
   blocks_per_proposer: 1
@@ -44,6 +44,7 @@ chain_maker_config:
   chainmaker_go_project_path: /home/zhf/Projects/emulator/chainmaker-go
   chainmaker_build: ./build
   templates_file_path: ../resources/templates
+  start_defence_key: "start_defence"
 
 
 images_config:

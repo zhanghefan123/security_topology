@@ -25,7 +25,6 @@ def udp_flood_attack(attack_thread_count: int, attacked_node_ip: str, attack_dur
         attack_process = multiprocessing.Process(target=udp_flood_attack_single_thread, args=(attacked_node_ip, stop_queue))
         attack_processes.append(attack_process)
         attack_process.start()
-        print("hello")
     # 攻击开始时间
     start_time = datetime.now()
     while True:
@@ -37,8 +36,6 @@ def udp_flood_attack(attack_thread_count: int, attacked_node_ip: str, attack_dur
         # 超过时间退出
         if time_delta_in_seconds > attack_duration:
             break
-        else:
-            print(time_delta_in_seconds)
     # 向队列发送停止攻击信号
     stop_queue.put("stop attack")
     for attack_process in attack_processes:

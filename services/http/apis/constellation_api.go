@@ -11,6 +11,7 @@ import (
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/docker/client"
 	"zhanghefan123/security_topology/modules/entities/real_entities/constellation"
+	"zhanghefan123/security_topology/modules/entities/types"
 )
 
 // GetConstellationState 获取星座的状态
@@ -56,9 +57,17 @@ func GetInstancesPositions(c *gin.Context) {
 	// -----------------------------------------------------------------------------
 	isls := map[int][]string{}
 	for _, isl := range constellation.ConstellationInstance.AllSatelliteLinks {
-		isls[isl.Id] = make([]string, 0)
-		isls[isl.Id] = append(isls[isl.Id], isl.SourceContainerName)
-		isls[isl.Id] = append(isls[isl.Id], isl.TargetContainerName)
+		if isl.Type == types.NetworkLinkType_IntraOrbitSatelliteLink {
+			isls[isl.Id] = make([]string, 0)
+			isls[isl.Id] = append(isls[isl.Id], isl.SourceContainerName)
+			isls[isl.Id] = append(isls[isl.Id], isl.TargetContainerName)
+			isls[isl.Id] = append(isls[isl.Id], "intra_orbit")
+		} else if isl.Type == types.NetworkLinkType_InterOrbitSatelliteLink {
+			isls[isl.Id] = make([]string, 0)
+			isls[isl.Id] = append(isls[isl.Id], isl.SourceContainerName)
+			isls[isl.Id] = append(isls[isl.Id], isl.TargetContainerName)
+			isls[isl.Id] = append(isls[isl.Id], "inter_orbit")
+		}
 	}
 	// -----------------------------------------------------------------------------
 
@@ -66,9 +75,11 @@ func GetInstancesPositions(c *gin.Context) {
 	// -----------------------------------------------------------------------------
 	gsls := map[int][]string{}
 	for _, gsl := range constellation.ConstellationInstance.AllGroundSatelliteLinks {
-		gsls[gsl.Id] = make([]string, 0)
-		gsls[gsl.Id] = append(gsls[gsl.Id], gsl.SourceContainerName)
-		gsls[gsl.Id] = append(gsls[gsl.Id], gsl.TargetContainerName)
+		if gsl.Status {
+			gsls[gsl.Id] = make([]string, 0)
+			gsls[gsl.Id] = append(gsls[gsl.Id], gsl.SourceContainerName)
+			gsls[gsl.Id] = append(gsls[gsl.Id], gsl.TargetContainerName)
+		}
 	}
 	// -----------------------------------------------------------------------------
 

@@ -41,12 +41,14 @@ func (trr *TxRateRecorder) StartTxRateTest(threadCount int) error {
 	// 创建长安链的客户端
 	chainMakerClient, err := CreateChainMakerClient(clientConfiguration)
 	if err != nil {
+		fmt.Printf("create chainmaker client failed, err:%v\n", err)
 		return fmt.Errorf("cannot create chainmaker client: %w", err)
 	}
 	// 进行合约的创建
 	err = CreateUpgradeUserContract(chainMakerClient, clientConfiguration, CreateContractOp)
 	if err != nil {
 		TxRateRecorderInstance = nil
+		fmt.Printf("create upgrade user contract failed, err:%v\n", err)
 		return fmt.Errorf("cannot create user contract: %w", err)
 	} else {
 		currentContractId = currentContractId + 1

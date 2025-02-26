@@ -21,6 +21,11 @@ type TopologyParams struct {
 	ConsensusNodeCpu     float64     `json:"consensus_node_cpu"`    // 单位为个
 	ConsensusNodeMemory  float64     `json:"consensus_node_memory"` // 单位为 MB
 	ConsensusThreadCount int         `json:"consensus_thread_count"`
-	Nodes                []NodeParam `json:"nodes"` // 所有的节点
-	Links                []LinkParam `json:"links"` // 所有的链路
+	Nodes                []NodeParam `json:"nodes"`         // 所有的节点
+	Links                []LinkParam `json:"links"`         // 所有的链路
+	StartDefence         bool        `json:"start_defence"` // 是否开启防御
+}
+
+type StartDefenceParameter struct {
+	StartDefence bool `json:"start_defence"`
 }

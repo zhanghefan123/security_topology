@@ -21,6 +21,7 @@ var postRoutes = map[string]gin.HandlerFunc{
 	"/stopTopology":           apis.StopTopology,           // (topology 相关)
 	"/saveTopology":           apis.SaveTopology,           // (topology 相关)
 	"/getTopologyDescription": apis.GetTopologyDescription, // (topology 相关)
+	"/changeStartDefence":     apis.ChangeStartDefence,     // (topology 相关)
 
 	"/startWebShell": apis.StartWebShell, // webshell 相关
 	"/stopWebShell":  apis.StopWebShell,  // webshell 相关

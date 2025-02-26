@@ -22,6 +22,7 @@ const (
 	StopNodeContainers          = "StopNodeContainers"
 	RemoveNodeContainers        = "RemoveNodeContainers"
 	RemoveLinks                 = "RemoveLinks"
+	RemoveEtcdService           = "RemoveEtcdService"
 	RemoveConfigurationFiles    = "RemoveConfigurationFiles"
 	RemoveChainMakerFiles       = "RemoveChainMakerFiles"
 )
@@ -46,6 +47,7 @@ func (t *Topology) Remove() error {
 		{StopNodeContainers: RemoveModule{true, t.StopNodeContainers}},
 		{RemoveNodeContainers: RemoveModule{true, t.RemoveNodeContainers}},
 		{RemoveLinks: RemoveModule{true, t.RemoveLinks}},
+		{RemoveEtcdService: RemoveModule{true, t.RemoveEtcdService}},
 		{RemoveConfigurationFiles: RemoveModule{true, t.RemoveConfigurationFiles}},
 		{RemoveChainMakerFiles: RemoveModule{removeChainMaker, t.RemoveChainMakerFiles}},
 	}
@@ -167,6 +169,28 @@ func (t *Topology) RemoveNodeContainers() error {
 	topologyLogger.Infof("execute remove node containers")
 
 	return multithread.RunInMultiThread(description, taskFunc, t.AllAbstractNodes)
+}
+
+// RemoveEtcdService 进行 etcd 服务的关闭
+func (t *Topology) RemoveEtcdService() error {
+	if _, ok := t.topologyStopSteps[RemoveEtcdService]; ok {
+		topologyLogger.Infof("already execute remove etcd service")
+		return nil
+	}
+
+	err := container_api.StopContainer(t.client, t.abstractEtcdService)
+	if err != nil {
+		return fmt.Errorf("stop etcd service failed, %s", err)
+	}
+	err = container_api.RemoveContainer(t.client, t.abstractEtcdService)
+	if err != nil {
+		return fmt.Errorf("remove etcd service failed, %s", err)
+	}
+
+	t.topologyStopSteps[RemoveEtcdService] = struct{}{}
+	topologyLogger.Infof("execute remove etcd service")
+
+	return nil
 }
 
 // RemoveLinks 进行链路的删除
