@@ -15,7 +15,7 @@ func buildImageForFabricPeer() error {
 		return nil
 	})
 
-	commandStr := fmt.Sprintf("build -f images/order/Dockerfile --build-arg GO_TAGS= -t hyperledger/fabric-orderer -t hyperledger/fabric-orderer:3.0.0 -t hyperledger/fabric-orderer:3.0")
+	commandStr := fmt.Sprintf("build -f images/order/Dockerfile --build-arg GO_TAGS= -t hyperledger/fabric-orderer -t hyperledger/fabric-orderer:3.0.0 -t hyperledger/fabric-orderer:3.0 .")
 	err = execute.Command("docker", strings.Split(commandStr, " "))
 	if err != nil {
 		return fmt.Errorf("build fabric peer image err: %s", err.Error())
@@ -30,7 +30,7 @@ func buildImageForFabricOrder() error {
 	err := dir.WithContextManager(fabricProjectPath, func() error {
 		return nil
 	})
-	commandStr := fmt.Sprintf("build -f images/peer/Dockerfile --build-arg GO_TAGS= -t hyperledger/fabric-peer -t hyperledger/fabric-peer:3.0.0 -t hyperledger/fabric-peer:3.0")
+	commandStr := fmt.Sprintf("build -f images/peer/Dockerfile --build-arg GO_TAGS= -t hyperledger/fabric-peer -t hyperledger/fabric-peer:3.0.0 -t hyperledger/fabric-peer:3.0 .")
 	err = execute.Command("docker", strings.Split(commandStr, " "))
 	if err != nil {
 		return fmt.Errorf("build fabric peer image err: %s", err.Error())
