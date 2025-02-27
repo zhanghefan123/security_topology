@@ -32,26 +32,31 @@ type Topology struct {
 	Ipv6SubNets    []iplib.Net6
 	TopologyGraph  *simple.DirectedGraph
 
-	Routers         []*nodes.Router
-	NormalNodes     []*normal_node.NormalNode
-	ConsensusNodes  []*nodes.ConsensusNode
-	ChainmakerNodes []*nodes.ChainmakerNode
-	MaliciousNodes  []*nodes.MaliciousNode
-	LirNodes        []*nodes.LiRNode
-	Entrances       []*nodes.Entrance
+	Routers          []*nodes.Router
+	NormalNodes      []*normal_node.NormalNode
+	ConsensusNodes   []*nodes.ConsensusNode
+	ChainmakerNodes  []*nodes.ChainmakerNode
+	MaliciousNodes   []*nodes.MaliciousNode
+	LirNodes         []*nodes.LiRNode
+	Entrances        []*nodes.Entrance
+	FabricPeerNodes  []*nodes.FabricPeerNode
+	FabricOrderNodes []*nodes.FabricOrderNode
 
 	etcdService         *etcd.EtcdNode     // etcd 服务
 	abstractEtcdService *node.AbstractNode // 抽象 etcd 节点
 
-	RouterAbstractNodes     []*node.AbstractNode
-	NormalAbstractNodes     []*node.AbstractNode
-	ConsensusAbstractNodes  []*node.AbstractNode
-	ChainMakerAbstractNodes []*node.AbstractNode
-	MaliciousAbstractNodes  []*node.AbstractNode
-	LirAbstractNodes        []*node.AbstractNode
-	EntranceAbstractNodes   []*node.AbstractNode
-	AllAbstractNodes        []*node.AbstractNode
-	AbstractNodesMap        map[string]*node.AbstractNode
+	RouterAbstractNodes      []*node.AbstractNode
+	NormalAbstractNodes      []*node.AbstractNode
+	ConsensusAbstractNodes   []*node.AbstractNode
+	ChainMakerAbstractNodes  []*node.AbstractNode
+	MaliciousAbstractNodes   []*node.AbstractNode
+	LirAbstractNodes         []*node.AbstractNode
+	EntranceAbstractNodes    []*node.AbstractNode
+	FabricPeerAbstractNodes  []*node.AbstractNode
+	FabricOrderAbstractNodes []*node.AbstractNode
+
+	AllAbstractNodes []*node.AbstractNode
+	AbstractNodesMap map[string]*node.AbstractNode
 
 	Links       []*link.AbstractLink
 	AllLinksMap map[string]map[string]*link.AbstractLink // map[sourceContainerName][targetContainerName]*link.AbstractLink

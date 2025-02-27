@@ -12,6 +12,7 @@ import (
 	"zhanghefan123/security_topology/configs/chainmaker"
 	"zhanghefan123/security_topology/configs/consensus"
 	"zhanghefan123/security_topology/configs/constellation"
+	"zhanghefan123/security_topology/configs/fabric"
 	"zhanghefan123/security_topology/configs/images"
 	"zhanghefan123/security_topology/configs/network"
 	"zhanghefan123/security_topology/configs/path"
@@ -39,6 +40,7 @@ type TopConfig struct {
 	AppsConfig           apps.AppsConfig                      `mapstructure:"apps_config"`
 	ResourcesConfig      resources.ResourcesConfig            `mapstructure:"resources_config"`
 	PathValidationConfig path_validation.PathValidationConfig `mapstructure:"path_validation_config"`
+	FabricConfig         fabric.FabricConfig                  `mapstructure:"fabric_config"`
 }
 
 var availableOspfVersions = map[string]struct{}{

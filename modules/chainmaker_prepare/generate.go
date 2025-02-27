@@ -73,7 +73,7 @@ func (p *ChainMakerPrepare) Generate() error {
 
 func (p *ChainMakerPrepare) InitializePathMapping() error {
 	if _, ok := p.generateSteps[InitializePathMap]; ok {
-		prepareWorkLogger.Infof("already initialize path mapping")
+		chainmakerPrepareWorkLogger.Infof("already initialize path mapping")
 		return nil
 	}
 
@@ -98,7 +98,9 @@ func (p *ChainMakerPrepare) InitializePathMapping() error {
 	p.pathMapping[FrontPartOfBCFile] = filepath.Join(resources, "bc_template_part/front_part_of_bc_file.txt")
 	p.pathMapping[BackPartOfBCFile] = filepath.Join(resources, "bc_template_part/back_part_of_bc_file.txt")
 	p.pathMapping[CmdTestData] = filepath.Join("../cmd", "testdata/")
-	prepareWorkLogger.Infof("successfully initialize path mapping")
+
+	chainmakerPrepareWorkLogger.Infof("successfully initialize path mapping")
+
 	p.generateSteps[InitializePathMap] = struct{}{}
 	return nil
 }
@@ -112,7 +114,7 @@ func (p *ChainMakerPrepare) generatePrepareSteps(generateSteps []map[string]Gene
 			if err = generateFunc(); err != nil {
 				return fmt.Errorf("generate step [%s] failed, %w", name, err)
 			}
-			prepareWorkLogger.Infof("Generate STEP (%d/%d) => init step [%s] success)", idx+1, moduleNum, name)
+			chainmakerPrepareWorkLogger.Infof("Generate STEP (%d/%d) => init step [%s] success)", idx+1, moduleNum, name)
 		}
 	}
 	fmt.Println()
@@ -121,7 +123,7 @@ func (p *ChainMakerPrepare) generatePrepareSteps(generateSteps []map[string]Gene
 
 func (p *ChainMakerPrepare) GenerateCertsFiles() error {
 	if _, ok := p.generateSteps[GenerateCertFiles]; ok {
-		prepareWorkLogger.Errorf("already generate certs files")
+		chainmakerPrepareWorkLogger.Errorf("already generate certs files")
 		return nil
 	}
 
@@ -160,7 +162,7 @@ func (p *ChainMakerPrepare) GenerateCertsFiles() error {
 	if err != nil {
 		return fmt.Errorf("failed to generate certificates: %w", err)
 	}
-	prepareWorkLogger.Infof("Certificates generated successfully.")
+	chainmakerPrepareWorkLogger.Infof("Certificates generated successfully.")
 
 	// 将创建完成的 crypto-config 放入
 	mvCommand := exec.Command("cp", "-r", "./crypto-config", "./build/crypto-config")
@@ -217,7 +219,7 @@ func (p *ChainMakerPrepare) GenerateCertsFiles() error {
 // ResolvePeerIds 解析 peerId 列表
 func (p *ChainMakerPrepare) ResolvePeerIds() error {
 	if _, ok := p.generateSteps[ResolvePeerIds]; ok {
-		prepareWorkLogger.Infof("already resolve peer ids")
+		chainmakerPrepareWorkLogger.Infof("already resolve peer ids")
 		return nil
 	}
 
@@ -229,7 +231,7 @@ func (p *ChainMakerPrepare) ResolvePeerIds() error {
 		p.peerIdList = append(p.peerIdList, peerId)
 	}
 
-	prepareWorkLogger.Infof("successfully resolve peer ids")
+	chainmakerPrepareWorkLogger.Infof("successfully resolve peer ids")
 	p.generateSteps[GenerateCertFiles] = struct{}{}
 	return nil
 }
@@ -260,13 +262,13 @@ func (p *ChainMakerPrepare) GenerateLogYml() error {
 			return fmt.Errorf("cannot generate log file %w", err)
 		}
 	}
-	prepareWorkLogger.Infof("successfully generate log yml")
+	chainmakerPrepareWorkLogger.Infof("successfully generate log yml")
 	return nil
 }
 
 func (p *ChainMakerPrepare) GenerateBcTemplate() error {
 	if _, ok := p.generateSteps[GenerateBcTemplate]; ok {
-		prepareWorkLogger.Infof("already generate bc template")
+		chainmakerPrepareWorkLogger.Infof("already generate bc template")
 		return nil
 	}
 
@@ -338,7 +340,7 @@ trust_roots:
 		return fmt.Errorf("error writing bc config file: %w", err)
 	}
 
-	prepareWorkLogger.Infof("GenerateBcTemplate successfully!")
+	chainmakerPrepareWorkLogger.Infof("GenerateBcTemplate successfully!")
 
 	p.generateSteps[GenerateBcTemplate] = struct{}{}
 	return nil
@@ -346,7 +348,7 @@ trust_roots:
 
 func (p *ChainMakerPrepare) GenerateBcYml() error {
 	if _, ok := p.generateSteps[GenerateBcYml]; ok {
-		prepareWorkLogger.Infof("already generate bc yml")
+		chainmakerPrepareWorkLogger.Infof("already generate bc yml")
 		return nil
 	}
 
@@ -354,19 +356,19 @@ func (p *ChainMakerPrepare) GenerateBcYml() error {
 		nodeChainConfigDir := fmt.Sprintf("%s/node%d/chainconfig", p.pathMapping[BuildConfig], i)
 		err := os.MkdirAll(nodeChainConfigDir, os.ModePerm)
 		if err != nil {
-			prepareWorkLogger.Error("cannot generate dir")
+			chainmakerPrepareWorkLogger.Error("cannot generate dir")
 			os.Exit(0)
 		}
 		sourceFilePath := filepath.Join(p.pathMapping[Resources], fmt.Sprintf("bc_%d.yml", p.nodeCount))
 		targetFilePath := fmt.Sprintf("%s/bc1.yml", nodeChainConfigDir)
 		_, err = fileutils.CopyFile(sourceFilePath, targetFilePath)
 		if err != nil {
-			prepareWorkLogger.Error("cannot copy file")
+			chainmakerPrepareWorkLogger.Error("cannot copy file")
 			os.Exit(1)
 		}
 	}
 
-	prepareWorkLogger.Infof("GenerateBcYml successfully!")
+	chainmakerPrepareWorkLogger.Infof("GenerateBcYml successfully!")
 
 	p.generateSteps[GenerateBcYml] = struct{}{}
 	return nil
@@ -374,7 +376,7 @@ func (p *ChainMakerPrepare) GenerateBcYml() error {
 
 func (p *ChainMakerPrepare) ModifyBcYml() error {
 	if _, ok := p.generateSteps[ModifyBcYml]; ok {
-		prepareWorkLogger.Infof("already modify bc yml")
+		chainmakerPrepareWorkLogger.Infof("already modify bc yml")
 		return nil
 	}
 
@@ -398,19 +400,19 @@ func (p *ChainMakerPrepare) ModifyBcYml() error {
 
 		err := file.CopyAndReplaceTemplate(bcFilePath, bcFilePath, replaceMap)
 		if err != nil {
-			prepareWorkLogger.Errorf("cannot copy and replace file")
+			chainmakerPrepareWorkLogger.Errorf("cannot copy and replace file")
 			os.Exit(1)
 		}
 	}
 
-	prepareWorkLogger.Infof("Modify BC yml successfully!")
+	chainmakerPrepareWorkLogger.Infof("Modify BC yml successfully!")
 	p.generateSteps[ModifyBcYml] = struct{}{}
 	return nil
 }
 
 func (p *ChainMakerPrepare) GenerateChainMakerYml() error {
 	if _, ok := p.generateSteps[GenerateChainMakerYml]; ok {
-		prepareWorkLogger.Infof("already generate chainmaker yml")
+		chainmakerPrepareWorkLogger.Infof("already generate chainmaker yml")
 		return nil
 	}
 
@@ -469,7 +471,7 @@ func (p *ChainMakerPrepare) GenerateChainMakerYml() error {
 		}
 	}
 
-	prepareWorkLogger.Infof("GenerateChainMakerYml successfully!")
+	chainmakerPrepareWorkLogger.Infof("GenerateChainMakerYml successfully!")
 
 	p.generateSteps[GenerateChainMakerYml] = struct{}{}
 	return nil
@@ -478,7 +480,7 @@ func (p *ChainMakerPrepare) GenerateChainMakerYml() error {
 // CopyPrepareFiles 进行生成的文件的拷贝
 func (p *ChainMakerPrepare) CopyPrepareFiles() error {
 	if _, ok := p.generateSteps[CopyPrepareFiles]; ok {
-		prepareWorkLogger.Infof("already copy prepare files")
+		chainmakerPrepareWorkLogger.Infof("already copy prepare files")
 		return nil
 	}
 
@@ -496,7 +498,7 @@ func (p *ChainMakerPrepare) CopyPrepareFiles() error {
 		}
 	}
 
-	prepareWorkLogger.Infof("copy prepare files successfully!")
+	chainmakerPrepareWorkLogger.Infof("copy prepare files successfully!")
 
 	p.generateSteps[CopyPrepareFiles] = struct{}{}
 	return nil

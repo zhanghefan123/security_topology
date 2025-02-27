@@ -6,15 +6,14 @@ import (
 )
 
 const (
-	ModuleMainCmdHttpService   = "MAIN_CMD_HTTP_SERVICE"
-	ModuleMainCmdConstellation = "MAIN_CMD_CONSTELLATION"
-	ModuleMainCmdImages        = "MAIN_CMD_IMAGES"
-	ModuleMainCmdTest          = "MAIN_CMD_TEST"
-	ModuleConfig               = "CONFIG"
-	ModuleConstellation        = "CONSTELLATION"
-	ModuleTopology             = "TOPOLOGY"
-	ModuleHttpService          = "HTTP_SERVICE"
-	ModulePrepare              = "PREPARE"
+	ModuleMainCmdHttpService = "MAIN_CMD_HTTP_SERVICE"
+	ModuleMainCmdImages      = "MAIN_CMD_IMAGES"
+	ModuleMainCmdTest        = "MAIN_CMD_TEST"
+	ModuleConfig             = "CONFIG"
+	ModuleConstellation      = "CONSTELLATION"
+	ModuleTopology           = "TOPOLOGY"
+	ModuleChainmakerPrepare  = "CHAINMAKER_PREPARE"
+	ModuleFabricPrepare      = "FABRIC_PREPARE"
 )
 
 func init() {

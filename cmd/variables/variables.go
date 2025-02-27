@@ -15,11 +15,14 @@ const (
 	ImageNameLiRNode            = "lir_node"
 	ImageNameChainMakerEnv      = "chainmaker_env"
 	ImageNameChainMaker         = "chainmaker"
+	ImageNameFabricOrder        = "fabric-orderer"
+	ImageNameFabricPeer         = "fabric-peer"
 	AllImages                   = "all_images"
 )
 
 // 基于官方镜像的镜像 -> etcd_service
-// 基于 ubuntu_with_software  的镜像 -> python_env, go_env, chainmaker_env
+// 基于 ubuntu_with_software  的镜像 -> python_env, go_env, chainmaker_env,
+// fabric 的镜像 -> fabric-orderer fabric-peer
 // 基于 go_env 的镜像 -> normal_satellite, router, consensus_node, normal_node, ground_station
 // 基于 python_env 的镜像 -> lir_node, malicious_node, realtime_position
 // 基于 chainmaker_env 的镜像 -> chainmaker
@@ -36,6 +39,7 @@ var (
 	ImagesInBuildOrder    = []string{
 		ImageNameEtcd,
 		ImageNameUbuntuWithSoftware,
+		ImageNameFabricOrder, ImageNameFabricPeer,
 		ImageNamePythonEnv, ImageNameGoEnv, ImageNameChainMakerEnv,
 		ImageNameNormalNode, ImageNameGroundStation, ImageNameRouter, ImageNameConsensusNode, ImageNameNormalSatellite, ImageNameChainMaker,
 		ImageNameMaliciousNode, ImageNameLiRNode, ImageNameRealTimePosition,
@@ -52,6 +56,9 @@ var (
 		ImageNamePythonEnv:          struct{}{},
 		ImageNameGoEnv:              struct{}{},
 		ImageNameChainMakerEnv:      struct{}{},
+
+		ImageNameFabricOrder: struct{}{},
+		ImageNameFabricPeer:  struct{}{},
 
 		ImageNameGroundStation:   struct{}{},
 		ImageNameNormalNode:      struct{}{},
@@ -75,6 +82,9 @@ var (
 		ImageNamePythonEnv:          false,
 		ImageNameGoEnv:              false,
 		ImageNameChainMakerEnv:      false,
+
+		ImageNameFabricOrder: false,
+		ImageNameFabricPeer:  false,
 
 		ImageNameGroundStation:   false,
 		ImageNameNormalNode:      false,

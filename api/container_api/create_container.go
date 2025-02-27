@@ -84,6 +84,18 @@ func CreateContainer(client *docker.Client, node *node.AbstractNode) error {
 		if err != nil {
 			return fmt.Errorf("create Entrance err: %w", err)
 		}
+	case types.NetworkNodeType_FabricPeerNode:
+		fabricPeer, _ := node.ActualNode.(*nodes.FabricPeerNode)
+		err = create_apis.CreateFabricPeerNode(client, fabricPeer)
+		if err != nil {
+			return fmt.Errorf("create fabricPeer err: %w", err)
+		}
+	case types.NetworkNodeType_FabricOrderNode:
+		fabricOrder, _ := node.ActualNode.(*nodes.FabricOrderNode)
+		err = create_apis.CreateFabricOrderNode(client, fabricOrder)
+		if err != nil {
+			return fmt.Errorf("create fabricOrder err: %w", err)
+		}
 	}
 	return nil
 }

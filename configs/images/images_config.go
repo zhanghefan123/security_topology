@@ -12,4 +12,6 @@ type ImagesConfig struct {
 	MaliciousNodeImageName   string `mapstructure:"malicious_node_image_name"`
 	LirNodeImageName         string `mapstructure:"lir_node_image_name"`
 	EntranceImageName        string `mapstructure:"entrance_image_name"`
+	FabricPeerImageName      string `mapstructure:"fabric_peer_image_name"`
+	FabricOrderImageName     string `mapstructure:"fabric_order_image_name"`
 }

@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	prepareWorkLogger = logger.GetLogger(logger.ModulePrepare)
+	chainmakerPrepareWorkLogger = logger.GetLogger(logger.ModuleChainmakerPrepare)
 )
 
 type ChainMakerPrepare struct {

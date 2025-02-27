@@ -16,6 +16,7 @@ import (
 	"zhanghefan123/security_topology/modules/entities/real_entities/nodes"
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/entities/types"
+	"zhanghefan123/security_topology/modules/fabric_prepare"
 	"zhanghefan123/security_topology/modules/utils/dir"
 	"zhanghefan123/security_topology/modules/utils/file"
 	"zhanghefan123/security_topology/modules/utils/network"
@@ -30,7 +31,8 @@ type InitModule struct {
 }
 
 const (
-	GenerateChainMakerConfig              = "GenerateChainMakerConfig"
+	GenerateChainMakerConfig              = "GenerateChainMakerConfig"              // 生成长安链配置
+	GenerateFabricConfig                  = "GenerateFabricConfig"                  // 生成 fabric 配置
 	GenerateNodes                         = "GenerateNodes"                         // 生成节点
 	GenerateSubnets                       = "GenerateSubnets"                       // 创建子网
 	GenerateLinks                         = "GenerateISLs"                          // 生成链路
@@ -45,6 +47,7 @@ const (
 // Init 进行初始化
 func (t *Topology) Init() error {
 	enabledChainMaker := configs.TopConfiguration.ChainMakerConfig.Enabled
+	enabledFabric := configs.TopConfiguration.FabricConfig.Enabled
 
 	initSteps := []map[string]InitModule{
 		{GenerateNodes: InitModule{true, t.GenerateNodes}},
@@ -52,6 +55,7 @@ func (t *Topology) Init() error {
 		{GenerateLinks: InitModule{true, t.GenerateLinks}},
 		{GenerateFrrConfigurationFiles: InitModule{true, t.GenerateFrrConfigurationFiles}},
 		{GenerateChainMakerConfig: InitModule{enabledChainMaker, t.GenerateChainMakerConfig}},
+		{GenerateFabricConfig: InitModule{enabledFabric, t.GenerateFabricConfig}},
 		{GenerateAddressMapping: InitModule{true, t.GenerateAddressMapping}},
 		{GeneratePortMapping: InitModule{true, t.GeneratePortMapping}},
 		{CalculateAndWriteSegmentRoutes: InitModule{true, t.CalculateAndWriteSegmentRoutes}},
@@ -166,6 +170,24 @@ func (t *Topology) GenerateNodes() error {
 			t.EntranceAbstractNodes = append(t.EntranceAbstractNodes, abstractEntrance)
 			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractEntrance)
 			t.AbstractNodesMap[entranceTmp.ContainerName] = abstractEntrance
+		case types.NetworkNodeType_FabricPeerNode:
+			fmt.Println("create fabric peer node")
+			fabricPeerTmp := nodes.NewFabricPeerNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
+			t.FabricPeerNodes = append(t.FabricPeerNodes, fabricPeerTmp)
+			// 注意只能进行一次抽象节点的创建
+			abstractFabricPeer := node.NewAbstractNode(types.NetworkNodeType_FabricPeerNode, fabricPeerTmp, TopologyInstance.TopologyGraph)
+			t.FabricPeerAbstractNodes = append(t.FabricPeerAbstractNodes, abstractFabricPeer)
+			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractFabricPeer)
+			t.AbstractNodesMap[fabricPeerTmp.ContainerName] = abstractFabricPeer
+		case types.NetworkNodeType_FabricOrderNode:
+			fmt.Println("create fabric order node")
+			fabricOrderTmp := nodes.NewFabricOrderNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
+			t.FabricOrderNodes = append(t.FabricOrderNodes, fabricOrderTmp)
+			// 注意只能进行一次抽象节点的创建
+			abstractFabricOrder := node.NewAbstractNode(types.NetworkNodeType_FabricOrderNode, fabricOrderTmp, TopologyInstance.TopologyGraph)
+			t.FabricOrderAbstractNodes = append(t.FabricOrderAbstractNodes, abstractFabricOrder)
+			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractFabricOrder)
+			t.AbstractNodesMap[fabricOrderTmp.ContainerName] = abstractFabricOrder
 		}
 	}
 
@@ -311,6 +333,10 @@ func (t *Topology) getSourceNodeAndTargetNode(sourceNodeParam, targetNodeParam p
 		sourceNode = t.LirAbstractNodes[sourceNodeParam.Index-1]
 	case types.NetworkNodeType_Entrance:
 		sourceNode = t.EntranceAbstractNodes[sourceNodeParam.Index-1]
+	case types.NetworkNodeType_FabricPeerNode:
+		sourceNode = t.FabricPeerAbstractNodes[sourceNodeParam.Index-1]
+	case types.NetworkNodeType_FabricOrderNode:
+		sourceNode = t.FabricOrderAbstractNodes[sourceNodeParam.Index-1]
 	default:
 		return nil, nil, fmt.Errorf("unsupported source node type: %s", *sourceNodeType)
 	}
@@ -331,6 +357,10 @@ func (t *Topology) getSourceNodeAndTargetNode(sourceNodeParam, targetNodeParam p
 		targetNode = t.LirAbstractNodes[targetNodeParam.Index-1]
 	case types.NetworkNodeType_Entrance:
 		targetNode = t.EntranceAbstractNodes[targetNodeParam.Index-1]
+	case types.NetworkNodeType_FabricPeerNode:
+		targetNode = t.FabricPeerAbstractNodes[targetNodeParam.Index-1]
+	case types.NetworkNodeType_FabricOrderNode:
+		targetNode = t.FabricOrderAbstractNodes[targetNodeParam.Index-1]
 	default:
 		return nil, nil, fmt.Errorf("unsupported target node type: %s", *sourceNodeType)
 	}
@@ -396,6 +426,31 @@ func (t *Topology) GenerateChainMakerConfig() error {
 
 	t.topologyInitSteps[GenerateChainMakerConfig] = struct{}{}
 	topologyLogger.Infof("generate chain maker config")
+	return nil
+}
+
+// GenerateFabricConfig 进行 fabric 配置文件的生成
+func (t *Topology) GenerateFabricConfig() error {
+	if _, ok := t.topologyInitSteps[GenerateFabricConfig]; ok {
+		topologyLogger.Infof("already generate fabric config")
+		return nil
+	}
+
+	fabricPeerNodesCount := len(t.FabricPeerNodes)
+	fabricOrderNodesCount := len(t.FabricOrderNodes)
+	if (fabricPeerNodesCount == 0) && (fabricOrderNodesCount == 0) {
+		topologyLogger.Infof("no fabric nodes -> not generate")
+		return nil
+	}
+
+	fabricPrepare := fabric_prepare.NewFabricPrepare(fabricPeerNodesCount, fabricOrderNodesCount)
+	err := fabricPrepare.Generate()
+	if err != nil {
+		return fmt.Errorf("generate fabric config files failed, %s", err)
+	}
+
+	t.topologyInitSteps[GenerateFabricConfig] = struct{}{}
+	topologyLogger.Infof("generate fabric config")
 	return nil
 }
 

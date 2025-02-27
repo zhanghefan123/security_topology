@@ -60,6 +60,9 @@ images_config:
   position_service_image_name: "realtime_position"
   lir_node_image_name: "lir_node"
   entrance_image_name: "normal_node"
+  fabric_peer_image_name: "hyperledger/fabric-peer"
+  fabric_order_image_name: "hyperledger/fabric-orderer"
+
 
 path_config:
   resources_path: "../resources"
@@ -83,7 +86,6 @@ services_config:
         isls_prefix: "/security_topology/isls"
         gsls_prefix: "/security_topology/gsls"
 
-
   position_update_config:
     interval: 1
     enabled: true
@@ -106,3 +108,21 @@ path_validation_config:
   pvf_effective_bits: 64 # 在 selir 之中有效, 其代表的是 selir 之中的 pvf 的大小
   hash_seed: 5 # hash 种子
   number_of_hash_functions: 5 # 哈希函数的个数
+
+fabric_config:
+  enabled: true
+  order_general_listen_start_port: 7050
+  order_admin_listen_start_port: 8050
+  order_operation_listen_start_port: 9050
+  order_start_port: 7050
+  peer_listen_start_port: 5050
+  peer_chaincode_start_port: 5550
+  peer_operation_start_port: 6050
+  consensus_type: 1
+  log_level: ERROR
+  enable_broadcast_defence: false
+  direct_remove_attacked_node: false
+  speed_check: false
+  fabric_project_path: /home/zhf/Projects/simulation/fabric
+  fabric_samples_path: /home/zhf/Projects/simulation/fabric-samples
+  fabric_network_path: /home/zhf/Projects/simulation/fabric-samples/test-network
