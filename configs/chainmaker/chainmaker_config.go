@@ -5,7 +5,6 @@ type ChainMakerConfig struct {
 	P2pStartPort    int    `mapstructure:"p2p_start_port"`
 	RpcStartPort    int    `mapstructure:"rpc_start_port"`
 	HttpStartPort   int    `mapstructure:"http_start_port"`
-	ConsensusType   int    `mapstructure:"consensus_type"`
 	LogLevel        string `mapstructure:"log_level"`
 	VmGoRuntimePort int    `mapstructure:"vm_go_runtime_port"`
 	VmGoEnginePort  int    `mapstructure:"vm_go_engine_port"`

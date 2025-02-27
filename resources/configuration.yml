@@ -6,8 +6,8 @@ network_config:
   ospf_version: ospfv2
   enable_srv6: false
 
-consensus_config:
-  consensus_protocol: pbft
+#consensus_config:
+#  consensus_protocol: pbft
 
 #  C:\zhf_projects\security\security_topology\modules\entities\types\entities.pb.go:
 #  satellite_config.type 只能够选择下面的两种
@@ -32,7 +32,6 @@ chain_maker_config:
   p2p_start_port: 11301
   rpc_start_port: 12301
   http_start_port: 13301
-  consensus_type: 1
   log_level: ERROR
   vm_go_runtime_port: 32351
   vm_go_engine_port: 22351
@@ -123,6 +122,6 @@ fabric_config:
   enable_broadcast_defence: false
   direct_remove_attacked_node: false
   speed_check: false
-  fabric_project_path: /home/zhf/Projects/simulation/fabric
-  fabric_samples_path: /home/zhf/Projects/simulation/fabric-samples
-  fabric_network_path: /home/zhf/Projects/simulation/fabric-samples/test-network
+  fabric_project_path: /home/zhf/Projects/emulator/fabric
+  fabric_samples_path: /home/zhf/Projects/emulator/fabric-samples
+  fabric_network_path: /home/zhf/Projects/emulator/fabric-samples/test-network

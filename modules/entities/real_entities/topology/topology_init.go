@@ -418,7 +418,7 @@ func (t *Topology) GenerateChainMakerConfig() error {
 	}
 
 	ipv4Addresses := t.GetChainMakerNodeListenAddresses()
-	chainMakerPrepare := chainmaker_prepare.NewChainMakerPrepare(chainMakerNodeCount, ipv4Addresses)
+	chainMakerPrepare := chainmaker_prepare.NewChainMakerPrepare(chainMakerNodeCount, ipv4Addresses, t.TopologyParams.ConsensusType)
 	err := chainMakerPrepare.Generate()
 	if err != nil {
 		return fmt.Errorf("generate chain maker config files failed, %s", err)

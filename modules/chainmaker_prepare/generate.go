@@ -380,12 +380,10 @@ func (p *ChainMakerPrepare) ModifyBcYml() error {
 		return nil
 	}
 
-	consensusType := configs.TopConfiguration.ChainMakerConfig.ConsensusType
-
 	replaceMap := map[string]string{
 		"{chain_id}":       "chain1",
 		"{version}":        "\"2030200\"",
-		"{consensus_type}": fmt.Sprintf("%d", consensusType),
+		"{consensus_type}": fmt.Sprintf("%d", p.selectedConsensusType),
 	}
 
 	for i := 1; i <= p.nodeCount; i++ {
@@ -420,7 +418,7 @@ func (p *ChainMakerPrepare) GenerateChainMakerYml() error {
 	rpcStartPort := configs.TopConfiguration.ChainMakerConfig.RpcStartPort
 	vmGoRuntimePort := configs.TopConfiguration.ChainMakerConfig.VmGoRuntimePort
 	vmGoEnginePort := configs.TopConfiguration.ChainMakerConfig.VmGoEnginePort
-	consensusType := configs.TopConfiguration.ChainMakerConfig.ConsensusType
+	consensusType := p.selectedConsensusType
 
 	// 创建 peerIdList
 	seedsString := "seeds:\n"
