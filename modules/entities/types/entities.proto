@@ -21,6 +21,8 @@ enum NetworkNodeType {
   LirNode = 8;
   Entrance = 9;
   GroundStation = 10;
+  FabricPeerNode = 11;
+  FabricOrderNode = 12;
 }
 
 enum NetworkLinkType {

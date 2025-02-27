@@ -26,6 +26,10 @@ func GetPrefix(typ NetworkNodeType) string {
 		return "ln"
 	} else if typ == NetworkNodeType_Entrance {
 		return "en"
+	} else if typ == NetworkNodeType_FabricPeerNode {
+		return "fp"
+	} else if typ == NetworkNodeType_FabricOrderNode {
+		return "fo"
 	}
 	return ""
 }

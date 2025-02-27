@@ -154,12 +154,15 @@ func buildImage(userSelectedImage string) error {
 		}
 		return nil
 	} else if userSelectedImage == variables.ImageNameChainMaker {
-		// 1. call build chainmaker image function
 		err := buildImageForChainMaker()
 		if err != nil {
 			return fmt.Errorf("fail to build chainmaker image")
 		}
 		return nil
+	} else if userSelectedImage == variables.ImageNameFabricPeer {
+
+	} else if userSelectedImage == variables.ImageNameFabricOrder {
+
 	} else {
 		// 1. 进行镜像构建命令的生成, 参数1 -> 镜像名称, 参数2->镜像的位置, 参数3->相对路径
 		commandStr = fmt.Sprintf("build -t %s:latest -f ../images/%s/Dockerfile ../images/%s/",

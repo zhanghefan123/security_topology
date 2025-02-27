@@ -1,0 +1,5 @@
+FROM ubuntu_with_software:latest
+
+ENV GOLANG_VERSION=1.23.2
+
+
