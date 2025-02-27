@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/real_entities/nodes"
+	"zhanghefan123/security_topology/modules/entities/real_entities/topology"
 	"zhanghefan123/security_topology/modules/entities/types"
 )
 
@@ -84,6 +85,7 @@ func CreateChainMakerNode(client *docker.Client, chainMakerNode *nodes.Chainmake
 		fmt.Sprintf("%s=%s", "ETCD_LISTEN_ADDR", configs.TopConfiguration.NetworkConfig.LocalNetworkAddress),
 		fmt.Sprintf("%s=%d", "ETCD_LISTEN_PORT", configs.TopConfiguration.ServicesConfig.EtcdConfig.ClientPort),
 		fmt.Sprintf("%s=%s", "START_DEFENCE_KEY", configs.TopConfiguration.ChainMakerConfig.StartDefenceKey),
+		fmt.Sprintf("%s=%d", "CHAINMAKER_NODE_COUNT", len(topology.TopologyInstance.ChainmakerNodes)),
 	}
 
 	// 6. 资源限制
