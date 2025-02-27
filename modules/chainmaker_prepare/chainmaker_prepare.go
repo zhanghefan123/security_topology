@@ -10,8 +10,8 @@ var (
 
 var (
 	chainmakerConsensusStrToIntMapping = map[string]int{
-		"tbft": 1,
-		"raft": 4,
+		"TBFT": 1,
+		"RAFT": 4,
 	}
 )
 
