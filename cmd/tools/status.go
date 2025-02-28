@@ -52,11 +52,12 @@ func RetrieveStatus() error {
 		if len(line) > 0 {
 			differentParts := strings.Split(line, " ")
 			imageName := differentParts[0]
-			if _, ok := variables.ExistedImages[imageName]; ok {
-				variables.ExistedImages[imageName] = true
-			} else {
-				fmt.Println("image name", imageName, "not in the map")
-			}
+			variables.ExistedImages[imageName] = true
+			//if _, ok := variables.ExistedImages[imageName]; ok {
+			//	variables.ExistedImages[imageName] = true
+			//} else {
+			//	fmt.Println("image name", imageName, "not in the map")
+			//}
 		}
 	}
 	return nil

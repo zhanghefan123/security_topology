@@ -118,19 +118,24 @@ func buildImage(userSelectedImage string) error {
 // removeImage 进行镜像的删除
 func removeImage(imageName string) error {
 	// 判断是否存在
-	if ok := variables.ExistedImages[imageName]; !ok {
-		cmdImagesLogger.Infof("image %s is not built", variables.UserSelectedImage)
-		return nil
+	if variables.UserSelectedImage == variables.ImageNameFabricPeer {
+		err := removeImageForFabricPeer()
+		if err != nil {
+			return fmt.Errorf("fail to remove fabric peer image: %v", err)
+		}
+	} else if variables.UserSelectedImage == variables.ImageNameFabricOrder {
+		err := removeImageForFabricOrder()
+		if err != nil {
+			return fmt.Errorf("fail to remove fabric order image: %v", err)
+		}
+	} else {
+		commandStr := fmt.Sprintf("rmi %s", imageName)
+		err := execute.Command("docker", strings.Split(commandStr, " "))
+		if err != nil {
+			return fmt.Errorf("remove image %s failed: %w", imageName, err)
+		}
 	}
 
-	// 1. 创建命令
-	commandStr := fmt.Sprintf("rmi %s", imageName)
-	err := execute.Command("docker", strings.Split(commandStr, " "))
-	// 2. 运行命令并检查是否有错误
-	if err != nil {
-		return fmt.Errorf("remove image %s failed: %w", imageName, err)
-	}
-	// 3. 日志输出
 	cmdImagesLogger.Infof("remove image %s successfully", imageName)
 	return nil
 }
