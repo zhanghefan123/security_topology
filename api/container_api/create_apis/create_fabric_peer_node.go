@@ -53,7 +53,8 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 	// 4. 创建容器卷映射
 	volumes := []string{
 		// fmt.Sprintf("%s:%s", nodeDir, fmt.Sprintf("/configuration/%s", fabricPeerNode.ContainerName)),
-		fmt.Sprintf("%s:%s", fmt.Sprintf("%s/organizations/peerOrganizations/org%d.example.com/peers/peer0.org%d.example.com", fabricNetwork, fabricPeerNode.Id, fabricPeerNode.Id),
+		fmt.Sprintf("%s:%s", fmt.Sprintf("%s/organizations/peerOrganizations/org%d.example.com/peers/peer0.org%d.example.com", fabricNetwork,
+			fabricPeerNode.Id, fabricPeerNode.Id),
 			"/etc/hyperledger/fabric"),
 		fmt.Sprintf("%s:%s", fmt.Sprintf("peer0.org%d.example.com", fabricPeerNode.Id),
 			"/var/hyperledger/production"),

@@ -290,33 +290,35 @@ func (p *FabricPrepare) InvokeCryptogenTool() error {
 		fabricPrepareWorkLogger.Errorf("already invoke crytogen tool")
 		return nil
 	}
-
 	ordererNum := p.fabricOrderNodeCount
 	peerNum := p.fabricPeerNodeCount
 	configFile := p.pathMapping[OrdererOrgCryptoNew]
+	fmt.Println("invoke cryptogen tool")
 	if ordererNum != 0 {
+		//fmt.Println("generate orderer msp")
 		cmd := exec.Command(p.pathMapping[FabricBinCryptogen], "generate", "--config", configFile, "--output", p.pathMapping[organizationsPath])
 		_, err := cmd.CombinedOutput()
 		if err != nil {
+			fmt.Println("cannot generate orderer msp")
 			fabricPrepareWorkLogger.Errorf("can not generate orderer msp")
 		}
 	}
 	fabricPrepareWorkLogger.Infof("Successfully generate orderer msp")
-
 	for i := 1; i <= peerNum; i++ {
-		configFile = path.Join(p.pathMapping[PeerOrgCryptoNew], fmt.Sprintf("crypto-config-org%d.yaml", i))
+		//fmt.Println("generate peer msp")
+		configFile := path.Join(p.pathMapping[PeerOrgCryptoNew], fmt.Sprintf("crypto-config-org%d.yaml", i))
+		fmt.Printf("%s generate --config %s --output %s", p.pathMapping[FabricBinCryptogen], configFile, p.pathMapping[organizationsPath])
 		cmd := exec.Command(p.pathMapping[FabricBinCryptogen], "generate", "--config", configFile, "--output", p.pathMapping[organizationsPath])
 		_, err := cmd.CombinedOutput()
 		if err != nil {
+			fmt.Println("cannot generate peer msp")
 			fabricPrepareWorkLogger.Errorf("can not generate peer msp")
 		}
 	}
-
-	fmt.Printf("p.pathMapping[organizationsPath]:%s", p.pathMapping[organizationsPath])
-
+	fmt.Println("p.pathMapping[organizationsPath]:%s", p.pathMapping[organizationsPath])
 	err := setPermissions(p.pathMapping[organizationsPath], 0777)
 	if err != nil {
-		fabricPrepareWorkLogger.Errorf("Error changing permissions: %v", err)
+		fabricPrepareWorkLogger.Errorf("Error changing permissions:", err)
 	}
 	return nil
 }
