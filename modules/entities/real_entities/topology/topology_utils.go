@@ -30,16 +30,17 @@ func (t *Topology) GetChainMakerNodeContainerNames() []string {
 	return chainMakerNodeNames
 }
 
-// GetContainerNameToAddressMapping 获取所有节点的从容器名称到地址的一个映射
-func (t *Topology) GetContainerNameToAddressMapping() (map[string]string, error) {
-	addressMapping := make(map[string]string)
+// GetContainerNameToAddressMapping 获取所有节点的从容器名称到地址的一个映射 (修改成了从容器名称到 ipv4 和 ipv6 地址的映射)
+func (t *Topology) GetContainerNameToAddressMapping() (map[string][]string, error) {
+	addressMapping := make(map[string][]string)
 	for _, abstractNode := range t.AllAbstractNodes {
 		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
 		if err != nil {
 			return nil, fmt.Errorf("GetContainerNameToAddressMapping abstract node error: %w", err)
 		}
 		ip, _, _ := net.ParseCIDR(normalNode.Interfaces[0].SourceIpv4Addr)
-		addressMapping[normalNode.ContainerName] = ip.String()
+		ipv6, _, _ := net.ParseCIDR(normalNode.Interfaces[0].SourceIpv6Addr)
+		addressMapping[normalNode.ContainerName] = []string{ip.String(), ipv6.String()}
 	}
 	return addressMapping, nil
 }

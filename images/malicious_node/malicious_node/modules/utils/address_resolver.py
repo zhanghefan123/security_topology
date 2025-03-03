@@ -30,6 +30,7 @@ def resolve_address_mapping(address_mapping_file: str) -> Dict[str, str]:
         lines = f.readlines()
         for line in lines:
             line = line.rstrip("\n")
-            container_name, graph_id, ip_address = line.split("->")
-            result_map[container_name] = ip_address
+            # ipv6 address 暂时没有使用到
+            container_name, graph_id, ipv4_address, ipv6_address = line.split("->")
+            result_map[container_name] = ipv4_address
     return result_map

@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"zhanghefan123/security/router/modules/frr"
+	"zhanghefan123/security/router/modules/srv6"
 )
 
 func main() {
@@ -16,6 +17,7 @@ func main() {
 	// =======================================================
 	PrintExitLogo()
 	frr.Start()
+	srv6.Start()
 	// =======================================================
 
 	<-signalChan

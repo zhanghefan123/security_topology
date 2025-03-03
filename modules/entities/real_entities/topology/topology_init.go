@@ -472,9 +472,9 @@ func (t *Topology) GenerateAddressMapping() error {
 	}
 
 	finalString := ""
-	for containerName, ip := range addressMapping {
+	for containerName, ipv4andipv6 := range addressMapping {
 		graphId := idMapping[containerName]
-		finalString += fmt.Sprintf("%s->%d->%s\n", containerName, graphId, ip)
+		finalString += fmt.Sprintf("%s->%d->%s->%s\n", containerName, graphId, ipv4andipv6[0], ipv4andipv6[1])
 	}
 
 	// 进行所有节点的遍历
