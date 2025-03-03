@@ -87,7 +87,9 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode, graphNodeId in
 		fmt.Sprintf("%s=%d", "HASH_SEED", hashSeed),
 		fmt.Sprintf("%s=%d", "NUMBER_OF_HASH_FUNCTIONS", numberOfHashFunctions),
 		fmt.Sprintf("%s=%d", "ROUTING_TABLE_TYPE", routingTableType),
+		fmt.Sprintf("%s=%d", "LIR_SINGLE_TIME_ENCODING_COUNT", configs.TopConfiguration.PathValidationConfig.LiRSingleTimeEncodingCount),
 	}
+
 	// 7. 容器配置
 	containerConfig := &container.Config{
 		Image:        configs.TopConfiguration.ImagesConfig.LirNodeImageName,

@@ -2,9 +2,9 @@ network_config:
   base_v4_network_address: 192.168.0.0/16
   base_v6_network_address: 2001:db8:1234:5678::/112
   http_listen_port: 8080
-  enable_frr: false # 这里设置成为false是不想要影响接口的接收速率
+  enable_frr: true # 这里设置成为false是不想要影响接口的接收速率
   ospf_version: ospfv2
-  enable_srv6: true
+  enable_srv6: false
 
 #consensus_config:
 #  consensus_protocol: pbft
@@ -103,10 +103,11 @@ resources_config:
 
 path_validation_config:
   routing_table_type: 2 # 1 -> array based routing table | 2 -> hash based routing table
-  bf_effective_bits: 64 # 有效的位数 (在 lir 之中是 bf 的大小, 在 selir 之中是 ppf 的大小)
-  pvf_effective_bits: 64 # 在 selir 之中有效, 其代表的是 selir 之中的 pvf 的大小
+  bf_effective_bits: 128 # 有效的位数 (在 lir 之中是 bf 的大小, 在 selir 之中是 ppf 的大小)
+  pvf_effective_bits: 128 # 在 selir 之中有效, 其代表的是 selir 之中的 pvf 的大小
   hash_seed: 5 # hash 种子
   number_of_hash_functions: 5 # 哈希函数的个数
+  lir_single_time_encoding_count: -1 # 设置的每次封装的元素个数
 
 fabric_config:
   enabled: true
