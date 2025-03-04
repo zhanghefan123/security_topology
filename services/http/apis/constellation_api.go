@@ -128,6 +128,8 @@ func StartConstellation(c *gin.Context) {
 	// 处理逻辑 -> 应该只需要更新卫星数量和每个轨道的卫星数量即可
 	err = startConstellationInner(constellationParams)
 	if err != nil {
+		// 不止进行星座启动
+		fmt.Printf("start constellation inner error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "down",
 			"message": fmt.Sprintf("startConstellationInner err: %v", err),

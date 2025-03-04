@@ -17,7 +17,7 @@ network_config:
 constellation_config:
   start_time: 2024|4|9|14|43|0 # 星座的启动时间
   satellite_config:
-    type: 0
+    type: 13 # 需要查询 pb.go 之中的映射
     p2p_port: 11300
     rpc_port: 12300
   isl_bandwidth: 10 # mbps 为单位
@@ -26,6 +26,7 @@ constellation_config:
   minimum_elevation_angle: 5 # 最小的能够支持的仰角
   time_step_key: /config/time_step  # time_step 对应的 key
   minimum_elevation_angle_key: /config/minimum_elevation_angle # minimum_elevation_angle 对应的 key
+  update_position: false
 
 chain_maker_config:
   enabled: true
@@ -47,6 +48,8 @@ chain_maker_config:
 
 
 images_config:
+#  normal_satellite_image_name: "normal_satellite"
+  lir_satellite_image_name: "lir_node"
   normal_satellite_image_name: "normal_satellite"
   ground_station_image_name: "ground_station"
   consensus_satellite_image_name: "consensus_satellite"

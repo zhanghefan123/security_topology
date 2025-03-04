@@ -99,3 +99,7 @@
 
 - [1] 需要修改 cmd/build.sh 之中的 go 语言的绝对路径
 - [2] 需要修改 resources/configuration.yml 之中的 chainmaker_go_project_path 和 chainmaker_gen_path
+
+# 9. 在进行 udp 吞吐量的测试的时候需要增大 udp 的接收缓冲区, 否则包可能收不完
+- [1] sudo sysctl -w net.core.rmem_max=16777216  # 16MB
+- [2] sudo sysctl -w net.core.rmem_default=16777216

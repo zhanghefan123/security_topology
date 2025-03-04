@@ -86,8 +86,12 @@ func SetInterfacesDelay(containerPid int, interfaces []string, delays []float64)
 			NetQdiscTemplate.QdiscAttrs,
 			netlink.NetemQdiscAttrs{
 				Latency: uint32(delays[index] * 1000),
+				Limit:   4294967295, // 如果不进行这个选项的设置的时候就会丢包 (因为默认给到的 Limit 的值就只有1000), 并且还需要进行 udp 接受缓冲区的设置
+				// sysctl -w net.core.rmem_max=16777216  # 16MB
+				// sysctl -w net.core.rmem_default=16777216
 			},
 		)
+		fmt.Println(netemInfo)
 		netemInfo.LinkIndex = vethInterface.Attrs().Index
 		err = netlink.QdiscReplace(netemInfo)
 		if err != nil {

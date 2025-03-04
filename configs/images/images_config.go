@@ -14,4 +14,5 @@ type ImagesConfig struct {
 	EntranceImageName        string `mapstructure:"entrance_image_name"`
 	FabricPeerImageName      string `mapstructure:"fabric_peer_image_name"`
 	FabricOrderImageName     string `mapstructure:"fabric_order_image_name"`
+	LiRSatelliteImageName    string `mapstructure:"lir_satellite_image_name"`
 }

@@ -32,6 +32,7 @@ func CreateRealTimePositionService(client *docker.Client, positionService *posit
 		fmt.Sprintf("%s=%d", "SATELLITE_AVAILABLE_GSLS", configs.TopConfiguration.ConstellationConfig.SatelliteAvailableGSLs),
 		fmt.Sprintf("%s=%s", "TIME_STEP_KEY", configs.TopConfiguration.ConstellationConfig.TimeStepKey),
 		fmt.Sprintf("%s=%s", "MINIMUM_ELEVATION_ANGLE_KEY", configs.TopConfiguration.ConstellationConfig.MinimumElevationAngleKey),
+		fmt.Sprintf("%s=%t", "UPDATE_POSITION", configs.TopConfiguration.ConstellationConfig.UpdatePosition),
 	}
 
 	// 3. 创建 containerConfig

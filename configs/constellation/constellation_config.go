@@ -20,4 +20,5 @@ type ConstellationConfig struct {
 	SatelliteAvailableGSLs   int             `mapstructure:"satellite_available_gsls"`
 	TimeStepKey              string          `mapstructure:"time_step_key"`
 	MinimumElevationAngleKey string          `mapstructure:"minimum_elevation_angle_key"`
+	UpdatePosition           bool            `mapstructure:"update_position"` // 是否进行位置的更新
 }

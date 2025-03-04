@@ -265,6 +265,10 @@ func (c *Constellation) StoreToEtcd() (err error) {
 				// 如果节点为普通卫星
 				normalSat, _ := absNode.ActualNode.(*satellites.NormalSatellite)
 				err = normalSat.StoreToEtcd(c.EtcdClient)
+			} else if absNode.Type == types.NetworkNodeType_LiRSatellite {
+				// 如果节点为 lir 卫星
+				lirSat, _ := absNode.ActualNode.(*satellites.LiRSatellite)
+				err = lirSat.StoreToEtcd(c.EtcdClient)
 			} else {
 				err = fmt.Errorf("unsupported node type")
 			}
@@ -563,10 +567,10 @@ func handleSatellitesUpdate(c *Constellation) {
 			containerName := sat.ContainerName
 			// ContainerNameToPosition 可能会引起并发的修改
 			c.ContainerNameToPosition[containerName] = &position_info.Position{
-				NodeType:  types.NetworkNodeType_NormalSatellite.String(), // 节点类型
-				Latitude:  float64(sat.Latitude),                          // 纬度
-				Longitude: float64(sat.Longitude),                         // 经度
-				Altitude:  float64(sat.Altitude),                          // 高度
+				NodeType:  c.SatelliteType.String(), // 节点类型
+				Latitude:  float64(sat.Latitude),    // 纬度
+				Longitude: float64(sat.Longitude),   // 经度
+				Altitude:  float64(sat.Altitude),    // 高度
 			}
 			go func() {
 				// 创建接口数组

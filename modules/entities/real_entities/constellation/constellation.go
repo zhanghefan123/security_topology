@@ -64,6 +64,7 @@ type Constellation struct {
 
 	GroundStations   []*ground_station.GroundStation // 所有的地面站
 	NormalSatellites []*satellites.NormalSatellite   // 所有的普通卫星
+	LiRSatellites    []*satellites.LiRSatellite      // 所有的 lir 卫星
 
 	SatelliteAbstractNodes     []*node.AbstractNode // 卫星对应的抽象节点
 	GroundStationAbstractNodes []*node.AbstractNode // 地面对应的抽象节点

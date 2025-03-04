@@ -23,6 +23,7 @@ enum NetworkNodeType {
   GroundStation = 10;
   FabricPeerNode = 11;
   FabricOrderNode = 12;
+  LiRSatellite = 13;
 }
 
 enum NetworkLinkType {

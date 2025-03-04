@@ -96,6 +96,12 @@ func CreateContainer(client *docker.Client, node *node.AbstractNode) error {
 		if err != nil {
 			return fmt.Errorf("create fabricOrder err: %w", err)
 		}
+	case types.NetworkNodeType_LiRSatellite:
+		lirSatellite, _ := node.ActualNode.(*satellites.LiRSatellite)
+		err = create_apis.CreateLiRSatellite(client, lirSatellite, int(node.Node.ID())+1)
+		if err != nil {
+			return fmt.Errorf("createLiRSatellite err: %w", err)
+		}
 	}
 	return nil
 }

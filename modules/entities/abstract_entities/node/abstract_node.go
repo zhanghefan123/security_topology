@@ -93,6 +93,10 @@ func (abstractNode *AbstractNode) GetNormalNodeFromAbstractNode() (*normal_node.
 		if fabricOrderNode, ok := abstractNode.ActualNode.(*nodes.FabricOrderNode); ok {
 			return fabricOrderNode.NormalNode, nil
 		}
+	case types.NetworkNodeType_LiRSatellite:
+		if lirSatelliteNode, ok := abstractNode.ActualNode.(*satellites.LiRSatellite); ok {
+			return lirSatelliteNode.NormalNode, nil
+		}
 	}
 
 	return nil, fmt.Errorf("cannot get normal node from abstract node")
