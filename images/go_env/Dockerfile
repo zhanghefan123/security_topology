@@ -4,6 +4,8 @@ LABEL mantainer="HeFan Zhang"
 
 ENV GOLANG_VERSION=1.18.10
 
+ENV GOPROXY=https://mirrors.aliyun.com/goproxy/
+
 COPY ./resources/go${GOLANG_VERSION}.linux-amd64.tar.gz /usr/local/
 
 RUN cd /usr/local && \

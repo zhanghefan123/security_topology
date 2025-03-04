@@ -54,7 +54,7 @@ func (c *Constellation) Init() error {
 	enableSRv6 := configs.TopConfiguration.NetworkConfig.EnableSRv6
 
 	initSteps := []map[string]InitModule{
-		{SetHostReceiveMemory: InitModule{true, c.SetHostReceiveMemory}},
+		{SetHostReceiveMemory: InitModule{false, c.SetHostReceiveMemory}},
 		{GenerateSatellites: InitModule{true, c.GenerateSatellites}},
 		{GenerateGroundStations: InitModule{true, c.GenerateGroundStations}},
 		{GenerateSubnets: InitModule{true, c.GenerateSubnets}},
@@ -119,7 +119,7 @@ func (c *Constellation) SetHostReceiveMemory() error {
 		return fmt.Errorf("set host receive memory failed %w", err)
 	}
 
-	err = execute.Command("sysctl", strings.Split(" -w net.core.rmem_default=16777216", " "))
+	err = execute.Command("sysctl", strings.Split("-w net.core.rmem_default=16777216", " "))
 	if err != nil {
 		return fmt.Errorf("set host receive memory failed %w", err)
 	}
@@ -145,7 +145,7 @@ func (c *Constellation) GenerateSatellites() error {
 	freq := 1 / 0.06965
 	for orbitId := 0; orbitId < c.OrbitNumber; orbitId++ {
 		orbitStartLatitude := startLatitude + delta
-		orbitLongitude := startLongitude + 180*float32(orbitId)/float32(c.SatellitePerOrbit)
+		orbitLongitude := startLongitude + 180*float32(orbitId)/float32(c.OrbitNumber)
 		for nodeId := c.SatellitePerOrbit * orbitId; nodeId < c.SatellitePerOrbit*(orbitId+1); nodeId++ {
 			// 轨道内编号
 			indexInOrbit := nodeId % c.SatellitePerOrbit
@@ -287,7 +287,7 @@ func (c *Constellation) GenerateAddressMapping() error {
 		}
 		containerName := normalNode.ContainerName
 		outputDir = filepath.Join(configs.TopConfiguration.PathConfig.ConfigGeneratePath, containerName)
-		outputFilePath = filepath.Join(outputDir, "address_mapping.conf")
+		outputFilePath = filepath.Join(outputDir, "route/address_mapping.conf")
 		// 创建一个文件
 		// /simulation/containerName/address_mapping.conf
 		f, err = os.Create(outputFilePath)

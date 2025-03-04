@@ -30,7 +30,7 @@ class AttackManager:
         self.resolve_attacked_port_address()
 
     def resolve_attacked_node_address(self):
-        address_mapping_file = f"/configuration/{elm.env_loader.container_name}/address_mapping.conf"
+        address_mapping_file = f"/configuration/{elm.env_loader.container_name}/route/address_mapping.conf"
         address_mapping = arm.resolve_address_mapping(address_mapping_file=address_mapping_file)
         self.attack_node_ip = address_mapping[env_loader.container_name]
         self.attacked_node_ip = address_mapping[self.attacked_node]

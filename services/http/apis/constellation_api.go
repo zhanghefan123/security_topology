@@ -125,6 +125,8 @@ func StartConstellation(c *gin.Context) {
 	}
 	// -------------------------------------------------------------------------------
 
+	fmt.Println(constellationParams)
+
 	// 处理逻辑 -> 应该只需要更新卫星数量和每个轨道的卫星数量即可
 	err = startConstellationInner(constellationParams)
 	if err != nil {

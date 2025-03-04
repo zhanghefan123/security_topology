@@ -489,7 +489,7 @@ func (t *Topology) GenerateAddressMapping() error {
 		}
 		containerName := normalNode.ContainerName
 		outputDir = filepath.Join(configs.TopConfiguration.PathConfig.ConfigGeneratePath, containerName)
-		outputFilePath = filepath.Join(outputDir, "address_mapping.conf")
+		outputFilePath = filepath.Join(outputDir, "route/address_mapping.conf")
 		// 创建一个文件
 		// /simulation/containerName/address_mapping.conf
 		f, err = os.Create(outputFilePath)
