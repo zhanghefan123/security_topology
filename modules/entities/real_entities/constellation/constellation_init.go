@@ -35,7 +35,6 @@ const (
 	GenerateAddressMapping                = "GenerateAddressMapping"                // 生成容器名 -> 地址的映射
 	GeneratePortMapping                   = "GeneratePortMapping"                   // 生成容器名 -> 端口的映射
 	GenerateFrrConfigurationFiles         = "GenerateFrrConfigurationFiles"         // 生成 frr 配置
-	GeneratePeerIdAndPrivateKey           = "GeneratePeerIdAndPrivateKey"           // 生成 peerId 以及私钥
 	CalculateAndWriteSegmentRoutes        = "CalculateAndWriteSegmentRoutes"        // 进行段路由的计算
 	CalculateAndWriteLiRRoutes            = "CalculateAndWriteLiRRoutes"            // 进行 lir 路由的计算
 	GenerateIfnameToLinkIdentifierMapping = "GenerateIfnameToLinkIdentifierMapping" // 生成从接口名称到 link identifier 的映射
@@ -51,7 +50,7 @@ type InitModule struct {
 // Init 进行初始化
 func (c *Constellation) Init() error {
 
-	enableSRv6 := configs.TopConfiguration.NetworkConfig.EnableSRv6
+	// enableSRv6 := configs.TopConfiguration.NetworkConfig.EnableSRv6
 
 	initSteps := []map[string]InitModule{
 		{SetHostReceiveMemory: InitModule{false, c.SetHostReceiveMemory}},
@@ -63,8 +62,7 @@ func (c *Constellation) Init() error {
 		{GenerateFrrConfigurationFiles: InitModule{true, c.GenerateFrrConfigurationFiles}},
 		{GenerateAddressMapping: InitModule{true, c.GenerateAddressMapping}},
 		{GeneratePortMapping: InitModule{true, c.GeneratePortMapping}},
-		{GeneratePeerIdAndPrivateKey: InitModule{true, c.GeneratePeerIdAndPrivateKey}},
-		{CalculateAndWriteSegmentRoutes: InitModule{enableSRv6, c.CalculateAndWriteSegmentRoutes}},
+		{CalculateAndWriteSegmentRoutes: InitModule{true, c.CalculateAndWriteSegmentRoutes}},
 		{CalculateAndWriteLiRRoutes: InitModule{true, c.CalculateAndWriteLiRRoutes}},
 		{GenerateIfnameToLinkIdentifierMapping: InitModule{true, c.GenerateIfnameToLinkIdentifierMapping}},
 	}
@@ -142,7 +140,7 @@ func (c *Constellation) GenerateSatellites() error {
 	var startLatitude float32 = 0
 	var startLongitude float32 = 0
 	var delta float32 = 5
-	freq := 1 / 0.06965
+	freq := 1 / 0.0695
 	for orbitId := 0; orbitId < c.OrbitNumber; orbitId++ {
 		orbitStartLatitude := startLatitude + delta
 		orbitLongitude := startLongitude + 180*float32(orbitId)/float32(c.OrbitNumber)
@@ -641,28 +639,6 @@ func (c *Constellation) GenerateFrrConfigurationFiles() error {
 	return nil
 }
 
-func (c *Constellation) GeneratePeerIdAndPrivateKey() error {
-	if _, ok := c.systemInitSteps[GeneratePeerIdAndPrivateKey]; ok {
-		constellationLogger.Infof("already generate peer id and private key")
-		return nil
-	}
-
-	for _, abstractNode := range c.SatelliteAbstractNodes {
-		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
-		if err != nil {
-			return fmt.Errorf("cannot convert abstract node to normal node")
-		}
-		err = normalNode.GeneratePeerIdAndPrivateKey()
-		if err != nil {
-			return fmt.Errorf("generate peer id and private key failed: %w", err)
-		}
-	}
-
-	c.systemInitSteps[GeneratePeerIdAndPrivateKey] = struct{}{}
-	constellationLogger.Infof("generate peer id and private key")
-	return nil
-}
-
 // CalculateAndWriteSegmentRoutes 进行段路由的计算
 func (c *Constellation) CalculateAndWriteSegmentRoutes() error {
 	if _, ok := c.systemInitSteps[CalculateAndWriteSegmentRoutes]; ok {
@@ -682,6 +658,7 @@ func (c *Constellation) CalculateAndWriteSegmentRoutes() error {
 	return nil
 }
 
+// CalculateAndWriteLiRRoutes 计算 LiR 路由
 func (c *Constellation) CalculateAndWriteLiRRoutes() error {
 	if _, ok := c.systemInitSteps[CalculateAndWriteLiRRoutes]; ok {
 		constellationLogger.Infof("already calculate lir routes")

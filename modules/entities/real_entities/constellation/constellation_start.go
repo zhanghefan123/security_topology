@@ -6,7 +6,6 @@ import (
 	"go.etcd.io/etcd/client/v3"
 	"strconv"
 	"strings"
-	"sync"
 	"zhanghefan123/security_topology/api/container_api"
 	"zhanghefan123/security_topology/api/linux_tc_api"
 	"zhanghefan123/security_topology/api/multithread"
@@ -234,77 +233,77 @@ func (c *Constellation) StartEtcdService() error {
 }
 
 // StoreToEtcd 将卫星/链路信息放到 Etcd 之中
-func (c *Constellation) StoreToEtcd() (err error) {
+func (c *Constellation) StoreToEtcd() error {
 	if _, ok := c.systemStartSteps[StoreToEtcd]; ok {
 		constellationLogger.Infof("StoreToEtcd is already running")
 		return nil
 	}
 
-	waitGroup := sync.WaitGroup{}
-	// 存在3个子任务
-	waitGroup.Add(3)
-
-	// 第一个子任务: 进行星座链路的存储
-	go func() {
-		defer waitGroup.Done() // 最终记录一下任务做完了
-		for _, satelliteLink := range c.AllSatelliteLinks {
-			err = satelliteLink.StoreToEtcd(c.EtcdClient)
-			if err != nil {
-				err = fmt.Errorf("store ISL to etcd error %w", err)
-				return
-			}
+	// 1. 存储卫星链路
+	description := fmt.Sprintf("store satellite links to etcd")
+	var islTaskFunc multithread.TaskFunc[*link.AbstractLink] = func(satelliteLink *link.AbstractLink) error {
+		err := satelliteLink.StoreToEtcd(c.EtcdClient)
+		if err != nil {
+			return err
 		}
-	}()
+		return nil
+	}
+	err := multithread.RunInMultiThread(description, islTaskFunc, c.AllSatelliteLinks)
+	if err != nil {
+		return fmt.Errorf("store satellite links to etcd error %w", err)
+	}
 
-	// 第二个子任务: 进行卫星节点的存储
-	go func() {
-		// 最终记录一下任务做完了
-		defer waitGroup.Done()
-		for _, absNode := range c.SatelliteAbstractNodes {
-			if absNode.Type == types.NetworkNodeType_NormalSatellite {
-				// 如果节点为普通卫星
-				normalSat, _ := absNode.ActualNode.(*satellites.NormalSatellite)
-				err = normalSat.StoreToEtcd(c.EtcdClient)
-			} else if absNode.Type == types.NetworkNodeType_LiRSatellite {
-				// 如果节点为 lir 卫星
-				lirSat, _ := absNode.ActualNode.(*satellites.LiRSatellite)
-				err = lirSat.StoreToEtcd(c.EtcdClient)
-			} else {
-				err = fmt.Errorf("unsupported node type")
-			}
-			if err != nil {
-				err = fmt.Errorf("store ISL to etcd error %w", err)
-				return
-			}
+	// 2. 存储卫星节点
+	description = fmt.Sprintf("store satellites to etcd")
+	var satelliteTaskFunc multithread.TaskFunc[*node.AbstractNode] = func(absNode *node.AbstractNode) error {
+		if absNode.Type == types.NetworkNodeType_NormalSatellite {
+			// 如果节点为普通卫星
+			normalSat, _ := absNode.ActualNode.(*satellites.NormalSatellite)
+			err = normalSat.StoreToEtcd(c.EtcdClient)
+		} else if absNode.Type == types.NetworkNodeType_LiRSatellite {
+			// 如果节点为 lir 卫星
+			lirSat, _ := absNode.ActualNode.(*satellites.LiRSatellite)
+			err = lirSat.StoreToEtcd(c.EtcdClient)
+		} else {
+			return fmt.Errorf("unsupported node type")
 		}
-	}()
-
-	// 第三个子任务: 进行地面站节点的存储
-	go func() {
-		defer waitGroup.Done()
-		for _, absNode := range c.GroundStationAbstractNodes {
-			if absNode.Type == types.NetworkNodeType_GroundStation {
-				groundStation, _ := absNode.ActualNode.(*ground_station.GroundStation)
-				err = groundStation.StoreToEtcd(c.EtcdClient)
-			} else {
-				err = fmt.Errorf("unsupported node type")
-			}
-			if err != nil {
-				err = fmt.Errorf("store GroundStation to etcd error %w", err)
-				return
-			}
+		if err != nil {
+			return fmt.Errorf("store ISL to etcd error %w", err)
 		}
-	}()
-	waitGroup.Wait()
+		return nil
+	}
+	err = multithread.RunInMultiThread(description, satelliteTaskFunc, c.SatelliteAbstractNodes)
+	if err != nil {
+		return fmt.Errorf("store satellite nodes to etcd error %w", err)
+	}
 
-	// 第四步: 存储 timeStepKey
+	// 3. 存储地面站节点
+	description = fmt.Sprintf("store ground stations to etcd")
+	var groundStationTaskFunc multithread.TaskFunc[*node.AbstractNode] = func(absNode *node.AbstractNode) error {
+		if absNode.Type == types.NetworkNodeType_GroundStation {
+			groundStation, _ := absNode.ActualNode.(*ground_station.GroundStation)
+			err = groundStation.StoreToEtcd(c.EtcdClient)
+		} else {
+			return fmt.Errorf("unsupported node type")
+		}
+		if err != nil {
+			return fmt.Errorf("store GroundStation to etcd error %w", err)
+		}
+		return nil
+	}
+	err = multithread.RunInMultiThread(description, groundStationTaskFunc, c.GroundStationAbstractNodes)
+	if err != nil {
+		return fmt.Errorf("store ground stations to etcd error %w", err)
+	}
+
+	// 4. 存储 timeStepKey
 	timeStepKey := configs.TopConfiguration.ConstellationConfig.TimeStepKey
 	_, err = c.EtcdClient.Put(context.Background(), timeStepKey, strconv.Itoa(c.TimeStep))
 	if err != nil {
 		return fmt.Errorf("store time step to etcd error %w", err)
 	}
 
-	// 第五步: 存储 minimumElevationAngleKey
+	// 5. 存储 minimumElevationAngleKey
 	minimumElevationAngleKey := configs.TopConfiguration.ConstellationConfig.MinimumElevationAngleKey
 	_, err = c.EtcdClient.Put(context.Background(), minimumElevationAngleKey, strconv.Itoa(c.MinimumElevationAngle))
 	if err != nil {
@@ -562,7 +561,7 @@ func handleSatellitesUpdate(c *Constellation) {
 			// 将 etcd 的值进行反序列化
 			protobuf.MustUnmarshal(event.Kv.Value, sat)
 			// 获取卫星容器的 pid
-			satPid := sat.Pid
+			//satPid := sat.Pid
 			// 获取卫星容器名
 			containerName := sat.ContainerName
 			// ContainerNameToPosition 可能会引起并发的修改
@@ -590,7 +589,7 @@ func handleSatellitesUpdate(c *Constellation) {
 				}
 				//fmt.Println("interfaces and interfacedelays:", interfaces, interfaceDelays, satPid)
 				// 忽略错误 -> 这里会进行标红的原因就是 linux 下才有这个 api, set interface delay 的时候才进行修改
-				_ = linux_tc_api.SetInterfacesDelay(int(satPid), interfaces, interfaceDelays)
+				//_ = linux_tc_api.SetInterfacesDelay(int(satPid), interfaces, interfaceDelays)
 			}()
 		}
 	}

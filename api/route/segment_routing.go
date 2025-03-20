@@ -22,10 +22,11 @@ func GenerateSegmentRoutingString(destinationIp string, ipSegmentList *[]string,
 }
 
 // GenerateSegmentRoutingStrings  到所有节点的静态路由的生成
-func GenerateSegmentRoutingStrings(abstractNode *node.AbstractNode, linksMap *map[string]map[string]*link.AbstractLink, graphTmp *simple.DirectedGraph) ([]string, map[string][]string, error) {
+func GenerateSegmentRoutingStrings(abstractNode *node.AbstractNode, linksMap *map[string]map[string]*link.AbstractLink, graphTmp *simple.DirectedGraph) ([]string, map[string][]string, map[string]int, error) {
 	var err error
 	var finalResult []string
 	var destinationIpv6AddressMapping = map[string][]string{}
+	var destinationPathLengthMapping = map[string]int{}
 	shortestPath := path.DijkstraFrom(abstractNode, graphTmp)
 	iterator := graphTmp.Nodes()
 	for {
@@ -40,7 +41,7 @@ func GenerateSegmentRoutingStrings(abstractNode *node.AbstractNode, linksMap *ma
 			var currentDestinationNormal *normal_node.NormalNode
 			currentDestinationNormal, err = GetNormalNodeFromGraphNode(currentDestination)
 			if err != nil {
-				return nil, nil, fmt.Errorf("cannot retrieve normal node from graph node")
+				return nil, nil, nil, fmt.Errorf("cannot retrieve normal node from graph node")
 			}
 			// -----------------------------------------
 			ipSegmentList := make([]string, 0)
@@ -61,11 +62,11 @@ func GenerateSegmentRoutingStrings(abstractNode *node.AbstractNode, linksMap *ma
 				target := hopList[index+1]
 				sourceNormal, err = GetNormalNodeFromGraphNode(source)
 				if err != nil {
-					return nil, nil, fmt.Errorf("calcualate route error: %w", err)
+					return nil, nil, nil, fmt.Errorf("calcualate route error: %w", err)
 				}
 				targetNormal, err = GetNormalNodeFromGraphNode(target)
 				if err != nil {
-					return nil, nil, fmt.Errorf("calcualate route error: %w", err)
+					return nil, nil, nil, fmt.Errorf("calcualate route error: %w", err)
 				}
 				// 找到相应的链路 -> 带有方向的
 				isl := (*linksMap)[sourceNormal.ContainerName][targetNormal.ContainerName]
@@ -103,11 +104,13 @@ func GenerateSegmentRoutingStrings(abstractNode *node.AbstractNode, linksMap *ma
 				}
 			}
 
+			destinationPathLengthMapping[currentDestinationNormal.ContainerName] = len(ipSegmentList)
+
 			generateIpRouteString := GenerateSegmentRoutingString(destination, &ipSegmentList, outputInterfaceName)
 			finalResult = append(finalResult, generateIpRouteString)
 		}
 	}
-	return finalResult, destinationIpv6AddressMapping, nil
+	return finalResult, destinationIpv6AddressMapping, destinationPathLengthMapping, nil
 }
 
 // WriteSegmentRoutingStringsIntoFile 将段路由信息写入到文件之中
@@ -181,12 +184,49 @@ func WriteIpv6DestinationMappingIntoFile(containerName string, mapping map[strin
 	return nil
 }
 
+func WriteDestinationPathLengthMappingIntoFile(containerName string, destinationPathLengthMapping map[string]int) (err error) {
+	// simulation 文件夹的位置
+	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
+	// route dir 文件的位置
+	outputDir := filepath.Join(simulationDir, containerName, "route")
+	// 进行文件夹的生成
+	err = dir.Generate(outputDir)
+	if err != nil {
+		return fmt.Errorf("write route error: %w", err)
+	}
+	// 文件的路径
+	filePath := filepath.Join(outputDir, "destination_path_length.txt")
+	// 创建写入文件
+	var ipv6SegmentRouteFile *os.File
+	ipv6SegmentRouteFile, err = os.Create(filePath)
+	defer func() {
+		closeErr := ipv6SegmentRouteFile.Close()
+		if err == nil {
+			err = closeErr
+		}
+	}()
+	if err != nil {
+		return fmt.Errorf("calculate ipv6 destination path length mapping error: %w", err)
+	}
+	finalString := ""
+	for key, value := range destinationPathLengthMapping {
+		finalString += fmt.Sprintf("%s->%d\n", key, value)
+	}
+	// write content
+	_, err = ipv6SegmentRouteFile.WriteString(finalString)
+	if err != nil {
+		return fmt.Errorf("write destination path length mapping error: %w", err)
+	}
+	return nil
+}
+
 // CalculateAndWriteSegmentRoute 进行到其他节点的段路由的计算
 func CalculateAndWriteSegmentRoute(abstractNode *node.AbstractNode, linksMap *map[string]map[string]*link.AbstractLink, graphTmp *simple.DirectedGraph) error {
 	var err error
 	var ipRouteStrings []string
 	var destinationIpv6AddressMapping map[string][]string
-	ipRouteStrings, destinationIpv6AddressMapping, err = GenerateSegmentRoutingStrings(abstractNode, linksMap, graphTmp)
+	var destinationPathLengthMapping map[string]int
+	ipRouteStrings, destinationIpv6AddressMapping, destinationPathLengthMapping, err = GenerateSegmentRoutingStrings(abstractNode, linksMap, graphTmp)
 	if err != nil {
 		return fmt.Errorf("generate segment routing strings failed: %w", err)
 	}
@@ -201,6 +241,11 @@ func CalculateAndWriteSegmentRoute(abstractNode *node.AbstractNode, linksMap *ma
 	err = WriteIpv6DestinationMappingIntoFile(normalNode.ContainerName, destinationIpv6AddressMapping)
 	if err != nil {
 		return fmt.Errorf("write ipv6 destination mapping failed: %w", err)
+	}
+	// output to each destination's path length
+	err = WriteDestinationPathLengthMappingIntoFile(normalNode.ContainerName, destinationPathLengthMapping)
+	if err != nil {
+		return fmt.Errorf("write destination path length mapping failed: %w", err)
 	}
 	return nil
 }

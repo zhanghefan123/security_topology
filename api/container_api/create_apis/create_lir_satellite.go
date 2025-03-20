@@ -91,7 +91,10 @@ func CreateLiRSatellite(client *docker.Client, lirSatellite *satellites.LiRSatel
 		fmt.Sprintf("%s=%d", "NUMBER_OF_HASH_FUNCTIONS", numberOfHashFunctions),
 		fmt.Sprintf("%s=%d", "ROUTING_TABLE_TYPE", routingTableType),
 		fmt.Sprintf("%s=%d", "LIR_SINGLE_TIME_ENCODING_COUNT", configs.TopConfiguration.PathValidationConfig.LiRSingleTimeEncodingCount),
+		fmt.Sprintf("%s=%t", "ENABLE_SRV6", configs.TopConfiguration.NetworkConfig.EnableSRv6),
 	}
+
+	fmt.Println(fmt.Sprintf("%s=%d", "GRAPH_NODE_ID", graphNodeId))
 
 	// 7. 容器配置
 	containerConfig := &container.Config{

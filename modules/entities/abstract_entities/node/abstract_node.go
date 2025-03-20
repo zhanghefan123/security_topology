@@ -31,6 +31,9 @@ func NewAbstractNode(nodeType types.NetworkNodeType, actualNode interface{}, gra
 		graphNode = graphTmp.NewNode()
 		graphTmp.AddNode(graphNode)
 	}
+	if graphTmp != nil {
+		fmt.Printf("graph node id = %d\n", graphNode.ID())
+	}
 	return &AbstractNode{
 		Node:       graphNode,
 		Type:       nodeType,

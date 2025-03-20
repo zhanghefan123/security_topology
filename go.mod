@@ -1,6 +1,6 @@
 module zhanghefan123/security_topology
 
-go 1.23
+go 1.22
 
 require (
 	github.com/antonfisher/nested-logrus-formatter v1.3.1

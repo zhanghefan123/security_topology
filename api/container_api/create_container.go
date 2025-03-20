@@ -14,94 +14,60 @@ import (
 	"zhanghefan123/security_topology/modules/entities/types"
 )
 
+// createFuncTemplate 创建函数模板
+type createFuncTemplate func(client *docker.Client, abstractNode *node.AbstractNode) error
+
+// createFuncs 创建函数
+var createFuncs = map[types.NetworkNodeType]createFuncTemplate{
+	types.NetworkNodeType_NormalSatellite: func(client *docker.Client, abstractNode *node.AbstractNode) error {
+		return create_apis.CreateNormalSatellite(client, abstractNode.ActualNode.(*satellites.NormalSatellite))
+	},
+	types.NetworkNodeType_GroundStation: func(client *docker.Client, abstractNode *node.AbstractNode) error {
+		return create_apis.CreateGroundStation(client, abstractNode.ActualNode.(*ground_station.GroundStation))
+	},
+	types.NetworkNodeType_EtcdService: func(client *docker.Client, abstractNode *node.AbstractNode) error {
+		return create_apis.CreateEtcdNode(client, abstractNode.ActualNode.(*etcd.EtcdNode))
+	},
+	types.NetworkNodeType_PositionService: func(client *docker.Client, abstractNode *node.AbstractNode) error {
+		return create_apis.CreateRealTimePositionService(client, abstractNode.ActualNode.(*position.PositionService))
+	},
+	types.NetworkNodeType_Router: func(client *docker.Client, abstractNode *node.AbstractNode) error {
+		return create_apis.CreateRouter(client, abstractNode.ActualNode.(*nodes.Router))
+	},
+	types.NetworkNodeType_NormalNode: func(client *docker.Client, abstractNode *node.AbstractNode) error {
+		return create_apis.CreateNormalNode(client, abstractNode.ActualNode.(*normal_node.NormalNode))
+	},
+	types.NetworkNodeType_ConsensusNode: func(client *docker.Client, abstractNode *node.AbstractNode) error {
+		return create_apis.CreateConsensusNode(client, abstractNode.ActualNode.(*nodes.ConsensusNode))
+	},
+	types.NetworkNodeType_ChainMakerNode: func(client *docker.Client, abstractNode *node.AbstractNode) error {
+		return create_apis.CreateChainMakerNode(client, abstractNode.ActualNode.(*nodes.ChainmakerNode))
+	},
+	types.NetworkNodeType_MaliciousNode: func(client *docker.Client, abstractNode *node.AbstractNode) error {
+		return create_apis.CreateMaliciousNode(client, abstractNode.ActualNode.(*nodes.MaliciousNode))
+	},
+	types.NetworkNodeType_LirNode: func(client *docker.Client, abstractNode *node.AbstractNode) error {
+		return create_apis.CreateLirNode(client, abstractNode.ActualNode.(*nodes.LiRNode), int(abstractNode.Node.ID())+1)
+	},
+	types.NetworkNodeType_Entrance: func(client *docker.Client, abstractNode *node.AbstractNode) error {
+		return create_apis.CreateEntrance(client, abstractNode.ActualNode.(*nodes.Entrance))
+	},
+	types.NetworkNodeType_FabricPeerNode: func(client *docker.Client, abstractNode *node.AbstractNode) error {
+		return create_apis.CreateFabricPeerNode(client, abstractNode.ActualNode.(*nodes.FabricPeerNode))
+	},
+	types.NetworkNodeType_FabricOrderNode: func(client *docker.Client, abstractNode *node.AbstractNode) error {
+		return create_apis.CreateFabricOrderNode(client, abstractNode.ActualNode.(*nodes.FabricOrderNode))
+	},
+	types.NetworkNodeType_LiRSatellite: func(client *docker.Client, abstractNode *node.AbstractNode) error {
+		return create_apis.CreateLiRSatellite(client, abstractNode.ActualNode.(*satellites.LiRSatellite), int(abstractNode.Node.ID())+1)
+	},
+}
+
 // CreateContainer 创建 container
 func CreateContainer(client *docker.Client, node *node.AbstractNode) error {
-	var err error = nil
-	switch node.Type {
-	case types.NetworkNodeType_NormalSatellite:
-		sat, _ := node.ActualNode.(*satellites.NormalSatellite)
-		err = create_apis.CreateNormalSatellite(client, sat)
-		if err != nil {
-			return fmt.Errorf("createNormalSatellite err: %w", err)
-		}
-	case types.NetworkNodeType_GroundStation:
-		gnd, _ := node.ActualNode.(*ground_station.GroundStation)
-		err = create_apis.CreateGroundStation(client, gnd)
-		if err != nil {
-			return fmt.Errorf("createGroundStation err: %w", err)
-		}
-	case types.NetworkNodeType_EtcdService:
-		etcdNode, _ := node.ActualNode.(*etcd.EtcdNode)
-		err = create_apis.CreateEtcdNode(client, etcdNode)
-		if err != nil {
-			return fmt.Errorf("createEtcdNode err: %w", err)
-		}
-	case types.NetworkNodeType_PositionService:
-		positionService, _ := node.ActualNode.(*position.PositionService)
-		err = create_apis.CreateRealTimePositionService(client, positionService)
-		if err != nil {
-			return fmt.Errorf("createPositionService err: %w", err)
-		}
-	case types.NetworkNodeType_Router:
-		router, _ := node.ActualNode.(*nodes.Router)
-		err = create_apis.CreateRouter(client, router)
-		if err != nil {
-			return fmt.Errorf("createRouter err: %w", err)
-		}
-	case types.NetworkNodeType_NormalNode:
-		normalNode, _ := node.ActualNode.(*normal_node.NormalNode)
-		err = create_apis.CreateNormalNode(client, normalNode)
-		if err != nil {
-			return fmt.Errorf("createNormalNode err: %w", err)
-		}
-	case types.NetworkNodeType_ConsensusNode:
-		consensusNode, _ := node.ActualNode.(*nodes.ConsensusNode)
-		err = create_apis.CreateConsensusNode(client, consensusNode)
-		if err != nil {
-			return fmt.Errorf("createConsensusNode err: %w", err)
-		}
-	case types.NetworkNodeType_ChainMakerNode:
-		chainMakerNode, _ := node.ActualNode.(*nodes.ChainmakerNode)
-		err = create_apis.CreateChainMakerNode(client, chainMakerNode)
-		if err != nil {
-			return fmt.Errorf("createChainMakerNode err: %w", err)
-		}
-	case types.NetworkNodeType_MaliciousNode:
-		maliciousNode, _ := node.ActualNode.(*nodes.MaliciousNode)
-		err = create_apis.CreateMaliciousNode(client, maliciousNode)
-		if err != nil {
-			return fmt.Errorf("createMaliciousNode err: %w", err)
-		}
-	case types.NetworkNodeType_LirNode:
-		lirNode, _ := node.ActualNode.(*nodes.LiRNode)
-		err = create_apis.CreateLirNode(client, lirNode, int(node.Node.ID())+1)
-		if err != nil {
-			return fmt.Errorf("createLirNode err: %w", err)
-		}
-	case types.NetworkNodeType_Entrance:
-		entrance, _ := node.ActualNode.(*nodes.Entrance)
-		err = create_apis.CreateEntrance(client, entrance)
-		if err != nil {
-			return fmt.Errorf("create Entrance err: %w", err)
-		}
-	case types.NetworkNodeType_FabricPeerNode:
-		fabricPeer, _ := node.ActualNode.(*nodes.FabricPeerNode)
-		err = create_apis.CreateFabricPeerNode(client, fabricPeer)
-		if err != nil {
-			return fmt.Errorf("create fabricPeer err: %w", err)
-		}
-	case types.NetworkNodeType_FabricOrderNode:
-		fabricOrder, _ := node.ActualNode.(*nodes.FabricOrderNode)
-		err = create_apis.CreateFabricOrderNode(client, fabricOrder)
-		if err != nil {
-			return fmt.Errorf("create fabricOrder err: %w", err)
-		}
-	case types.NetworkNodeType_LiRSatellite:
-		lirSatellite, _ := node.ActualNode.(*satellites.LiRSatellite)
-		err = create_apis.CreateLiRSatellite(client, lirSatellite, int(node.Node.ID())+1)
-		if err != nil {
-			return fmt.Errorf("createLiRSatellite err: %w", err)
-		}
+	if createFunc, ok := createFuncs[node.Type]; ok {
+		return createFunc(client, node)
+	} else {
+		return fmt.Errorf("create container error: unknown node type %v", node.Type)
 	}
-	return nil
 }
