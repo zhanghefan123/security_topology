@@ -18,7 +18,6 @@ const (
 frr defaults traditional
 hostname %s
 log syslog debugging
-no ipv6 forwarding
 service integrated-vtysh-config
 !
 router ospf

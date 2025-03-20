@@ -18,8 +18,8 @@ func main() {
 	// =======================================================
 	PrintExitLogo()
 	go interface_listener.MonitorInterface()
-	frr.Start()
 	srv6.Start()
+	frr.Start()
 	// =======================================================
 
 	<-signalChan
