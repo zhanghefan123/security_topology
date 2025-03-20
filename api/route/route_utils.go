@@ -10,6 +10,7 @@ import (
 
 // GetNormalNodeFromGraphNode 从图节点获取普通节点
 func GetNormalNodeFromGraphNode(graphNode graph.Node) (*normal_node.NormalNode, error) {
+	// 如果出现了地面站的话, 将 graphNode 直接转化为 AbstractNode 是不行的。
 	currentAbstract, ok := graphNode.(*node.AbstractNode)
 	if !ok {
 		return nil, fmt.Errorf("convert to normal node failed")

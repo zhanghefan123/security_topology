@@ -12,6 +12,7 @@ import (
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
+	"zhanghefan123/security_topology/modules/entities/types"
 	"zhanghefan123/security_topology/modules/utils/dir"
 )
 
@@ -41,7 +42,11 @@ func GenerateSegmentRoutingStrings(abstractNode *node.AbstractNode, linksMap *ma
 			var currentDestinationNormal *normal_node.NormalNode
 			currentDestinationNormal, err = GetNormalNodeFromGraphNode(currentDestination)
 			if err != nil {
-				return nil, nil, nil, fmt.Errorf("cannot retrieve normal node from graph node")
+				return nil, nil, nil, fmt.Errorf("calcualate route error: %w", err)
+			}
+			// 不用计算到地面站的路径
+			if currentDestinationNormal.Type == types.NetworkNodeType_GroundStation {
+				continue
 			}
 			// -----------------------------------------
 			ipSegmentList := make([]string, 0)

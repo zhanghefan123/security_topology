@@ -24,20 +24,24 @@ type AbstractNode struct {
 func NewAbstractNode(nodeType types.NetworkNodeType, actualNode interface{}, graphTmp *simple.DirectedGraph) *AbstractNode {
 	// 进行图节点的创建
 	var graphNode graph.Node
-	// 当节点为 etcd_service 或者 position_service 的时候, graphTmp 为 nil
-	if graphTmp == nil {
+	// 可能存在 graphTmp 为空的情况 (比如 etcd_service 或者 position_service)
+	if nil == graphTmp {
 		graphNode = nil
+		return &AbstractNode{
+			Node:       nil,
+			Type:       nodeType,
+			ActualNode: actualNode,
+		}
 	} else {
 		graphNode = graphTmp.NewNode()
-		graphTmp.AddNode(graphNode)
-	}
-	if graphTmp != nil {
+		abstractNode := &AbstractNode{
+			Node:       graphNode,
+			Type:       nodeType,
+			ActualNode: actualNode,
+		}
+		graphTmp.AddNode(abstractNode)
 		fmt.Printf("graph node id = %d\n", graphNode.ID())
-	}
-	return &AbstractNode{
-		Node:       graphNode,
-		Type:       nodeType,
-		ActualNode: actualNode,
+		return abstractNode
 	}
 }
 

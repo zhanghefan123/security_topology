@@ -10,6 +10,8 @@ import (
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
+	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
+	"zhanghefan123/security_topology/modules/entities/types"
 	"zhanghefan123/security_topology/modules/utils/dir"
 )
 
@@ -45,6 +47,16 @@ func GenerateLiRRoutingStrings(abstractNode *node.AbstractNode, linksMap *map[st
 		}
 		currentDestination := iterator.Node()
 		if currentDestination.ID() != abstractNode.Node.ID() {
+			// 不用计算到地面站的路径 (过程和 GenerateSegmentRoutingStrings 基本一致)
+			var currentDestinationNormal *normal_node.NormalNode
+			currentDestinationNormal, err = GetNormalNodeFromGraphNode(currentDestination)
+			if err != nil {
+				return []string{}, fmt.Errorf("cannot convert graph node to normal node: %w", err)
+			}
+			if currentDestinationNormal.Type == types.NetworkNodeType_GroundStation {
+				continue
+			}
+
 			hopList, _ := shortestPath.To(currentDestination.ID())
 			sourceNode = hopList[0].ID() + 1                   // 这里使用 + 1 的原因是 graph Node 的 ID 从 0 开始
 			destinationNode = hopList[len(hopList)-1].ID() + 1 // 这里使用 + 1 的原因是 graph Node 的 ID 从 0 开始
