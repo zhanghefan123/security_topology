@@ -97,7 +97,7 @@ func (p *FabricPrepare) GenerateGenesisBlockConfigYml() (err error) {
 	inputFile := p.pathMapping[GenesisBlockBasic] // 模版文件路径
 	outputFile := p.pathMapping[GenesisBlockNew]  // 输出文件路径
 	var file, newFile *os.File                    // 模版文件和输出文件句柄
-	ordererNum := p.fabricOrderNodeCount
+	ordererNum := p.fabricOrdererNodeCount
 	peerNum := p.fabricPeerNodeCount
 	orderStartPort := configs.TopConfiguration.FabricConfig.OrderStartPort
 
@@ -204,7 +204,7 @@ func (p *FabricPrepare) GenerateOrdererOrgCryptoYml() (err error) {
 
 	outputFile := p.pathMapping[OrdererOrgCryptoNew]
 	var file *os.File
-	ordererNum := p.fabricOrderNodeCount
+	ordererNum := p.fabricOrdererNodeCount
 	if ordererNum != 0 {
 		// 进行文件的创建和权限修改
 		// --------------------------------------------------------
@@ -290,7 +290,7 @@ func (p *FabricPrepare) InvokeCryptogenTool() error {
 		fabricPrepareWorkLogger.Errorf("already invoke crytogen tool")
 		return nil
 	}
-	ordererNum := p.fabricOrderNodeCount
+	ordererNum := p.fabricOrdererNodeCount
 	peerNum := p.fabricPeerNodeCount
 	configFile := p.pathMapping[OrdererOrgCryptoNew]
 	fmt.Println("invoke cryptogen tool")

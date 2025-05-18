@@ -8,7 +8,18 @@ import (
 	"golang.org/x/sys/unix"
 	"os"
 	"os/exec"
+	"strings"
 )
+
+// IsFrrRunning 检测 FRR 是否运行
+func IsFrrRunning() bool {
+	cmd := exec.Command("service", "frr", "status")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return false
+	}
+	return strings.Contains(string(output), "Status of ospfd: running")
+}
 
 // AddInterfaceIntoOspf 将接口添加到 OSPF 之中
 func AddInterfaceIntoOspf(newInterfaceName string) error {
@@ -51,9 +62,9 @@ func RemoveInterfaceFromOSPF(removedInterface string) error {
 	}
 }
 
-// MonitorInterface 进行接口的监听
+// MonitorInterface 进行接口的监听, 然后进行相应的的处理, 但是可能接口出现事件发生后, 才完成 frr 的启动
 func MonitorInterface() {
-	// 所有存在的接口
+	// 获取所有存在的接口
 	existingInterfaces := make(map[string]struct{})
 	links, err := netlink.LinkList()
 	if err != nil {
@@ -72,28 +83,57 @@ func MonitorInterface() {
 		return
 	}
 
+	fmt.Println(existingInterfaces)
+
 	// 进行循环的监听
 	for {
 		select {
+		// 检测更新事件
 		case update := <-ch:
+			// 如果是新的链路 -> 调用 ospf
 			if update.Header.Type == unix.RTM_NEWLINK {
 				interfaceName := update.Link.Attrs().Name
 				if _, exists := existingInterfaces[interfaceName]; !exists {
-					err = AddInterfaceIntoOspf(interfaceName)
-					if err != nil {
-						fmt.Printf("cannot add interface to ospf: %v", err)
-						return
-					}
+					go func() {
+						// 检测 frr 是否运行
+						for {
+							if IsFrrRunning() {
+								fmt.Println(interfaceName)
+								err = AddInterfaceIntoOspf(interfaceName)
+								if err != nil {
+									fmt.Printf("cannot add interface to ospf: %v", err)
+									return
+								}
+								existingInterfaces[interfaceName] = struct{}{}
+								break
+							} else {
+								continue
+							}
+						}
+					}()
 				}
-				existingInterfaces[interfaceName] = struct{}{}
+
+				// 如果是链路被删除 -> 调用 ospf
 			} else if update.Header.Type == unix.RTM_DELLINK {
-				if _, exists := existingInterfaces[update.Link.Attrs().Name]; exists {
-					err = RemoveInterfaceFromOSPF(update.Link.Attrs().Name)
-					if err != nil {
-						fmt.Printf("cannot remove interface from ospf: %v", err)
-						return
-					}
-					delete(existingInterfaces, update.Link.Attrs().Name)
+				interfaceName := update.Link.Attrs().Name
+				if _, exists := existingInterfaces[interfaceName]; exists {
+					go func() {
+						// 检测 frr 是否运行
+						for {
+							if IsFrrRunning() {
+								fmt.Println(interfaceName)
+								err = RemoveInterfaceFromOSPF(interfaceName)
+								if err != nil {
+									fmt.Printf("cannot remove interface from ospf: %v", err)
+									return
+								}
+								delete(existingInterfaces, update.Link.Attrs().Name)
+								break
+							} else {
+								continue
+							}
+						}
+					}()
 				}
 			}
 		}

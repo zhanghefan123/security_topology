@@ -7,17 +7,18 @@ var (
 )
 
 type FabricPrepare struct {
-	fabricPeerNodeCount  int
-	fabricOrderNodeCount int
-	generateSteps        map[string]struct{}
-	pathMapping          map[string]string
+	fabricPeerNodeCount    int // 对等节点数量
+	fabricOrdererNodeCount int // 排序节点数量
+	generateSteps          map[string]struct{}
+	pathMapping            map[string]string
 }
 
-func NewFabricPrepare(fabricPeerNodeCount, fabricOrderNodeCount int) *FabricPrepare {
+// NewFabricPrepare 创建 FabricPrepare 对象
+func NewFabricPrepare(fabricPeerNodeCount, fabricOrdererNodeCount int) *FabricPrepare {
 	return &FabricPrepare{
-		fabricPeerNodeCount:  fabricPeerNodeCount,
-		fabricOrderNodeCount: fabricOrderNodeCount,
-		generateSteps:        make(map[string]struct{}),
-		pathMapping:          make(map[string]string),
+		fabricPeerNodeCount:    fabricPeerNodeCount,
+		fabricOrdererNodeCount: fabricOrdererNodeCount,
+		generateSteps:          make(map[string]struct{}),
+		pathMapping:            make(map[string]string),
 	}
 }

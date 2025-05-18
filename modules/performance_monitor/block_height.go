@@ -22,7 +22,9 @@ func (pm *PerformanceMonitor) UpdateBlockHeightInfo() (err error) {
 		pm.NormalNode.ContainerName)
 	currentBlockHeight, err = ReadBlockHeight(currentBlockHeightFilePath)
 	if err != nil {
-		return fmt.Errorf("read current block height error: %w", err)
+		// 如果不能读取的话, 就令 blockHeight = 0 即可
+		currentBlockHeight = 0
+		// return fmt.Errorf("read current block height error: %w", err)
 	}
 	if currentBlockHeight > largestBlockHeight {
 		largestBlockHeight = currentBlockHeight
@@ -38,7 +40,9 @@ func (pm *PerformanceMonitor) UpdateBlockHeightInfo() (err error) {
 				chainMakerContainerName)
 			otherBlockHeight, err = ReadBlockHeight(otherBlockHeightFilePath)
 			if err != nil {
-				return fmt.Errorf("read other block height error: %w", err)
+				// 如果不能获取到的话, 先置为0
+				otherBlockHeight = 0
+				// return fmt.Errorf("read other block height error: %w", err)
 			}
 			if otherBlockHeight > largestBlockHeight {
 				largestBlockHeight = otherBlockHeight
