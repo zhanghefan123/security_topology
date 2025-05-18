@@ -196,8 +196,9 @@ func StartTopology(c *gin.Context) {
 	err = startTopologyInner(topologyParams)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": fmt.Sprintf("start topology err: %v", err),
+			"message": fmt.Sprintf("start topology err: %v", err), // 既要反馈给前端
 		})
+		fmt.Printf("start topology inner error: %v\n", err) // 也要在服务器端进行反应
 		return
 	}
 

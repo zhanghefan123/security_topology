@@ -59,8 +59,8 @@ func (p *FabricPrepare) InitializePathMap() error {
 
 	p.pathMapping[FabricBin] = path.Join(fabricSamplesPath, "bin")                                                          // fabric-samples 之中的 bin 目录的路径
 	p.pathMapping[FabricBinCryptogen] = path.Join(fabricSamplesPath, "bin/cryptogen")                                       // fabric-samples 之中的 bin 目录的用于生成凭证的可执行文件
-	p.pathMapping[GenesisBlockBasic] = path.Join(fabricNetworkPath, "bft_config/configtx_basic.yaml")                       // configtx 模板文件
-	p.pathMapping[GenesisBlockNew] = path.Join(fabricNetworkPath, "bft_config/configtx.yaml")                               // configtx 输出文件
+	p.pathMapping[GenesisBlockBasic] = path.Join(fabricNetworkPath, "bft-config/configtx_basic.yaml")                       // configtx 模板文件
+	p.pathMapping[GenesisBlockNew] = path.Join(fabricNetworkPath, "bft-config/configtx.yaml")                               // configtx 输出文件
 	p.pathMapping[OrdererOrgCryptoNew] = path.Join(fabricNetworkPath, "organizations/cryptogen/crypto-config-orderer.yaml") // 排序文件
 	p.pathMapping[PeerOrgCryptoNew] = path.Join(fabricNetworkPath, "organizations/cryptogen")
 	p.pathMapping[organizationsPath] = path.Join(fabricNetworkPath, "organizations")
