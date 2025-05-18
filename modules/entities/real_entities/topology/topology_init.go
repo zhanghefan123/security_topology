@@ -182,7 +182,7 @@ func (t *Topology) GenerateNodes() error {
 		case types.NetworkNodeType_FabricOrderNode:
 			fmt.Println("create fabric order node")
 			fabricOrderTmp := nodes.NewFabricOrderNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
-			t.FabricOrderNodes = append(t.FabricOrderNodes, fabricOrderTmp)
+			t.FabricOrdererNodes = append(t.FabricOrdererNodes, fabricOrderTmp)
 			// 注意只能进行一次抽象节点的创建
 			abstractFabricOrder := node.NewAbstractNode(types.NetworkNodeType_FabricOrderNode, fabricOrderTmp, TopologyInstance.TopologyGraph)
 			t.FabricOrderAbstractNodes = append(t.FabricOrderAbstractNodes, abstractFabricOrder)
@@ -436,14 +436,21 @@ func (t *Topology) GenerateFabricConfig() error {
 		return nil
 	}
 
+	// 进行对等节点数量的获取
 	fabricPeerNodesCount := len(t.FabricPeerNodes)
-	fabricOrderNodesCount := len(t.FabricOrderNodes)
-	if (fabricPeerNodesCount == 0) && (fabricOrderNodesCount == 0) {
+	// 进行排序节点数量的获取
+	fabricOrdererNodesCount := len(t.FabricOrdererNodes)
+
+	// 如果都为0 直接返回
+	if (fabricPeerNodesCount == 0) && (fabricOrdererNodesCount == 0) {
 		topologyLogger.Infof("no fabric nodes -> not generate")
 		return nil
 	}
 
-	fabricPrepare := fabric_prepare.NewFabricPrepare(fabricPeerNodesCount, fabricOrderNodesCount)
+	// 创建 fabric prepare 准备对象
+	fabricPrepare := fabric_prepare.NewFabricPrepare(fabricPeerNodesCount, fabricOrdererNodesCount)
+
+	// 进行配置文件的生成
 	err := fabricPrepare.Generate()
 	if err != nil {
 		return fmt.Errorf("generate fabric config files failed, %s", err)

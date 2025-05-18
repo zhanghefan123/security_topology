@@ -32,15 +32,15 @@ type Topology struct {
 	Ipv6SubNets    []iplib.Net6
 	TopologyGraph  *simple.DirectedGraph
 
-	Routers          []*nodes.Router
-	NormalNodes      []*normal_node.NormalNode
-	ConsensusNodes   []*nodes.ConsensusNode
-	ChainmakerNodes  []*nodes.ChainmakerNode
-	MaliciousNodes   []*nodes.MaliciousNode
-	LirNodes         []*nodes.LiRNode
-	Entrances        []*nodes.Entrance
-	FabricPeerNodes  []*nodes.FabricPeerNode
-	FabricOrderNodes []*nodes.FabricOrderNode
+	Routers            []*nodes.Router
+	NormalNodes        []*normal_node.NormalNode
+	ConsensusNodes     []*nodes.ConsensusNode
+	ChainmakerNodes    []*nodes.ChainmakerNode
+	MaliciousNodes     []*nodes.MaliciousNode
+	LirNodes           []*nodes.LiRNode
+	Entrances          []*nodes.Entrance
+	FabricPeerNodes    []*nodes.FabricPeerNode
+	FabricOrdererNodes []*nodes.FabricOrderNode
 
 	etcdService         *etcd.EtcdNode     // etcd 服务
 	abstractEtcdService *node.AbstractNode // 抽象 etcd 节点

@@ -53,15 +53,15 @@ func (p *FabricPrepare) InitializePathMap() error {
 		return nil
 	}
 
-	fabricConfig := configs.TopConfiguration.FabricConfig
-	fabricSamplesPath := fabricConfig.FabricSamplesPath
-	fabricNetworkPath := fabricConfig.FabricNetworkPath
+	fabricConfig := configs.TopConfiguration.FabricConfig // fabric 配置项
+	fabricSamplesPath := fabricConfig.FabricSamplesPath   // fabric-samples 的路径
+	fabricNetworkPath := fabricConfig.FabricNetworkPath   // fabric-samples/test-network 的路径
 
-	p.pathMapping[FabricBin] = path.Join(fabricSamplesPath, "bin")
-	p.pathMapping[FabricBinCryptogen] = path.Join(fabricSamplesPath, "bin/cryptogen")
-	p.pathMapping[GenesisBlockBasic] = path.Join(fabricNetworkPath, "bft_config/configtx_basic.yaml")
-	p.pathMapping[GenesisBlockNew] = path.Join(fabricNetworkPath, "bft_config/configtx.yaml")
-	p.pathMapping[OrdererOrgCryptoNew] = path.Join(fabricNetworkPath, "organizations/cryptogen/crypto-config-orderer.yaml")
+	p.pathMapping[FabricBin] = path.Join(fabricSamplesPath, "bin")                                                          // fabric-samples 之中的 bin 目录的路径
+	p.pathMapping[FabricBinCryptogen] = path.Join(fabricSamplesPath, "bin/cryptogen")                                       // fabric-samples 之中的 bin 目录的用于生成凭证的可执行文件
+	p.pathMapping[GenesisBlockBasic] = path.Join(fabricNetworkPath, "bft_config/configtx_basic.yaml")                       // configtx 模板文件
+	p.pathMapping[GenesisBlockNew] = path.Join(fabricNetworkPath, "bft_config/configtx.yaml")                               // configtx 输出文件
+	p.pathMapping[OrdererOrgCryptoNew] = path.Join(fabricNetworkPath, "organizations/cryptogen/crypto-config-orderer.yaml") // 排序文件
 	p.pathMapping[PeerOrgCryptoNew] = path.Join(fabricNetworkPath, "organizations/cryptogen")
 	p.pathMapping[organizationsPath] = path.Join(fabricNetworkPath, "organizations")
 
@@ -306,7 +306,7 @@ func (p *FabricPrepare) InvokeCryptogenTool() error {
 	fabricPrepareWorkLogger.Infof("Successfully generate orderer msp")
 	for i := 1; i <= peerNum; i++ {
 		//fmt.Println("generate peer msp")
-		configFile := path.Join(p.pathMapping[PeerOrgCryptoNew], fmt.Sprintf("crypto-config-org%d.yaml", i))
+		configFile = path.Join(p.pathMapping[PeerOrgCryptoNew], fmt.Sprintf("crypto-config-org%d.yaml", i))
 		fmt.Printf("%s generate --config %s --output %s", p.pathMapping[FabricBinCryptogen], configFile, p.pathMapping[organizationsPath])
 		cmd := exec.Command(p.pathMapping[FabricBinCryptogen], "generate", "--config", configFile, "--output", p.pathMapping[organizationsPath])
 		_, err := cmd.CombinedOutput()
@@ -315,10 +315,11 @@ func (p *FabricPrepare) InvokeCryptogenTool() error {
 			fabricPrepareWorkLogger.Errorf("can not generate peer msp")
 		}
 	}
-	fmt.Println("p.pathMapping[organizationsPath]:%s", p.pathMapping[organizationsPath])
+	// 将 organizations 下面的文件全部变为支持所有权限的
+	fmt.Printf("p.pathMapping[organizationsPath]:%s\n", p.pathMapping[organizationsPath])
 	err := setPermissions(p.pathMapping[organizationsPath], 0777)
 	if err != nil {
-		fabricPrepareWorkLogger.Errorf("Error changing permissions:", err)
+		fabricPrepareWorkLogger.Errorf("Error changing permissions: %s", err)
 	}
 	return nil
 }
