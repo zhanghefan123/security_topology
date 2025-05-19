@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"zhanghefan123/security_topology/cmd/http_service"
 	"zhanghefan123/security_topology/cmd/images"
+	"zhanghefan123/security_topology/cmd/raspberrypi"
 	"zhanghefan123/security_topology/cmd/root"
 	"zhanghefan123/security_topology/cmd/test"
 	"zhanghefan123/security_topology/configs"
@@ -20,10 +22,12 @@ func main() {
 	}
 	rootCmd := root.CreateRootCmd()
 	httpServiceCmd := http_service.CreateHttpServiceCmd()
+	raspberrypiCmd := raspberrypi.CreateConfigureRaspberrypiCmd()
 	// constellationCmd := constellation.CreateConstellationCmd() 这个命令已经被淘汰了
 	imagesCmd := images.CreateImagesCmd()
 	testCmd := test.CreateTestCommand()
 	rootCmd.AddCommand(httpServiceCmd)
+	rootCmd.AddCommand(raspberrypiCmd)
 	// rootCmd.AddCommand(constellationCmd) 这个命令已经被淘汰了
 	rootCmd.AddCommand(imagesCmd)
 	rootCmd.AddCommand(testCmd)
@@ -40,18 +44,23 @@ func PrepareWorks() error {
 	if err != nil {
 		return fmt.Errorf("init local config failed, err:%w", err)
 	}
-	// 1. 然后为 gotty 文件分配可执行权限
-	gottyFilePath := configs.TopConfiguration.PathConfig.GottyPath
-	err = permission.AddExecutePermission(gottyFilePath)
-	if err != nil {
-		return fmt.Errorf("add execute permission to %s failed, err:%w", gottyFilePath, err)
-	}
-	// 2. 然后为 chainmakerCryptoGen 分配可执行权限
-	cryptoGenProjectPath := configs.TopConfiguration.ChainMakerConfig.CryptoGenProjectPath
-	cryptoGenBinPath := filepath.Join(cryptoGenProjectPath, "bin/chainmaker-cryptogen")
-	err = permission.AddExecutePermission(cryptoGenBinPath)
-	if err != nil {
-		return fmt.Errorf("add execute permission to %s failed, err:%w", cryptoGenBinPath, err)
+	// 在 windows 下肯定不会使用到
+	if runtime.GOOS == "windows" {
+		fmt.Println("windows don't need to allocate permission")
+	} else {
+		// 1. 然后为 gotty 文件分配可执行权限
+		gottyFilePath := configs.TopConfiguration.PathConfig.GottyPath
+		err = permission.AddExecutePermission(gottyFilePath)
+		if err != nil {
+			return fmt.Errorf("add execute permission to %s failed, err:%w", gottyFilePath, err)
+		}
+		// 2. 然后为 chainmakerCryptoGen 分配可执行权限
+		cryptoGenProjectPath := configs.TopConfiguration.ChainMakerConfig.CryptoGenProjectPath
+		cryptoGenBinPath := filepath.Join(cryptoGenProjectPath, "bin/chainmaker-cryptogen")
+		err = permission.AddExecutePermission(cryptoGenBinPath)
+		if err != nil {
+			return fmt.Errorf("add execute permission to %s failed, err:%w", cryptoGenBinPath, err)
+		}
 	}
 	return nil
 }
