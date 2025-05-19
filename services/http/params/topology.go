@@ -8,9 +8,11 @@ type NodeParam struct {
 }
 
 type LinkParam struct {
-	SourceNode NodeParam `json:"source_node"`
-	TargetNode NodeParam `json:"target_node"`
-	LinkType   string    `json:"link_type"` // 链路的类型 - 可能是接入 access, 也可能是骨干 backbone
+	SourceNode          NodeParam `json:"source_node"` // 链路的源节点
+	TargetNode          NodeParam `json:"target_node"` // 链路的目的节点
+	SourceInterfaceName string    // 源接口名称 (只在 raspberry pi 之中使用)
+	TargetInterfaceName string    // 目的接口名称 (只在 raspberry pi 之中使用)
+	LinkType            string    `json:"link_type"` // 链路的类型 - 可能是接入 access, 也可能是骨干 backbone
 }
 
 type TopologyParams struct {

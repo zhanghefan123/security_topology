@@ -42,6 +42,10 @@ func StartContainer(client *docker.Client, node *node.AbstractNode) error {
 	}
 	normalNode.Pid = info.State.Pid
 
+	if network, exists := info.NetworkSettings.Networks["bridge"]; exists {
+		normalNode.DockerZeroNetworkAddress = network.IPAddress
+	}
+
 	// 5. 进行状态的转换
 	normalNode.Status = types.NetworkNodeStatus_Started
 

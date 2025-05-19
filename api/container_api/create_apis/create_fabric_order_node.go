@@ -18,6 +18,11 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 	if fabricOrderNode.Status != types.NetworkNodeStatus_Logic {
 		return fmt.Errorf("fabric orderer node not in logic status cannot create")
 	}
+
+	firstInterfaceName := fabricOrderNode.Interfaces[0].IfName
+	firstInterfaceAddress := fabricOrderNode.Interfaces[0].SourceIpv4Addr[:len(fabricOrderNode.Interfaces[0].SourceIpv4Addr)-3]
+	fmt.Printf("Node Name: %s Addr: %s \n", fabricOrderNode.ContainerName, firstInterfaceAddress)
+
 	// 2. 创建 sysctls
 	sysctls := map[string]string{
 		// ipv4 的相关网络配置
@@ -64,6 +69,10 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 
 	// 5. 配置环境变量
 	envs := []string{
+		// zhf add code
+		fmt.Sprintf("%s=%s", "FIRST_INTERFACE_NAME", firstInterfaceName),
+		fmt.Sprintf("%s=%s", "FIRST_INTERFACE_ADDR", firstInterfaceAddress),
+
 		fmt.Sprintf("%s=%d", "NODE_ID", fabricOrderNode.Id),
 		fmt.Sprintf("%s=%s", "CONTAINER_NAME", fabricOrderNode.ContainerName),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
@@ -88,8 +97,14 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 		fmt.Sprintf("%s=%s", "ORDERER_ADMIN_TLS_PRIVATEKEY", "/var/hyperledger/orderer/tls/server.key"),
 		fmt.Sprintf("%s=%s", "ORDERER_ADMIN_TLS_ROOTCAS", "[/var/hyperledger/orderer/tls/ca.crt]"),
 		fmt.Sprintf("%s=%s", "ORDERER_ADMIN_TLS_CLIENTROOTCAS", "[/var/hyperledger/orderer/tls/ca.crt]"),
+
+		// 之前的版本
+		// fmt.Sprintf("%s=%s", "ORDERER_ADMIN_LISTENADDRESS", fmt.Sprintf("0.0.0.0:%d", orderAdminListenStartPort)),
+		// fmt.Sprintf("%s=%s", "ORDERER_OPERATIONS_LISTENADDRESS", fmt.Sprintf("orderer%d.example.com:%d", fabricOrderNode.Id, orderOperationListenStartPort)),
+		// 现在的版本
 		fmt.Sprintf("%s=%s", "ORDERER_ADMIN_LISTENADDRESS", fmt.Sprintf("0.0.0.0:%d", orderAdminListenStartPort)),
-		fmt.Sprintf("%s=%s", "ORDERER_OPERATIONS_LISTENADDRESS", fmt.Sprintf("orderer%d.example.com:%d", fabricOrderNode.Id, orderOperationListenStartPort)),
+		fmt.Sprintf("%s=%s", "ORDERER_OPERATIONS_LISTENADDRESS", fmt.Sprintf("%s:%d", firstInterfaceAddress, orderOperationListenStartPort)),
+
 		// fmt.Sprintf("%s=%s", "ORDERER_OPERATIONS_LISTENADDRESS", fmt.Sprintf("%s:%d", ipv4, orderOperationListenStartPort)),
 		fmt.Sprintf("%s=%s", "ORDERER_METRICS_PROVIDER", "prometheus"),
 	}
@@ -155,7 +170,7 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 		PortBindings: portBindings,
 		Resources:    resourcesLimit,
 		//指定宿主机作为DNS服务器
-		DNS: []string{"192.168.47.128"},
+		DNS: []string{"10.134.86.192"},
 	}
 	// 10. 进行容器的创建
 	response, err := client.ContainerCreate(

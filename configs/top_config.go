@@ -16,6 +16,7 @@ import (
 	"zhanghefan123/security_topology/configs/network"
 	"zhanghefan123/security_topology/configs/path"
 	"zhanghefan123/security_topology/configs/path_validation"
+	"zhanghefan123/security_topology/configs/raspberrypi"
 	"zhanghefan123/security_topology/configs/resources"
 	"zhanghefan123/security_topology/configs/services"
 	"zhanghefan123/security_topology/modules/logger"
@@ -39,6 +40,7 @@ type TopConfig struct {
 	ResourcesConfig      resources.ResourcesConfig            `mapstructure:"resources_config"`
 	PathValidationConfig path_validation.PathValidationConfig `mapstructure:"path_validation_config"`
 	FabricConfig         fabric.FabricConfig                  `mapstructure:"fabric_config"`
+	RaspberryPiConfig    raspberrypi.RaspberryPiConfig        `mapstructure:"raspberrypi_config"`
 }
 
 var availableOspfVersions = map[string]struct{}{

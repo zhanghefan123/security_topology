@@ -7,12 +7,15 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"strings"
 	"zhanghefan123/security_topology/api/container_api"
 	"zhanghefan123/security_topology/api/multithread"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/performance_monitor"
+	"zhanghefan123/security_topology/modules/utils/dir"
+	"zhanghefan123/security_topology/modules/utils/execute"
 	"zhanghefan123/security_topology/modules/webshell"
 )
 
@@ -25,6 +28,7 @@ const (
 	RemoveEtcdService           = "RemoveEtcdService"
 	RemoveConfigurationFiles    = "RemoveConfigurationFiles"
 	RemoveChainMakerFiles       = "RemoveChainMakerFiles"
+	RemoveFabricFiles           = "RemoveFabricFiles"
 )
 
 // RemoveFunction 删除函数
@@ -41,6 +45,8 @@ func (t *Topology) Remove() error {
 
 	removeChainMaker := configs.TopConfiguration.ChainMakerConfig.Enabled
 
+	removeFabric := configs.TopConfiguration.FabricConfig.Enabled
+
 	removeSteps := []map[string]RemoveModule{
 		{DeleteWebShells: RemoveModule{true, t.DeleteWebShells}},
 		{RemoveInterfaceRateMonitors: RemoveModule{true, t.RemoveInterfaceRateMonitor}},
@@ -50,6 +56,7 @@ func (t *Topology) Remove() error {
 		{RemoveEtcdService: RemoveModule{true, t.RemoveEtcdService}},
 		{RemoveConfigurationFiles: RemoveModule{true, t.RemoveConfigurationFiles}},
 		{RemoveChainMakerFiles: RemoveModule{removeChainMaker, t.RemoveChainMakerFiles}},
+		{RemoveFabricFiles: RemoveModule{removeFabric, t.RemoveFabricFiles}},
 	}
 	err := t.removeSteps(removeSteps)
 	if err != nil {
@@ -271,5 +278,36 @@ func (t *Topology) RemoveChainMakerFiles() error {
 
 	t.topologyStopSteps[RemoveChainMakerFiles] = struct{}{}
 	topologyLogger.Infof("execute remove chainmaker files")
+	return nil
+}
+
+// RemoveFabricFiles 进行 Fabric 所生成的配置文件的删除
+func (t *Topology) RemoveFabricFiles() error {
+	if _, ok := t.topologyStopSteps[RemoveFabricFiles]; ok {
+		topologyLogger.Infof("already execute remove fabric files")
+		return nil
+	}
+
+	testNetworkPath := configs.TopConfiguration.FabricConfig.FabricNetworkPath
+	organizationsPath := path.Join(testNetworkPath, "organizations")
+	ordererOrganizationsPath := path.Join(organizationsPath, "ordererOrganizations")
+	peerOrganizationsPath := path.Join(organizationsPath, "peerOrganizations")
+	cryptogenFiles := path.Join(organizationsPath, "cryptogen/")
+
+	commandStr := fmt.Sprintf("-rf %s %s", ordererOrganizationsPath, peerOrganizationsPath)
+
+	err := execute.Command("rm", strings.Split(commandStr, " "))
+	if err != nil {
+		return fmt.Errorf("remove fabric files failed: %w", err)
+	}
+
+	// 不能使用 rm -rf * go 无法识别
+	err = dir.ClearDir(cryptogenFiles)
+	if err != nil {
+		return fmt.Errorf("remove fabric files failed: %w", err)
+	}
+
+	t.topologyStopSteps[RemoveFabricFiles] = struct{}{}
+	topologyLogger.Infof("execute remove fabric files")
 	return nil
 }

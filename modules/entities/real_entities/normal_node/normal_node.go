@@ -11,19 +11,20 @@ import (
 
 // NormalNode 基础的网络节点
 type NormalNode struct {
-	Type                    types.NetworkNodeType   // 节点的类型
-	Status                  types.NetworkNodeStatus // 节点状态
-	Id                      int                     // 节点编号
-	Pid                     int                     // 对应的进程编号
-	Ifidx                   int                     // 接口索引
-	Interfaces              []*intf.NetworkInterface
-	IfNameToInterfaceMap    map[string]*intf.NetworkInterface // 从接口名称到对应的 ip 地址的映射
-	ConnectedIpv4SubnetList []string                          // 连接到的 IPV4 的子网
-	ConnectedIpv6SubnetList []string                          // 连接到的 IPV6 的子网
-	ContainerName           string                            // 对应的容器的名称
-	ContainerId             string                            // 容器的 ID
-	X                       float64                           // 在前端之中的横坐标
-	Y                       float64                           // 在前端之中的纵坐标
+	Type                     types.NetworkNodeType   // 节点的类型
+	Status                   types.NetworkNodeStatus // 节点状态
+	Id                       int                     // 节点编号
+	Pid                      int                     // 对应的进程编号
+	Ifidx                    int                     // 接口索引
+	Interfaces               []*intf.NetworkInterface
+	IfNameToInterfaceMap     map[string]*intf.NetworkInterface // 从接口名称到对应的 ip 地址的映射
+	ConnectedIpv4SubnetList  []string                          // 连接到的 IPV4 的子网
+	ConnectedIpv6SubnetList  []string                          // 连接到的 IPV6 的子网
+	ContainerName            string                            // 对应的容器的名称
+	ContainerId              string                            // 容器的 ID
+	X                        float64                           // 在前端之中的横坐标
+	Y                        float64                           // 在前端之中的纵坐标
+	DockerZeroNetworkAddress string                            // docker0 网桥接口地址
 }
 
 // NewNormalNode 创建普通系欸但

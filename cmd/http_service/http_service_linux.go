@@ -1,3 +1,5 @@
+//go:build linux
+
 package http_service
 
 import (

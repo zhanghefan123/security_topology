@@ -141,3 +141,22 @@ fabric_config:
   fabric_project_path: /home/zhf/Projects/emulator/fabric
   fabric_samples_path: /home/zhf/Projects/emulator/fabric-samples
   fabric_network_path: /home/zhf/Projects/emulator/fabric-samples/test-network
+
+raspberrypi_config:
+  node_ids:
+    - 1
+    - 2
+    - 3
+  node_types:
+    - Router
+    - Router
+    - Router
+  ip_addresses:
+    - 192.168.110.79
+    - 192.168.110.92
+    - 192.168.110.93
+  connections:
+    - 1:eth0-2:eth1
+    - 2:eth0-3:eth0
+  user_name: zeusnet
+  password: zeusnet123

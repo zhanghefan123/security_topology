@@ -122,38 +122,6 @@ func (t *Topology) GenerateNodes() error {
 			t.RouterAbstractNodes = append(t.RouterAbstractNodes, abstractRouter)
 			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractRouter)
 			t.AbstractNodesMap[routerTmp.ContainerName] = abstractRouter
-		case types.NetworkNodeType_NormalNode:
-			normalNodeTmp := normal_node.NewNormalNode(types.NetworkNodeType_NormalNode, nodeParam.Index, fmt.Sprintf("%s-%d", nodeType.String(), nodeParam.Index))
-			t.NormalNodes = append(t.NormalNodes, normalNodeTmp)
-			// 注意只能唯一创建一次
-			abstractNormalNode := node.NewAbstractNode(types.NetworkNodeType_NormalNode, normalNodeTmp, TopologyInstance.TopologyGraph)
-			t.NormalAbstractNodes = append(t.NormalAbstractNodes, abstractNormalNode)
-			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractNormalNode)
-			t.AbstractNodesMap[normalNodeTmp.ContainerName] = abstractNormalNode
-		case types.NetworkNodeType_ConsensusNode:
-			consensusNodeTmp := nodes.NewConsensusNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
-			t.ConsensusNodes = append(t.ConsensusNodes, consensusNodeTmp)
-			// 注意只能唯一创建一次
-			abstractConsensusNode := node.NewAbstractNode(types.NetworkNodeType_ConsensusNode, consensusNodeTmp, TopologyInstance.TopologyGraph)
-			t.ConsensusAbstractNodes = append(t.ConsensusAbstractNodes, abstractConsensusNode)
-			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractConsensusNode)
-			t.AbstractNodesMap[consensusNodeTmp.ContainerName] = abstractConsensusNode
-		case types.NetworkNodeType_ChainMakerNode:
-			chainmakerNodeTmp := nodes.NewChainmakerNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
-			t.ChainmakerNodes = append(t.ChainmakerNodes, chainmakerNodeTmp)
-			// 注意只能唯一创建一次
-			abstractChainmakerNode := node.NewAbstractNode(types.NetworkNodeType_ChainMakerNode, chainmakerNodeTmp, TopologyInstance.TopologyGraph)
-			t.ChainMakerAbstractNodes = append(t.ChainMakerAbstractNodes, abstractChainmakerNode)
-			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractChainmakerNode)
-			t.AbstractNodesMap[chainmakerNodeTmp.ContainerName] = abstractChainmakerNode
-		case types.NetworkNodeType_MaliciousNode:
-			maliciousNodeTmp := nodes.NewMaliciousNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
-			t.MaliciousNodes = append(t.MaliciousNodes, maliciousNodeTmp)
-			// 注意只能唯一创建一次
-			abstractMaliciousNode := node.NewAbstractNode(types.NetworkNodeType_MaliciousNode, maliciousNodeTmp, TopologyInstance.TopologyGraph)
-			t.MaliciousAbstractNodes = append(t.MaliciousAbstractNodes, abstractMaliciousNode)
-			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractMaliciousNode)
-			t.AbstractNodesMap[maliciousNodeTmp.ContainerName] = abstractMaliciousNode
 		case types.NetworkNodeType_LirNode:
 			lirNodeTmp := nodes.NewLiRNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
 			t.LirNodes = append(t.LirNodes, lirNodeTmp)
@@ -192,7 +160,7 @@ func (t *Topology) GenerateNodes() error {
 	}
 
 	t.topologyInitSteps[GenerateNodes] = struct{}{}
-	topologyLogger.Infof("generate satellites")
+	topologyLogger.Infof("generate nodes")
 
 	return nil
 }

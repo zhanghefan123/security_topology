@@ -3,15 +3,22 @@ module zhanghefan123/security_topology
 go 1.22
 
 require (
+	chainmaker.org/chainmaker/common/v2 v2.3.5
+	chainmaker.org/chainmaker/pb-go/v2 v2.3.6
+	chainmaker.org/chainmaker/protocol/v2 v2.3.6
+	chainmaker.org/chainmaker/sdk-go/v2 v2.3.6
 	github.com/antonfisher/nested-logrus-formatter v1.3.1
 	github.com/c-robinson/iplib/v2 v2.0.5
 	github.com/docker/docker v24.0.7+incompatible
 	github.com/docker/go-connections v0.5.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/golang/protobuf v1.5.4
+	github.com/hokaccha/go-prettyjson v0.0.0-20201222001619-a42f9ac2ec8e
 	github.com/kr/pretty v0.3.1
 	github.com/libp2p/go-libp2p v0.22.0
+	github.com/melbahja/goph v1.4.0
 	github.com/schollz/progressbar/v3 v3.15.0
+	github.com/shirou/gopsutil v2.19.10+incompatible
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
@@ -26,15 +33,10 @@ require (
 require (
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
-	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
 require (
-	chainmaker.org/chainmaker/common/v2 v2.3.5 // indirect
-	chainmaker.org/chainmaker/pb-go/v2 v2.3.6 // indirect
-	chainmaker.org/chainmaker/protocol/v2 v2.3.6 // indirect
-	chainmaker.org/chainmaker/sdk-go/v2 v2.3.6 // indirect
 	chainmaker.org/chainmaker/utils/v2 v2.3.5 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/Rican7/retry v0.1.0 // indirect
@@ -54,6 +56,7 @@ require (
 	github.com/dgryski/go-metro v0.0.0-20200812162917-85c65e2d0165 // indirect
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/go-units v0.5.0 // indirect
+	github.com/fatih/color v1.10.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.6 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
@@ -74,6 +77,7 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.8 // indirect
+	github.com/kr/fs v0.1.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kudelskisecurity/crystals-go v0.0.0-20210705112123-14b89bfbcdc8 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
@@ -82,6 +86,7 @@ require (
 	github.com/libp2p/go-openssl v0.1.0 // indirect
 	github.com/linvon/cuckoo-filter v0.4.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
+	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-pointer v0.0.1 // indirect
 	github.com/miekg/pkcs11 v1.1.1 // indirect
@@ -110,11 +115,11 @@ require (
 	github.com/pingcap/tidb v1.1.0-beta.0.20200630082100-328b6d0a955c // indirect
 	github.com/pingcap/tipb v0.0.0-20210425040103-dc47a87b52aa // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pkg/sftp v1.13.5 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
-	github.com/shirou/gopsutil v2.19.10+incompatible // indirect
 	github.com/spacemonkeygo/spacelog v0.0.0-20180420211403-2296661a0572 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/afero v1.6.0 // indirect

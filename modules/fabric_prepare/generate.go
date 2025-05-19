@@ -20,10 +20,12 @@ const (
 )
 
 const (
-	FabricBin           = "FabricBin"
-	FabricBinCryptogen  = "FabricBinCryptogen"
-	GenesisBlockBasic   = "GenesisBlockBasic"
-	GenesisBlockNew     = "GenesisBlockNew"
+	FabricBin          = "FabricBin"
+	FabricBinCryptogen = "FabricBinCryptogen"
+
+	GenesisBlockBasic = "GenesisBlockBasic"
+	GenesisBlockNew   = "GenesisBlockNew"
+
 	OrdererOrgCryptoNew = "OrdererOrgCryptoNew"
 	PeerOrgCryptoNew    = "PeerOrgCryptoNew"
 	organizationsPath   = "organizationsPath"
@@ -53,17 +55,20 @@ func (p *FabricPrepare) InitializePathMap() error {
 		return nil
 	}
 
-	fabricConfig := configs.TopConfiguration.FabricConfig // fabric 配置项
-	fabricSamplesPath := fabricConfig.FabricSamplesPath   // fabric-samples 的路径
-	fabricNetworkPath := fabricConfig.FabricNetworkPath   // fabric-samples/test-network 的路径
+	templatePath := path.Join(configs.TopConfiguration.PathConfig.ResourcesPath, "/fabric_template") // 资源文件路径
+	fabricConfig := configs.TopConfiguration.FabricConfig                                            // fabric 配置项
+	fabricSamplesPath := fabricConfig.FabricSamplesPath                                              // fabric-samples 的路径
+	fabricNetworkPath := fabricConfig.FabricNetworkPath                                              // fabric-samples/test-network 的路径
 
-	p.pathMapping[FabricBin] = path.Join(fabricSamplesPath, "bin")                                                          // fabric-samples 之中的 bin 目录的路径
-	p.pathMapping[FabricBinCryptogen] = path.Join(fabricSamplesPath, "bin/cryptogen")                                       // fabric-samples 之中的 bin 目录的用于生成凭证的可执行文件
-	p.pathMapping[GenesisBlockBasic] = path.Join(fabricNetworkPath, "bft-config/configtx_basic.yaml")                       // configtx 模板文件
-	p.pathMapping[GenesisBlockNew] = path.Join(fabricNetworkPath, "bft-config/configtx.yaml")                               // configtx 输出文件
+	p.pathMapping[GenesisBlockBasic] = path.Join(templatePath, "configtx_basic.yaml")         // configtx 模板文件
+	p.pathMapping[GenesisBlockNew] = path.Join(fabricNetworkPath, "bft-config/configtx.yaml") // configtx 输出文件
+
+	p.pathMapping[FabricBin] = path.Join(fabricSamplesPath, "bin")                    // fabric-samples 之中的 bin 目录的路径
+	p.pathMapping[FabricBinCryptogen] = path.Join(fabricSamplesPath, "bin/cryptogen") // fabric-samples 之中的 bin 目录的用于生成凭证的可执行文件
+
 	p.pathMapping[OrdererOrgCryptoNew] = path.Join(fabricNetworkPath, "organizations/cryptogen/crypto-config-orderer.yaml") // 排序文件
-	p.pathMapping[PeerOrgCryptoNew] = path.Join(fabricNetworkPath, "organizations/cryptogen")
-	p.pathMapping[organizationsPath] = path.Join(fabricNetworkPath, "organizations")
+	p.pathMapping[PeerOrgCryptoNew] = path.Join(fabricNetworkPath, "organizations/cryptogen")                               // 凭证输出位置
+	p.pathMapping[organizationsPath] = path.Join(fabricNetworkPath, "organizations")                                        // 组织文件夹位置
 
 	fabricPrepareWorkLogger.Infof("successfully initialize path mapping")
 

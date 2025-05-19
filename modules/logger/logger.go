@@ -6,14 +6,16 @@ import (
 )
 
 const (
-	ModuleMainCmdHttpService = "MAIN_CMD_HTTP_SERVICE"
-	ModuleMainCmdImages      = "MAIN_CMD_IMAGES"
-	ModuleMainCmdTest        = "MAIN_CMD_TEST"
-	ModuleConfig             = "CONFIG"
-	ModuleConstellation      = "CONSTELLATION"
-	ModuleTopology           = "TOPOLOGY"
-	ModuleChainmakerPrepare  = "CHAINMAKER_PREPARE"
-	ModuleFabricPrepare      = "FABRIC_PREPARE"
+	ModuleMainCmdConfigureRaspberrypi = "MAIN_CMD_CONFIGURE_RASPBERRYPI"
+	ModuleMainCmdHttpService          = "MAIN_CMD_HTTP_SERVICE"
+	ModuleMainCmdImages               = "MAIN_CMD_IMAGES"
+	ModuleMainCmdTest                 = "MAIN_CMD_TEST"
+	ModuleConfig                      = "CONFIG"
+	ModuleConstellation               = "CONSTELLATION"
+	ModuleTopology                    = "TOPOLOGY"
+	ModuleChainmakerPrepare           = "CHAINMAKER_PREPARE"
+	ModuleFabricPrepare               = "FABRIC_PREPARE"
+	ModuleRaspberrypiConfigure        = "RASPBERRYPI_CONFIGURE"
 )
 
 func init() {

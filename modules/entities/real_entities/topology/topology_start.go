@@ -19,6 +19,7 @@ const (
 	SetVethNameSpaces      = "SetVethNameSpaces"
 	SetLinkParameters      = "SetLinkParameters"
 	StoreToEtcd            = "StoreToEtcd"
+	UpdateHosts            = "UpdateHosts"
 )
 
 type StartFunction func() error
@@ -37,6 +38,7 @@ func (t *Topology) Start() error {
 		{StartNodeContainers: StartModule{true, t.StartNodeContainers}},       // step3 一定要在 step1 之后，因为创建了容器后才有命名空间
 		{SetVethNameSpaces: StartModule{true, t.SetVethNamespaces}},           // step4 一定要在 step2 之后，因为创建了容器才能设置 veth 的 namespace
 		{SetLinkParameters: StartModule{true, t.SetLinkParameters}},           // step5 进行链路属性的设置
+		{UpdateHosts: StartModule{true, t.UpdateHosts}},
 	}
 	err := t.startSteps(startSteps)
 	if err != nil {
@@ -74,6 +76,25 @@ func (t *Topology) startSteps(startSteps []map[string]StartModule) (err error) {
 		}
 	}
 	return
+}
+
+func (t *Topology) UpdateHosts() error {
+	finalString := ""
+	for _, ordererNode := range t.FabricOrdererNodes {
+		orderString := fmt.Sprintf("order%d.example.com", ordererNode.Id)
+		firstIpAddressWithPrefix := ordererNode.Interfaces[0].SourceIpv4Addr
+		firstIpAddress := firstIpAddressWithPrefix[:len(firstIpAddressWithPrefix)-3]
+		finalString = finalString + fmt.Sprintf("%s %s\n", firstIpAddress, orderString)
+	}
+
+	for _, peerNode := range t.FabricPeerNodes {
+		peerString := fmt.Sprintf("org%d.example.com", peerNode.Id)
+		firstIpAddressWithPrefix := peerNode.Interfaces[0].SourceIpv4Addr
+		firstIpAddress := firstIpAddressWithPrefix[:len(firstIpAddressWithPrefix)-3]
+		finalString = finalString + fmt.Sprintf("%s %s\n", firstIpAddress, peerString)
+	}
+	fmt.Println(finalString)
+	return nil
 }
 
 // StartEtcdService 开启 etcd 服务
