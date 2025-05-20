@@ -22,13 +22,11 @@ func main() {
 	}
 	rootCmd := root.CreateRootCmd()
 	httpServiceCmd := http_service.CreateHttpServiceCmd()
-	raspberrypiCmd := raspberrypi.CreateConfigureRaspberrypiCmd()
-	// constellationCmd := constellation.CreateConstellationCmd() 这个命令已经被淘汰了
+	raspberrypiClientCmd := raspberrypi.CreateRaspberrypiClientCmd()
 	imagesCmd := images.CreateImagesCmd()
 	testCmd := test.CreateTestCommand()
 	rootCmd.AddCommand(httpServiceCmd)
-	rootCmd.AddCommand(raspberrypiCmd)
-	// rootCmd.AddCommand(constellationCmd) 这个命令已经被淘汰了
+	rootCmd.AddCommand(raspberrypiClientCmd)
 	rootCmd.AddCommand(imagesCmd)
 	rootCmd.AddCommand(testCmd)
 	err = rootCmd.Execute()

@@ -1,0 +1,23 @@
+syntax = "proto3"; // 版本声明，使用Protocol Buffers v3版本
+
+option go_package = "zhanghefan123/security_topology/services/raspberrypi/interact";  // 指定生成的Go代码在你项目中的导入路径
+
+package protobuf; // 包名
+
+
+// 定义服务
+service Interact {
+  // SayHello 方法
+  rpc SetAddr (SetAddrRequest) returns (SetAddrResponse) {}
+}
+
+// 请求消息
+message SetAddrRequest {
+  string interfaceName = 1;
+  string interfaceAddr = 2;
+}
+
+// 响应消息
+message SetAddrResponse {
+  string reply = 1;
+}
