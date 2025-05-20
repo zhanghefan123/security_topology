@@ -160,3 +160,5 @@ raspberrypi_config:
     - 2:eth0-3:eth0
   user_name: zeusnet
   password: zeusnet123
+  grpc_port: 8972
+  python_path: /home/zeusnet/miniconda3/envs/lir/bin/python

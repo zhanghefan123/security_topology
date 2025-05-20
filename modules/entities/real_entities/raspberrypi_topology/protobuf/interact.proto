@@ -1,6 +1,6 @@
 syntax = "proto3"; // 版本声明，使用Protocol Buffers v3版本
 
-option go_package = "zhanghefan123/security_topology/services/raspberrypi/interact";  // 指定生成的Go代码在你项目中的导入路径
+option go_package = "zhanghefan123/security_topology/modules/entities/real_entities/raspberrypi_topology/protobuf"; // Go语言包名
 
 package protobuf; // 包名
 
@@ -8,7 +8,14 @@ package protobuf; // 包名
 // 定义服务
 service Interact {
   // SayHello 方法
-  rpc SetAddr (SetAddrRequest) returns (SetAddrResponse) {}
+  rpc SetAddr (SetAddrRequest) returns (NormalResponse) {}
+  rpc AddRoute (AddRouteRequest) returns (NormalResponse) {}
+  rpc TransmitFile (TransmitFileRequest) returns (NormalResponse) {}
+  rpc SetEnv(SetEnvRequest) returns (NormalResponse) {}
+}
+
+message NormalResponse {
+  string reply = 1;
 }
 
 // 请求消息
@@ -17,7 +24,20 @@ message SetAddrRequest {
   string interfaceAddr = 2;
 }
 
-// 响应消息
-message SetAddrResponse {
-  string reply = 1;
+// 添加路由消息
+message AddRouteRequest {
+  string destinationNetworkSegment = 1;
+  string gateway = 2;
+}
+
+// 文件传输消息
+message TransmitFileRequest {
+  string destinationPath = 1;
+  string content = 2;
+}
+
+// 设置环境变量消息
+message SetEnvRequest {
+  repeated string envFields = 1;
+  repeated string envValues = 2;
 }

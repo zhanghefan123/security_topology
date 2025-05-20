@@ -7,4 +7,6 @@ type RaspberryPiConfig struct {
 	Connections []string `mapstructure:"connections"`
 	UserName    string   `mapstructure:"user_name"`
 	Password    string   `mapstructure:"password"`
+	GrpcPort    int      `mapstructure:"grpc_port"`
+	PythonPath  string   `mapstructure:"python_path"`
 }

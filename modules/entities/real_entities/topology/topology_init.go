@@ -258,7 +258,9 @@ func (t *Topology) GenerateLinks() error {
 			sourceIntf, targetIntf,
 			sourceAbstractNode, targetAbstractNode,
 			bandWidth,
-			TopologyInstance.TopologyGraph)
+			TopologyInstance.TopologyGraph,
+			ipv4SubNet,
+			ipv6SubNet)
 		sourceNormalNode.Ifidx++
 		targetNormalNode.Ifidx++
 		t.Links = append(t.Links, abstractLink)

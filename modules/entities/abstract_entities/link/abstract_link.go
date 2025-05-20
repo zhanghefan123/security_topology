@@ -3,6 +3,7 @@ package link
 import (
 	"context"
 	"fmt"
+	"github.com/c-robinson/iplib/v2"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 	"go.etcd.io/etcd/client/v3"
@@ -33,6 +34,8 @@ type AbstractLink struct {
 	TargetNode          *node.AbstractNode     `json:"-"` // 目的节点
 	BandWidth           int                    `json:"-"` // 带宽
 	Status              bool                   `json:"-"` // 状态
+	NetworkSegmentIPv4  iplib.Net4             `json:"-"` // 网络段
+	NetworkSegmentIPv6  iplib.Net6             `json:"-"` // 网络段
 }
 
 func NewAbstractLink(typ types.NetworkLinkType, id int,
@@ -42,7 +45,9 @@ func NewAbstractLink(typ types.NetworkLinkType, id int,
 	sourceIntf, targetIntf *intf.NetworkInterface,
 	sourceNode, targetNode *node.AbstractNode,
 	bandWidth int,
-	graphTmp *simple.DirectedGraph) *AbstractLink {
+	graphTmp *simple.DirectedGraph,
+	NetworkSegmentIPv4 iplib.Net4, NetworkSegmentIPv6 iplib.Net6,
+) *AbstractLink {
 
 	// 进行星座拓扑的边的添加 (注意这是有向图, 需要进行双向的链路的添加)
 	// 在这里进行了双向的链路的添加 -> 为的是方便 LiR
@@ -69,6 +74,8 @@ func NewAbstractLink(typ types.NetworkLinkType, id int,
 		SourceNode:          sourceNode,
 		TargetNode:          targetNode,
 		BandWidth:           bandWidth,
+		NetworkSegmentIPv4:  NetworkSegmentIPv4,
+		NetworkSegmentIPv6:  NetworkSegmentIPv6,
 	}
 }
 

@@ -1,28 +1,34 @@
 package raspberrypi_topology
 
 import (
+	"context"
 	"fmt"
 	"github.com/c-robinson/iplib/v2"
 	"strconv"
 	"strings"
 	"zhanghefan123/security_topology/api/linux_tc_api"
+	"zhanghefan123/security_topology/api/route"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/intf"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/nodes"
+	"zhanghefan123/security_topology/modules/entities/real_entities/raspberrypi_topology/protobuf"
 	"zhanghefan123/security_topology/modules/entities/types"
 	"zhanghefan123/security_topology/modules/utils/network"
-	"zhanghefan123/security_topology/modules/utils/remote"
 	"zhanghefan123/security_topology/services/http/params"
 )
 
 const (
-	GenerateNodes    = "GenerateNodes"
-	GenerateSubnets  = "GenerateSubnets"
-	GenerateLinks    = "GenerateLinks"
-	PrintTopology    = "PrintTopology"
-	SetInterfaceAddr = "SetInterfaceAddr"
+	GenerateNodes                         = "GenerateNodes"
+	GenerateSubnets                       = "GenerateSubnets"
+	GenerateLinks                         = "GenerateLinks"
+	PrintTopology                         = "PrintTopology"
+	SetInterfaceAddr                      = "SetInterfaceAddr"
+	CalculateAndInstallStaticRoutes       = "CalculateAndInstallStaticRoutes"
+	CalculateAndWriteLiRRoutes            = "CalculateAndWriteLiRRoutes"
+	GenerateIfnameToLinkIdentifierMapping = "GenerateIfnameToLinkIdentifierMapping"
+	SetEnvs                               = "SetEnvs"
 )
 
 type InitFunction func() error
@@ -40,6 +46,10 @@ func (rpt *RaspberrypiTopology) Init() error {
 		{GenerateLinks: InitModule{true, rpt.GenerateLinks}},
 		{PrintTopology: InitModule{true, rpt.PrintTopology}},
 		{SetInterfaceAddr: InitModule{true, rpt.SetInterfaceAddr}},
+		{CalculateAndInstallStaticRoutes: InitModule{true, rpt.CalculateStaticRoutes}},
+		{GenerateIfnameToLinkIdentifierMapping: InitModule{true, rpt.GenerateIfnameToLinkIdentifierMapping}},
+		{CalculateAndWriteLiRRoutes: InitModule{true, rpt.CalculateAndWriteLiRRoutes}},
+		{SetEnvs: InitModule{true, rpt.SetEnv}},
 	}
 	err := rpt.initializeSteps(initSteps)
 	if err != nil {
@@ -96,7 +106,7 @@ func (rpt *RaspberrypiTopology) GenerateNodes() error {
 			routerTmp := nodes.NewRouter(nodeId, 0, 0)
 			rpt.Routers = append(rpt.Routers, routerTmp)
 			// 注意只能唯一创建一次
-			abstractRouter := node.NewAbstractNode(types.NetworkNodeType_Router, routerTmp, RaspberrypiTopologyInstance.TopologyGraph)
+			abstractRouter := node.NewAbstractNode(types.NetworkNodeType_Router, routerTmp, rpt.TopologyGraph)
 			rpt.RouterAbstractNodes = append(rpt.RouterAbstractNodes, abstractRouter)
 			rpt.AllAbstractNodes = append(rpt.AllAbstractNodes, abstractRouter)
 			rpt.AbstractNodesMap[routerTmp.ContainerName] = abstractRouter
@@ -104,7 +114,7 @@ func (rpt *RaspberrypiTopology) GenerateNodes() error {
 			lirNodeTmp := nodes.NewLiRNode(nodeId, 0, 0)
 			rpt.LirNodes = append(rpt.LirNodes, lirNodeTmp)
 			// 注意只能唯一创建一次
-			abstractLirNode := node.NewAbstractNode(types.NetworkNodeType_LirNode, lirNodeTmp, RaspberrypiTopologyInstance.TopologyGraph)
+			abstractLirNode := node.NewAbstractNode(types.NetworkNodeType_LirNode, lirNodeTmp, rpt.TopologyGraph)
 			rpt.LirAbstractNodes = append(rpt.LirAbstractNodes, abstractLirNode)
 			rpt.AllAbstractNodes = append(rpt.AllAbstractNodes, abstractLirNode)
 			rpt.AbstractNodesMap[lirNodeTmp.ContainerName] = abstractLirNode
@@ -288,7 +298,9 @@ func (rpt *RaspberrypiTopology) GenerateLinks() error {
 			sourceIntf, targetIntf,
 			sourceAbstractNode, targetAbstractNode,
 			bandWidth,
-			RaspberrypiTopologyInstance.TopologyGraph)
+			rpt.TopologyGraph,
+			ipv4SubNet,
+			ipv6SubNet)
 		sourceNormalNode.Ifidx++
 		targetNormalNode.Ifidx++
 		rpt.Links = append(rpt.Links, abstractLink)
@@ -336,44 +348,251 @@ func (rpt *RaspberrypiTopology) SetInterfaceAddr() error {
 		return nil
 	}
 
-	// 注意每个在进行测试的时候, 最好先使用 ssh zeusnet@192.168.110.xx 进行登陆, 生成 known_hosts 文件
+	// 监听端口
+	grpcPort := configs.TopConfiguration.RaspberryPiConfig.GrpcPort
+
+	// 创建 connection
 	for index, abstractNode := range rpt.AllAbstractNodes {
 		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
 		if err != nil {
 			return fmt.Errorf("get normal node failed, %s", err)
 		}
-		fmt.Println(normalNode.ContainerName)
-		sshClient, err := remote.CreateSSHClient(configs.TopConfiguration.RaspberryPiConfig.UserName,
-			configs.TopConfiguration.RaspberryPiConfig.Password,
-			configs.TopConfiguration.RaspberryPiConfig.IpAddresses[index])
+		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.RaspberryPiConfig.IpAddresses[index], grpcPort))
 		if err != nil {
-			fmt.Println("create ssh client failed")
-			return fmt.Errorf("create ssh client failed, %v", err)
+			return fmt.Errorf("create raspberrypi connection failed")
+		}
+		raspberrypiClient, err := CreateRaspberrypiClient(raspberrypiConn)
+		if err != nil {
+			return fmt.Errorf("create raspberrypi client failed")
 		}
 
 		for _, networkInterface := range normalNode.Interfaces {
-			var out []byte
-			// 首先检查是否存在 IP 地址
-			checkIpAddressString := "ip addr | grep inet"
-			out, err = sshClient.Run(checkIpAddressString)
+			var response *protobuf.NormalResponse
+			response, err = raspberrypiClient.SetAddr(context.Background(), &protobuf.SetAddrRequest{InterfaceName: networkInterface.IfName, InterfaceAddr: networkInterface.SourceIpv4Addr})
 			if err != nil {
-				return fmt.Errorf("run command failed, %v", err)
+				return fmt.Errorf("error setting addr %v", err)
 			}
-			if strings.Contains(string(out), networkInterface.SourceIpv4Addr[:len(networkInterface.SourceIpv4Addr)-3]) {
-				fmt.Printf("interface %s already has address %s\n", networkInterface.IfName, networkInterface.SourceIpv4Addr)
-				continue
-			}
-			ipSetString := "sudo ip addr add " + networkInterface.SourceIpv4Addr + " dev " + networkInterface.IfName
-			fmt.Println(ipSetString)
-			out, err = sshClient.Run(ipSetString)
-			if err != nil {
-				return fmt.Errorf("run command failed, %v", err)
-			}
-			fmt.Println(string(out))
+			fmt.Println(response.Reply)
+		}
+
+		err = raspberrypiConn.Close()
+		if err != nil {
+			return fmt.Errorf("close error")
 		}
 	}
 
 	rpt.topologyInitSteps[SetInterfaceAddr] = struct{}{}
 	raspberrypiTopologyLogger.Infof("set interface addr")
+	return nil
+}
+
+func (rpt *RaspberrypiTopology) CalculateStaticRoutes() error {
+	if _, ok := rpt.topologyInitSteps[CalculateAndInstallStaticRoutes]; ok {
+		raspberrypiTopologyLogger.Infof("already calculate static routes")
+		return nil
+	}
+
+	// 监听端口
+	grpcPort := configs.TopConfiguration.RaspberryPiConfig.GrpcPort
+
+	for index, abstractNode := range rpt.AllAbstractNodes {
+		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.RaspberryPiConfig.IpAddresses[index], grpcPort))
+		if err != nil {
+			return fmt.Errorf("create raspberrypi connection failed")
+		}
+		raspberrypiClient, err := CreateRaspberrypiClient(raspberrypiConn)
+		if err != nil {
+			return fmt.Errorf("create raspberrypi client failed")
+		}
+		allStaticRoutes, err := route.GenerateStaticRoutes(abstractNode, &rpt.AllLinksMap, rpt.TopologyGraph)
+		if err != nil {
+			return fmt.Errorf("generate static routes failed: %w", err)
+		}
+		for _, staticRoute := range allStaticRoutes {
+			var response *protobuf.NormalResponse
+			response, err = raspberrypiClient.AddRoute(context.Background(), &protobuf.AddRouteRequest{
+				DestinationNetworkSegment: staticRoute.DestinationNetworkSegment,
+				Gateway:                   staticRoute.Gateway,
+			})
+			if err != nil {
+				return fmt.Errorf("cannot add route: %v", err)
+			}
+			fmt.Println(response.Reply)
+		}
+	}
+
+	rpt.topologyInitSteps[CalculateAndInstallStaticRoutes] = struct{}{}
+	return nil
+}
+
+func (rpt *RaspberrypiTopology) CalculateAndWriteLiRRoutes() error {
+	if _, ok := rpt.topologyInitSteps[CalculateAndWriteLiRRoutes]; ok {
+		raspberrypiTopologyLogger.Infof("already calculate and write routes")
+		return nil
+	}
+
+	// 所有的节点的 LiR 路由的列表形式
+	allLiRRoutes := make([]string, 0)
+
+	// 遍历所有节点生成路由文件
+	for _, abstractNode := range rpt.AllAbstractNodes {
+		// 获取单个节点的路由条目集合
+		lirRoute, err := route.GenerateLiRRoute(abstractNode, &(rpt.AllLinksMap), rpt.TopologyGraph)
+		if err != nil {
+			return fmt.Errorf("generate path_validation route failed: %w", err)
+		}
+		// 更新总路由条目
+		allLiRRoutes = append(allLiRRoutes, lirRoute)
+	}
+
+	// 所有的路由的字符串形式
+	allLirRoutesString := strings.Join(allLiRRoutes, "\n")
+
+	// 监听端口
+	grpcPort := configs.TopConfiguration.RaspberryPiConfig.GrpcPort
+
+	for index, _ := range configs.TopConfiguration.RaspberryPiConfig.IpAddresses {
+		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.RaspberryPiConfig.IpAddresses[index], grpcPort))
+		if err != nil {
+			return fmt.Errorf("create raspberrypi connection failed")
+		}
+		raspberrypiClient, err := CreateRaspberrypiClient(raspberrypiConn)
+		if err != nil {
+			return fmt.Errorf("create raspberrypi client failed")
+		}
+		var response *protobuf.NormalResponse
+		response, err = raspberrypiClient.TransmitFile(context.Background(), &protobuf.TransmitFileRequest{
+			DestinationPath: "/home/zeusnet/Projects/configuration/route/lir.txt",
+			Content:         allLiRRoutes[index],
+		})
+		if err != nil {
+			return fmt.Errorf("error setting addr %v", err)
+		}
+		fmt.Println(response.Reply)
+
+		response, err = raspberrypiClient.TransmitFile(context.Background(), &protobuf.TransmitFileRequest{
+			DestinationPath: "/home/zeusnet/Projects/configuration/route/all_lir.txt",
+			Content:         allLirRoutesString,
+		})
+		if err != nil {
+			return fmt.Errorf("error setting addr %v", err)
+		}
+		fmt.Println(response.Reply)
+		err = raspberrypiConn.Close()
+		if err != nil {
+			return fmt.Errorf("close error")
+		}
+	}
+
+	rpt.topologyInitSteps[CalculateAndWriteLiRRoutes] = struct{}{}
+	return nil
+}
+
+func (rpt *RaspberrypiTopology) GenerateIfnameToLinkIdentifierMapping() error {
+	if _, ok := rpt.topologyInitSteps[GenerateIfnameToLinkIdentifierMapping]; ok {
+		raspberrypiTopologyLogger.Infof("already generate ifname to link identifier mapping")
+		return nil
+	}
+
+	// 监听端口
+	grpcPort := configs.TopConfiguration.RaspberryPiConfig.GrpcPort
+
+	for index, abstractNode := range rpt.AllAbstractNodes {
+		finalString := ""
+		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
+		if err != nil {
+			return fmt.Errorf("get normal node failed, %v", err)
+		}
+		for interfaceName, networkIntf := range normalNode.IfNameToInterfaceMap {
+			finalString += fmt.Sprintf("%s->%d->%s\n", interfaceName, networkIntf.LinkIdentifier, networkIntf.TargetIpv4Addr)
+		}
+		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.RaspberryPiConfig.IpAddresses[index], grpcPort))
+		if err != nil {
+			return fmt.Errorf("create raspberrypi connection failed")
+		}
+		raspberrypiClient, err := CreateRaspberrypiClient(raspberrypiConn)
+		if err != nil {
+			return fmt.Errorf("create raspberrypi client failed")
+		}
+		var response *protobuf.NormalResponse
+		response, err = raspberrypiClient.TransmitFile(context.Background(), &protobuf.TransmitFileRequest{
+			DestinationPath: "/home/zeusnet/Projects/configuration/interface/interface.txt",
+			Content:         finalString,
+		})
+		if err != nil {
+			return fmt.Errorf("error setting addr %v", err)
+		}
+		fmt.Println(response.Reply)
+		err = raspberrypiConn.Close()
+		if err != nil {
+			return fmt.Errorf("close error")
+		}
+	}
+
+	rpt.topologyInitSteps[GenerateIfnameToLinkIdentifierMapping] = struct{}{}
+	return nil
+}
+
+func (rpt *RaspberrypiTopology) SetEnv() error {
+	if _, ok := rpt.topologyInitSteps["SetEnv"]; ok {
+		raspberrypiTopologyLogger.Infof("already set env")
+		return nil
+	}
+
+	// 监听端口
+	grpcPort := configs.TopConfiguration.RaspberryPiConfig.GrpcPort
+
+	for index, abstractNode := range rpt.AllAbstractNodes {
+		// 进行 normalNode 的获取
+		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
+		if err != nil {
+			return fmt.Errorf("get normal node failed, %s", err)
+		}
+		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.RaspberryPiConfig.IpAddresses[index], grpcPort))
+		if err != nil {
+			return fmt.Errorf("create raspberrypi connection failed")
+		}
+		raspberrypiClient, err := CreateRaspberrypiClient(raspberrypiConn)
+		if err != nil {
+			return fmt.Errorf("create raspberrypi client failed")
+		}
+
+		// 创建环境变量列表
+		envFields := []string{
+			"BF_EFFECTIVE_BITS",
+			"PVF_EFFECTIVE_BITS",
+			"HASH_SEED",
+			"NUMBER_OF_HASH_FUNCTIONS",
+			"ROUTING_TABLE_TYPE",
+			"NODE_ID", // 暂时没有使用到
+			"GRAPH_NODE_ID",
+			"LIR_SINGLE_TIME_ENCODING_COUNT",
+			"ENABLE_SRV6",
+		}
+		envValues := []string{
+			strconv.Itoa(configs.TopConfiguration.PathValidationConfig.BfEffectiveBits),
+			strconv.Itoa(configs.TopConfiguration.PathValidationConfig.PVFEffectiveBits),
+			strconv.Itoa(configs.TopConfiguration.PathValidationConfig.HashSeed),
+			strconv.Itoa(configs.TopConfiguration.PathValidationConfig.NumberOfHashFunctions),
+			strconv.Itoa(configs.TopConfiguration.PathValidationConfig.RoutingTableType),
+			strconv.Itoa(normalNode.Id),
+			strconv.Itoa(int(abstractNode.Node.ID())),
+			strconv.Itoa(configs.TopConfiguration.PathValidationConfig.LiRSingleTimeEncodingCount),
+			fmt.Sprintf("%t", configs.TopConfiguration.NetworkConfig.EnableSRv6),
+		}
+
+		var response *protobuf.NormalResponse
+		response, err = raspberrypiClient.SetEnv(context.Background(), &protobuf.SetEnvRequest{
+			EnvFields: envFields,
+			EnvValues: envValues,
+		})
+		if err != nil {
+			return fmt.Errorf("error setting env %v", err)
+		}
+		fmt.Println(response.Reply)
+	}
+
+	rpt.topologyInitSteps["SetEnv"] = struct{}{}
+	raspberrypiTopologyLogger.Infof("set env")
 	return nil
 }
