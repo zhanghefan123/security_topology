@@ -32,5 +32,9 @@ func clientCore() error {
 	if err != nil {
 		return fmt.Errorf("raspberrypi init failed %v", err)
 	}
+	err = raspberrypi_topology.RaspberrypiTopologyInstance.Start()
+	if err != nil {
+		return fmt.Errorf("raspberrypi start failed %v", err)
+	}
 	return nil
 }
