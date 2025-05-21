@@ -668,7 +668,7 @@ func (c *Constellation) CalculateAndWriteSegmentRoutes() error {
 	return nil
 }
 
-// CalculateAndWriteLiRRoutes 计算 LiR 路由
+// CalculateAndWriteLiRRoutes 计算 LiR 路由并将文件传输到树莓派中
 func (c *Constellation) CalculateAndWriteLiRRoutes() error {
 	if _, ok := c.systemInitSteps[CalculateAndWriteLiRRoutes]; ok {
 		constellationLogger.Infof("already calculate lir routes")
@@ -725,6 +725,7 @@ func (c *Constellation) CalculateAndWriteLiRRoutes() error {
 	return nil
 }
 
+// GenerateIfnameToLinkIdentifierMapping 生成 ifname 到链路标识符的映射
 func (c *Constellation) GenerateIfnameToLinkIdentifierMapping() error {
 	if _, ok := c.systemInitSteps[GenerateIfnameToLinkIdentifierMapping]; ok {
 		constellationLogger.Infof("already generate ifname to link identifier")

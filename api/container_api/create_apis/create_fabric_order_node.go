@@ -97,15 +97,9 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 		fmt.Sprintf("%s=%s", "ORDERER_ADMIN_TLS_PRIVATEKEY", "/var/hyperledger/orderer/tls/server.key"),
 		fmt.Sprintf("%s=%s", "ORDERER_ADMIN_TLS_ROOTCAS", "[/var/hyperledger/orderer/tls/ca.crt]"),
 		fmt.Sprintf("%s=%s", "ORDERER_ADMIN_TLS_CLIENTROOTCAS", "[/var/hyperledger/orderer/tls/ca.crt]"),
-
-		// 之前的版本
-		// fmt.Sprintf("%s=%s", "ORDERER_ADMIN_LISTENADDRESS", fmt.Sprintf("0.0.0.0:%d", orderAdminListenStartPort)),
-		// fmt.Sprintf("%s=%s", "ORDERER_OPERATIONS_LISTENADDRESS", fmt.Sprintf("orderer%d.example.com:%d", fabricOrderNode.Id, orderOperationListenStartPort)),
 		// 现在的版本
-		fmt.Sprintf("%s=%s", "ORDERER_ADMIN_LISTENADDRESS", fmt.Sprintf("0.0.0.0:%d", orderAdminListenStartPort)),
-		fmt.Sprintf("%s=%s", "ORDERER_OPERATIONS_LISTENADDRESS", fmt.Sprintf("%s:%d", firstInterfaceAddress, orderOperationListenStartPort)),
-
-		// fmt.Sprintf("%s=%s", "ORDERER_OPERATIONS_LISTENADDRESS", fmt.Sprintf("%s:%d", ipv4, orderOperationListenStartPort)),
+		fmt.Sprintf("%s=%s", "ORDERER_ADMIN_LISTENADDRESS", fmt.Sprintf("0.0.0.0:%d", orderAdminListenStartPort)),                            // 这个地址需要设置成 0.0.0.0 供宿主机访问
+		fmt.Sprintf("%s=%s", "ORDERER_OPERATIONS_LISTENADDRESS", fmt.Sprintf("%s:%d", firstInterfaceAddress, orderOperationListenStartPort)), // 这个地址需要设置成 firstInterfaceAddress, 供交互使用
 		fmt.Sprintf("%s=%s", "ORDERER_METRICS_PROVIDER", "prometheus"),
 	}
 
@@ -155,22 +149,18 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 		ExposedPorts: exposedPorts,
 		Hostname:     fmt.Sprintf(fmt.Sprintf("orderer%d", fabricOrderNode.Id)),
 		Domainname:   fmt.Sprintf("example.com"),
-		// Cmd: []string{
-		//     "peer node start",
-		// },
 	}
 	// 9. hostConfig
 	hostConfig := &container.HostConfig{
 		// 容器数据卷映射
-		Binds:      volumes,
-		CapAdd:     []string{"NET_ADMIN"},
-		Privileged: true,
-		Sysctls:    sysctls,
-		// ExtraHosts:   []string{fmt.Sprintf("orderer%d.example.com:%s", fabricOrdererNode.Id, ipv4)},
+		Binds:        volumes,
+		CapAdd:       []string{"NET_ADMIN"},
+		Privileged:   true,
+		Sysctls:      sysctls,
 		PortBindings: portBindings,
 		Resources:    resourcesLimit,
 		//指定宿主机作为DNS服务器
-		DNS: []string{"10.134.86.192"},
+		DNS: []string{configs.TopConfiguration.NetworkConfig.LocalNetworkAddress},
 	}
 	// 10. 进行容器的创建
 	response, err := client.ContainerCreate(

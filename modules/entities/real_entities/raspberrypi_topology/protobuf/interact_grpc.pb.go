@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Interact_SetAddr_FullMethodName      = "/protobuf.Interact/SetAddr"
-	Interact_AddRoute_FullMethodName     = "/protobuf.Interact/AddRoute"
-	Interact_TransmitFile_FullMethodName = "/protobuf.Interact/TransmitFile"
-	Interact_SetEnv_FullMethodName       = "/protobuf.Interact/SetEnv"
+	Interact_SetAddr_FullMethodName        = "/protobuf.Interact/SetAddr"
+	Interact_AddRoute_FullMethodName       = "/protobuf.Interact/AddRoute"
+	Interact_TransmitFile_FullMethodName   = "/protobuf.Interact/TransmitFile"
+	Interact_SetEnv_FullMethodName         = "/protobuf.Interact/SetEnv"
+	Interact_LoadKernelInfo_FullMethodName = "/protobuf.Interact/LoadKernelInfo"
 )
 
 // InteractClient is the client API for Interact service.
@@ -36,6 +37,7 @@ type InteractClient interface {
 	AddRoute(ctx context.Context, in *AddRouteRequest, opts ...grpc.CallOption) (*NormalResponse, error)
 	TransmitFile(ctx context.Context, in *TransmitFileRequest, opts ...grpc.CallOption) (*NormalResponse, error)
 	SetEnv(ctx context.Context, in *SetEnvRequest, opts ...grpc.CallOption) (*NormalResponse, error)
+	LoadKernelInfo(ctx context.Context, in *LoadKernelInfoRequest, opts ...grpc.CallOption) (*NormalResponse, error)
 }
 
 type interactClient struct {
@@ -86,6 +88,16 @@ func (c *interactClient) SetEnv(ctx context.Context, in *SetEnvRequest, opts ...
 	return out, nil
 }
 
+func (c *interactClient) LoadKernelInfo(ctx context.Context, in *LoadKernelInfoRequest, opts ...grpc.CallOption) (*NormalResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NormalResponse)
+	err := c.cc.Invoke(ctx, Interact_LoadKernelInfo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // InteractServer is the server API for Interact service.
 // All implementations must embed UnimplementedInteractServer
 // for forward compatibility.
@@ -97,6 +109,7 @@ type InteractServer interface {
 	AddRoute(context.Context, *AddRouteRequest) (*NormalResponse, error)
 	TransmitFile(context.Context, *TransmitFileRequest) (*NormalResponse, error)
 	SetEnv(context.Context, *SetEnvRequest) (*NormalResponse, error)
+	LoadKernelInfo(context.Context, *LoadKernelInfoRequest) (*NormalResponse, error)
 	mustEmbedUnimplementedInteractServer()
 }
 
@@ -118,6 +131,9 @@ func (UnimplementedInteractServer) TransmitFile(context.Context, *TransmitFileRe
 }
 func (UnimplementedInteractServer) SetEnv(context.Context, *SetEnvRequest) (*NormalResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetEnv not implemented")
+}
+func (UnimplementedInteractServer) LoadKernelInfo(context.Context, *LoadKernelInfoRequest) (*NormalResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LoadKernelInfo not implemented")
 }
 func (UnimplementedInteractServer) mustEmbedUnimplementedInteractServer() {}
 func (UnimplementedInteractServer) testEmbeddedByValue()                  {}
@@ -212,6 +228,24 @@ func _Interact_SetEnv_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Interact_LoadKernelInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LoadKernelInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InteractServer).LoadKernelInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Interact_LoadKernelInfo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InteractServer).LoadKernelInfo(ctx, req.(*LoadKernelInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Interact_ServiceDesc is the grpc.ServiceDesc for Interact service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -234,6 +268,10 @@ var Interact_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetEnv",
 			Handler:    _Interact_SetEnv_Handler,
+		},
+		{
+			MethodName: "LoadKernelInfo",
+			Handler:    _Interact_LoadKernelInfo_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

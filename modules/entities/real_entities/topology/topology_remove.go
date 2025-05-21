@@ -1,7 +1,9 @@
 package topology
 
 import (
+	"context"
 	"fmt"
+	"github.com/docker/docker/api/types/volume"
 	"github.com/vishvananda/netlink"
 	"os"
 	"os/exec"
@@ -29,6 +31,7 @@ const (
 	RemoveConfigurationFiles    = "RemoveConfigurationFiles"
 	RemoveChainMakerFiles       = "RemoveChainMakerFiles"
 	RemoveFabricFiles           = "RemoveFabricFiles"
+	RemoveVolumes               = "RemoveVolumes"
 )
 
 // RemoveFunction 删除函数
@@ -57,6 +60,7 @@ func (t *Topology) Remove() error {
 		{RemoveConfigurationFiles: RemoveModule{true, t.RemoveConfigurationFiles}},
 		{RemoveChainMakerFiles: RemoveModule{removeChainMaker, t.RemoveChainMakerFiles}},
 		{RemoveFabricFiles: RemoveModule{removeFabric, t.RemoveFabricFiles}},
+		{RemoveVolumes: RemoveModule{true, t.RemoveVolumes}},
 	}
 	err := t.removeSteps(removeSteps)
 	if err != nil {
@@ -309,5 +313,27 @@ func (t *Topology) RemoveFabricFiles() error {
 
 	t.topologyStopSteps[RemoveFabricFiles] = struct{}{}
 	topologyLogger.Infof("execute remove fabric files")
+	return nil
+}
+
+func (t *Topology) RemoveVolumes() error {
+	if _, ok := t.topologyStopSteps[RemoveVolumes]; ok {
+		topologyLogger.Infof("already execute remove volumes")
+		return nil
+	}
+
+	volumes, err := t.client.VolumeList(context.Background(), volume.ListOptions{})
+	if err != nil {
+		return fmt.Errorf("get volumes failed: %w", err)
+	}
+	for _, dockerVolume := range volumes.Volumes {
+		err = t.client.VolumeRemove(context.Background(), dockerVolume.Name, true)
+		if err != nil {
+			return fmt.Errorf("remove volume %s failed: %w", dockerVolume.Name, err)
+		}
+	}
+
+	t.topologyStopSteps[RemoveVolumes] = struct{}{}
+	topologyLogger.Infof("execute remove volumes")
 	return nil
 }

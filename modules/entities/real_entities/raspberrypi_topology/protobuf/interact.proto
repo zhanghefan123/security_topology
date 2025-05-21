@@ -12,6 +12,7 @@ service Interact {
   rpc AddRoute (AddRouteRequest) returns (NormalResponse) {}
   rpc TransmitFile (TransmitFileRequest) returns (NormalResponse) {}
   rpc SetEnv(SetEnvRequest) returns (NormalResponse) {}
+  rpc LoadKernelInfo(LoadKernelInfoRequest) returns (NormalResponse) {}
 }
 
 message NormalResponse {
@@ -34,6 +35,10 @@ message AddRouteRequest {
 message TransmitFileRequest {
   string destinationPath = 1;
   string content = 2;
+}
+
+message LoadKernelInfoRequest {
+
 }
 
 // 设置环境变量消息

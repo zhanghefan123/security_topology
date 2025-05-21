@@ -3,6 +3,8 @@ package topology
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 	"zhanghefan123/security_topology/api/container_api"
 	"zhanghefan123/security_topology/api/multithread"
 	"zhanghefan123/security_topology/configs"
@@ -10,6 +12,7 @@ import (
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/services/etcd"
 	"zhanghefan123/security_topology/modules/entities/types"
+	"zhanghefan123/security_topology/modules/utils/file"
 )
 
 const (
@@ -31,6 +34,17 @@ type StartModule struct {
 
 // Start 启动
 func (t *Topology) Start() error {
+
+	// 如果已经启动了 hosts 则不需要进行启动了
+	// ----------------------------------
+	var enabledUpdateHosts bool
+	if len(t.FabricOrdererNodes) > 0 {
+		enabledUpdateHosts = true
+	} else {
+		enabledUpdateHosts = false
+	}
+	// ----------------------------------
+
 	startSteps := []map[string]StartModule{
 		{StartEtcdService: StartModule{true, t.StartEtcdService}},
 		{StoreToEtcd: StartModule{true, t.StoreToEtcd}},                       // step1 将要存储的东西放到 etcd 之中
@@ -38,7 +52,7 @@ func (t *Topology) Start() error {
 		{StartNodeContainers: StartModule{true, t.StartNodeContainers}},       // step3 一定要在 step1 之后，因为创建了容器后才有命名空间
 		{SetVethNameSpaces: StartModule{true, t.SetVethNamespaces}},           // step4 一定要在 step2 之后，因为创建了容器才能设置 veth 的 namespace
 		{SetLinkParameters: StartModule{true, t.SetLinkParameters}},           // step5 进行链路属性的设置
-		{UpdateHosts: StartModule{true, t.UpdateHosts}},
+		{UpdateHosts: StartModule{enabledUpdateHosts, t.UpdateHosts}},         // step6 进行 hosts 文件的更新, 只有启动了 fabric 之后才需要进行 hosts 文件的更新
 	}
 	err := t.startSteps(startSteps)
 	if err != nil {
@@ -79,21 +93,51 @@ func (t *Topology) startSteps(startSteps []map[string]StartModule) (err error) {
 }
 
 func (t *Topology) UpdateHosts() error {
-	finalString := ""
-	for _, ordererNode := range t.FabricOrdererNodes {
-		orderString := fmt.Sprintf("order%d.example.com", ordererNode.Id)
-		firstIpAddressWithPrefix := ordererNode.Interfaces[0].SourceIpv4Addr
-		firstIpAddress := firstIpAddressWithPrefix[:len(firstIpAddressWithPrefix)-3]
-		finalString = finalString + fmt.Sprintf("%s %s\n", firstIpAddress, orderString)
+	if _, ok := t.topologyStartSteps[UpdateHosts]; ok {
+		topologyLogger.Infof("UpdateHosts is already running")
+		return nil
 	}
 
+	// 1. 进行文件的读取
+	hostsFilePath := "/etc/hosts"
+	data, err := os.ReadFile(hostsFilePath)
+	if err != nil {
+		return fmt.Errorf("read hosts file failed, %s", err.Error())
+	}
+	allLines := strings.Split(string(data), "\n")
+
+	// 2. 删除所有包含 example.com 的行
+	var newLines []string
+	for _, line := range allLines {
+		if !strings.Contains(line, "example.com") {
+			newLines = append(newLines, line)
+		}
+	}
+
+	// 3. 进行 orderer 映射行的添加
+	for _, ordererNode := range t.FabricOrdererNodes {
+		orderString := fmt.Sprintf("orderer%d.example.com", ordererNode.Id)
+		firstIpAddressWithPrefix := ordererNode.Interfaces[0].SourceIpv4Addr
+		firstIpAddress := firstIpAddressWithPrefix[:len(firstIpAddressWithPrefix)-3]
+		newLines = append(newLines, fmt.Sprintf("%s %s", firstIpAddress, orderString))
+	}
+
+	// 4. 进行 peer 映射行的添加
 	for _, peerNode := range t.FabricPeerNodes {
 		peerString := fmt.Sprintf("org%d.example.com", peerNode.Id)
 		firstIpAddressWithPrefix := peerNode.Interfaces[0].SourceIpv4Addr
 		firstIpAddress := firstIpAddressWithPrefix[:len(firstIpAddressWithPrefix)-3]
-		finalString = finalString + fmt.Sprintf("%s %s\n", firstIpAddress, peerString)
+		newLines = append(newLines, fmt.Sprintf("%s %s", firstIpAddress, peerString))
 	}
-	fmt.Println(finalString)
+
+	// 5. 将所有的行写回文件之中
+	newData := strings.Join(newLines, "\n")
+	err = file.WriteStringIntoFile(hostsFilePath, newData) // 进行截断式的写入
+	if err != nil {
+		return fmt.Errorf("write hosts file failed, %s", err.Error())
+	}
+
+	t.topologyStartSteps[UpdateHosts] = struct{}{}
 	return nil
 }
 

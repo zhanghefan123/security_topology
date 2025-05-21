@@ -32,7 +32,8 @@ type RaspberrypiTopology struct {
 	Ipv4SubNets []iplib.Net4 // IPv4 两主机子网列表
 	Ipv6SubNets []iplib.Net6 // IPv6 两主机子网列表
 
-	topologyInitSteps map[string]struct{} // 拓扑初始化步骤
+	topologyInitSteps  map[string]struct{} // 拓扑初始化步骤
+	topologyStartSteps map[string]struct{} // 拓扑启动步骤
 
 	NetworkInterfaces int // 网络接口数量
 }
@@ -51,9 +52,11 @@ func NewRaspeberryTopology() *RaspberrypiTopology {
 		AllAbstractNodes: make([]*node.AbstractNode, 0),
 		AbstractNodesMap: make(map[string]*node.AbstractNode),
 
-		Links:             make([]*link.AbstractLink, 0),
-		AllLinksMap:       make(map[string]map[string]*link.AbstractLink),
-		topologyInitSteps: make(map[string]struct{}),
+		Links:       make([]*link.AbstractLink, 0),
+		AllLinksMap: make(map[string]map[string]*link.AbstractLink),
+
+		topologyInitSteps:  make(map[string]struct{}),
+		topologyStartSteps: make(map[string]struct{}),
 
 		NetworkInterfaces: 0,
 	}
