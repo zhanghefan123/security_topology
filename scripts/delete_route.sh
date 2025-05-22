@@ -1,0 +1,1 @@
+ sudo ip route | awk '/via 172.17.0./ {print "ip route del", $1, "via", $3, "dev", $5}' | sudo sh

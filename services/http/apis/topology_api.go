@@ -8,6 +8,7 @@ import (
 	"github.com/kr/pretty"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 	"zhanghefan123/security_topology/api/etcd_api"
@@ -148,6 +149,8 @@ func SaveTopology(c *gin.Context) {
 
 // GetTopologyState 进行拓扑状态的获取
 func GetTopologyState(c *gin.Context) {
+	directory, err := os.Getwd()
+	fmt.Println(directory)
 	// 进行所有的 topology 的获取
 	AllTopologyNames, err := GetAllTopologyNames()
 	fmt.Println(AllTopologyNames)
@@ -166,6 +169,7 @@ func GetTopologyState(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"state":              "up",
 			"topology_params":    topology.TopologyInstance.TopologyParams, // 如果已经创建完成了, 还需要进行创建的参数的返回
+			"links":              topology.TopologyInstance.AllLinksMap,    // 直接返回一个 map
 			"all_topology_names": AllTopologyNames,
 		})
 	}

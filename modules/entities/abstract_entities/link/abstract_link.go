@@ -20,22 +20,24 @@ import (
 )
 
 type AbstractLink struct {
-	Type                types.NetworkLinkType  `json:"-"`              // 链路的类型
-	Id                  int                    `json:"id"`             // 链路 id
-	SourceNodeType      types.NetworkNodeType  `json:"-"`              // 源节点类型
-	TargetNodeType      types.NetworkNodeType  `json:"-"`              // 目的节点类型
-	SourceNodeId        int                    `json:"source_node_id"` // 源节点 id
-	TargetNodeId        int                    `json:"target_node_id"` // 目的节点 id
-	SourceContainerName string                 // 源容器的名称
-	TargetContainerName string                 // 目的容器的名称
-	SourceInterface     *intf.NetworkInterface `json:"-"` // 源接口
-	TargetInterface     *intf.NetworkInterface `json:"-"` // 目的接口
-	SourceNode          *node.AbstractNode     `json:"-"` // 源节点
-	TargetNode          *node.AbstractNode     `json:"-"` // 目的节点
-	BandWidth           int                    `json:"-"` // 带宽
-	Status              bool                   `json:"-"` // 状态
-	NetworkSegmentIPv4  iplib.Net4             `json:"-"` // 网络段
-	NetworkSegmentIPv6  iplib.Net6             `json:"-"` // 网络段
+	Type                     types.NetworkLinkType  `json:"-"`                    // 链路的类型
+	Id                       int                    `json:"id"`                   // 链路 id
+	SourceNodeType           types.NetworkNodeType  `json:"-"`                    // 源节点类型
+	TargetNodeType           types.NetworkNodeType  `json:"-"`                    // 目的节点类型
+	SourceNodeId             int                    `json:"source-node_id"`       // 源节点 id
+	TargetNodeId             int                    `json:"target-node_id"`       // 目的节点 id
+	SourceContainerName      string                 `json:"source-node-name"`     // 源容器的名称
+	TargetContainerName      string                 `json:"target-node-name"`     // 目的容器的名称
+	SourceInterface          *intf.NetworkInterface `json:"source-interface"`     // 源接口
+	TargetInterface          *intf.NetworkInterface `json:"target-interface"`     // 目的接口
+	SourceNode               *node.AbstractNode     `json:"-"`                    // 源节点
+	TargetNode               *node.AbstractNode     `json:"-"`                    // 目的节点
+	BandWidth                int                    `json:"-"`                    // 带宽
+	Status                   bool                   `json:"-"`                    // 状态
+	NetworkSegmentIPv4       iplib.Net4             `json:"-"`                    // 网络段
+	NetworkSegmentIPv6       iplib.Net6             `json:"-"`                    // 网络段
+	NetworkSegmentIpv4String string                 `json:"network-segment-ipv4"` // 网络段的字符串表示
+	NetworkSegmentIpv6String string                 `json:"network-segment-ipv6"` // 网络段的字符串表示
 }
 
 func NewAbstractLink(typ types.NetworkLinkType, id int,
@@ -61,21 +63,23 @@ func NewAbstractLink(typ types.NetworkLinkType, id int,
 	// ---------------------------------------------------------
 
 	return &AbstractLink{
-		Type:                typ,
-		Id:                  id,
-		SourceNodeType:      sourceNodeType,
-		TargetNodeType:      targetNodeType,
-		SourceNodeId:        sourceNodeId,
-		TargetNodeId:        targetNodeId,
-		SourceContainerName: sourceContainerName,
-		TargetContainerName: targetContainerName,
-		SourceInterface:     sourceIntf,
-		TargetInterface:     targetIntf,
-		SourceNode:          sourceNode,
-		TargetNode:          targetNode,
-		BandWidth:           bandWidth,
-		NetworkSegmentIPv4:  NetworkSegmentIPv4,
-		NetworkSegmentIPv6:  NetworkSegmentIPv6,
+		Type:                     typ,
+		Id:                       id,
+		SourceNodeType:           sourceNodeType,
+		TargetNodeType:           targetNodeType,
+		SourceNodeId:             sourceNodeId,
+		TargetNodeId:             targetNodeId,
+		SourceContainerName:      sourceContainerName,
+		TargetContainerName:      targetContainerName,
+		SourceInterface:          sourceIntf,
+		TargetInterface:          targetIntf,
+		SourceNode:               sourceNode,
+		TargetNode:               targetNode,
+		BandWidth:                bandWidth,
+		NetworkSegmentIPv4:       NetworkSegmentIPv4,
+		NetworkSegmentIPv6:       NetworkSegmentIPv6,
+		NetworkSegmentIpv4String: NetworkSegmentIPv4.String(),
+		NetworkSegmentIpv6String: NetworkSegmentIPv6.String(),
 	}
 }
 

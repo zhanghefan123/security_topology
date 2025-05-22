@@ -5,8 +5,8 @@ import "github.com/vishvananda/netlink"
 type NetworkInterface struct {
 	Ifidx          int           // 接口索引
 	IfName         string        // 接口名
-	SourceIpv4Addr string        // 接口 ipv4 地址
-	SourceIpv6Addr string        // 接口 ipv6 地址
+	SourceIpv4Addr string        `json:"source-ipv4"` // 接口 ipv4 地址
+	SourceIpv6Addr string        `json:"source-ipv6"` // 接口 ipv6 地址
 	TargetIpv4Addr string        // 对侧的 ipv4 地址
 	TargetIpv6Addr string        // 对侧的 ipv6 地址
 	LinkIdentifier int           // 链路标识

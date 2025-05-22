@@ -58,6 +58,8 @@ type Topology struct {
 	AllAbstractNodes []*node.AbstractNode
 	AbstractNodesMap map[string]*node.AbstractNode
 
+	ChannelAndChainCodeInstalled bool
+
 	Links       []*link.AbstractLink
 	AllLinksMap map[string]map[string]*link.AbstractLink // map[sourceContainerName][targetContainerName]*link.AbstractLink
 
@@ -94,6 +96,8 @@ func NewTopology(client *docker.Client, etcdClient *clientv3.Client, params *par
 
 		AllAbstractNodes: make([]*node.AbstractNode, 0),
 		AbstractNodesMap: make(map[string]*node.AbstractNode),
+
+		ChannelAndChainCodeInstalled: false,
 
 		Links:              make([]*link.AbstractLink, 0),
 		AllLinksMap:        make(map[string]map[string]*link.AbstractLink),

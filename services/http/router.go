@@ -10,6 +10,8 @@ var postRoutes = map[string]gin.HandlerFunc{
 	"/startTxRateTest": apis.StartTxRateTestRequest, // contract 相关
 	"/stopTxRateTest":  apis.StopTxRateTestRequest,  // contract 相关
 
+	"/installChannelAndChaincode": apis.InstallChannelAndChaincode, // fabric 相关
+
 	"/getConstellationState": apis.GetConstellationState, // (constellation 相关)
 	"/getInstancePositions":  apis.GetInstancesPositions, // (constellation 相关)
 	"/startConstellation":    apis.StartConstellation,    // (constellation 相关)

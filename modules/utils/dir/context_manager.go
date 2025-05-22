@@ -11,15 +11,13 @@ type ContextManager struct {
 }
 
 func (cm *ContextManager) Enter(directory string) error {
+	var err error
+	cm.OldDirectory, err = os.Getwd()
 	fmt.Printf("enter directory: %s\n", directory)
-	if err := os.Chdir(directory); err != nil {
+	if err = os.Chdir(directory); err != nil {
 		return fmt.Errorf("change to new dir failed: %v", err)
 	} else {
 		cm.NewDirectory = directory
-		cm.OldDirectory, err = os.Getwd()
-		if err != nil {
-			return fmt.Errorf("get current dir failed: %v", err)
-		}
 		return nil
 	}
 }

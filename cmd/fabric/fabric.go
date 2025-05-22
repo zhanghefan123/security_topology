@@ -3,9 +3,11 @@ package fabric
 import (
 	"fmt"
 	"github.com/spf13/cobra"
-	"time"
-	"zhanghefan123/security_topology/api/fabric_api"
+	"os"
+	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/logger"
+	"zhanghefan123/security_topology/modules/utils/dir"
+	"zhanghefan123/security_topology/modules/utils/execute"
 )
 
 var (
@@ -29,15 +31,19 @@ func CreateFabricCmd() *cobra.Command {
 }
 
 func core() error {
-	txRateRecorder := fabric_api.NewTxRateRecorder()
-	err := txRateRecorder.StartTxRateTest(5)
-	if err != nil {
-		return fmt.Errorf("start tps test error: %v", err)
-	}
-	timer := time.NewTimer(time.Second * 10)
-	select {
-	case <-timer.C:
-		txRateRecorder.StopTxRateTestCore()
-	}
+	testNetworkPath := configs.TopConfiguration.FabricConfig.FabricNetworkPath
+	_ = dir.WithContextManager(testNetworkPath, func() error {
+		err := execute.Command("bash", []string{"-l", "-c", "echo $PATH"})
+		if err != nil {
+			return fmt.Errorf("start install channel failed: %w", err)
+		}
+		err = execute.Command("bash", []string{"-l", "-c", "echo $PATH"})
+		if err != nil {
+			return fmt.Errorf("start install chaincode failed: %w", err)
+		}
+		return nil
+	})
+	directory, _ := os.Getwd()
+	fmt.Printf("current directory: %s\n", directory)
 	return nil
 }
