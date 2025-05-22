@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"zhanghefan123/security_topology/cmd/fabric"
 	"zhanghefan123/security_topology/cmd/http_service"
 	"zhanghefan123/security_topology/cmd/images"
 	"zhanghefan123/security_topology/cmd/raspberrypi"
@@ -25,10 +26,12 @@ func main() {
 	raspberrypiClientCmd := raspberrypi.CreateRaspberrypiClientCmd()
 	imagesCmd := images.CreateImagesCmd()
 	testCmd := test.CreateTestCommand()
+	fabricCmd := fabric.CreateFabricCmd()
 	rootCmd.AddCommand(httpServiceCmd)
 	rootCmd.AddCommand(raspberrypiClientCmd)
 	rootCmd.AddCommand(imagesCmd)
 	rootCmd.AddCommand(testCmd)
+	rootCmd.AddCommand(fabricCmd)
 	err = rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)

@@ -12,17 +12,19 @@ import (
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/services/etcd"
 	"zhanghefan123/security_topology/modules/entities/types"
+	"zhanghefan123/security_topology/modules/utils/execute"
 	"zhanghefan123/security_topology/modules/utils/file"
 )
 
 const (
-	StartEtcdService       = "StartEtcdService"
-	GenerateNodesVethPairs = "GenerateNodesVethPairs"
-	StartNodeContainers    = "StartNodeContainers"
-	SetVethNameSpaces      = "SetVethNameSpaces"
-	SetLinkParameters      = "SetLinkParameters"
-	StoreToEtcd            = "StoreToEtcd"
-	UpdateHosts            = "UpdateHosts"
+	StartEtcdService                = "StartEtcdService"
+	GenerateNodesVethPairs          = "GenerateNodesVethPairs"
+	StartNodeContainers             = "StartNodeContainers"
+	SetVethNameSpaces               = "SetVethNameSpaces"
+	SetLinkParameters               = "SetLinkParameters"
+	StoreToEtcd                     = "StoreToEtcd"
+	UpdateHosts                     = "UpdateHosts"
+	AddDefaultRouteToFirstInterface = "AddDefaultRouteToFirstInterface"
 )
 
 type StartFunction func() error
@@ -37,22 +39,23 @@ func (t *Topology) Start() error {
 
 	// 如果已经启动了 hosts 则不需要进行启动了
 	// ----------------------------------
-	var enabledUpdateHosts bool
+	var enabledFabric bool
 	if len(t.FabricOrdererNodes) > 0 {
-		enabledUpdateHosts = true
+		enabledFabric = true
 	} else {
-		enabledUpdateHosts = false
+		enabledFabric = false
 	}
 	// ----------------------------------
 
 	startSteps := []map[string]StartModule{
 		{StartEtcdService: StartModule{true, t.StartEtcdService}},
-		{StoreToEtcd: StartModule{true, t.StoreToEtcd}},                       // step1 将要存储的东西放到 etcd 之中
-		{GenerateNodesVethPairs: StartModule{true, t.GenerateNodesVethPairs}}, // step2 先创建 veth pair 然后改变链路的命名空间
-		{StartNodeContainers: StartModule{true, t.StartNodeContainers}},       // step3 一定要在 step1 之后，因为创建了容器后才有命名空间
-		{SetVethNameSpaces: StartModule{true, t.SetVethNamespaces}},           // step4 一定要在 step2 之后，因为创建了容器才能设置 veth 的 namespace
-		{SetLinkParameters: StartModule{true, t.SetLinkParameters}},           // step5 进行链路属性的设置
-		{UpdateHosts: StartModule{enabledUpdateHosts, t.UpdateHosts}},         // step6 进行 hosts 文件的更新, 只有启动了 fabric 之后才需要进行 hosts 文件的更新
+		{StoreToEtcd: StartModule{true, t.StoreToEtcd}},                                                  // step1 将要存储的东西放到 etcd 之中
+		{GenerateNodesVethPairs: StartModule{true, t.GenerateNodesVethPairs}},                            // step2 先创建 veth pair 然后改变链路的命名空间
+		{StartNodeContainers: StartModule{true, t.StartNodeContainers}},                                  // step3 一定要在 step1 之后，因为创建了容器后才有命名空间
+		{SetVethNameSpaces: StartModule{true, t.SetVethNamespaces}},                                      // step4 一定要在 step2 之后，因为创建了容器才能设置 veth 的 namespace
+		{SetLinkParameters: StartModule{true, t.SetLinkParameters}},                                      // step5 进行链路属性的设置
+		{UpdateHosts: StartModule{enabledFabric, t.UpdateHosts}},                                         // step6 进行 hosts 文件的更新, 只有启动了 fabric 之后才需要进行 hosts 文件的更新
+		{AddDefaultRouteToFirstInterface: StartModule{enabledFabric, t.AddDefaultRouteToFirstInterface}}, // step7 进行默认路由的添加
 	}
 	err := t.startSteps(startSteps)
 	if err != nil {
@@ -124,7 +127,7 @@ func (t *Topology) UpdateHosts() error {
 
 	// 4. 进行 peer 映射行的添加
 	for _, peerNode := range t.FabricPeerNodes {
-		peerString := fmt.Sprintf("org%d.example.com", peerNode.Id)
+		peerString := fmt.Sprintf("peer0.org%d.example.com", peerNode.Id)
 		firstIpAddressWithPrefix := peerNode.Interfaces[0].SourceIpv4Addr
 		firstIpAddress := firstIpAddressWithPrefix[:len(firstIpAddressWithPrefix)-3]
 		newLines = append(newLines, fmt.Sprintf("%s %s", firstIpAddress, peerString))
@@ -296,5 +299,30 @@ func (t *Topology) StoreToEtcd() error {
 
 	t.topologyStartSteps[StoreToEtcd] = struct{}{}
 	topologyLogger.Infof("execute store to etcd")
+	return nil
+}
+
+func (t *Topology) AddDefaultRouteToFirstInterface() error {
+	if _, ok := t.topologyStartSteps[AddDefaultRouteToFirstInterface]; ok {
+		topologyLogger.Infof("Add default route is already running")
+		return nil
+	}
+
+	for _, abstractNode := range t.AllAbstractNodes {
+		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
+		if err != nil {
+			return err
+		}
+		firstInterface := normalNode.Interfaces[0]
+		addRouteCommand := fmt.Sprintf("add -host %s gw %s", firstInterface.SourceIpv4Addr[:len(firstInterface.SourceIpv4Addr)-3], normalNode.DockerZeroNetworkAddress)
+		fmt.Println(addRouteCommand)
+		err = execute.Command("route", strings.Split(addRouteCommand, " "))
+		if err != nil {
+			return fmt.Errorf("add default route failed: %w", err)
+		}
+	}
+
+	t.topologyStartSteps[AddDefaultRouteToFirstInterface] = struct{}{}
+	topologyLogger.Infof("execute add default route")
 	return nil
 }

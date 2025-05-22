@@ -19,6 +19,7 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 	}
 
 	firstInterfaceName := fabricPeerNode.Interfaces[0].IfName
+	//firstInterfaceAddress := fabricPeerNode.DockerZeroNetworkAddress
 	firstInterfaceAddress := fabricPeerNode.Interfaces[0].SourceIpv4Addr[:len(fabricPeerNode.Interfaces[0].SourceIpv4Addr)-3]
 	fmt.Printf("Node Name: %s Addr: %s \n", fabricPeerNode.ContainerName, firstInterfaceAddress)
 
@@ -78,6 +79,8 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 		fmt.Sprintf("%s=%s", "CONTAINER_NAME", fabricPeerNode.ContainerName),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
 		fmt.Sprintf("%s=%s", "INTERFACE_NAME", fmt.Sprintf("%s%d_idx%d", types.GetPrefix(fabricPeerNode.Type), fabricPeerNode.Id, 1)),
+		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
+		//add
 		fmt.Sprintf("%s=%s", "FABRIC_CFG_PATH", "/etc/hyperledger/peercfg"),
 		fmt.Sprintf("%s=%s", "FABRIC_LOGGING_SPEC", "INFO"),
 		fmt.Sprintf("%s=%s", "CORE_PEER_TLS_ENABLED", "true"),
@@ -86,21 +89,25 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 		fmt.Sprintf("%s=%s", "CORE_PEER_TLS_KEY_FILE", "/etc/hyperledger/fabric/tls/server.key"),
 		fmt.Sprintf("%s=%s", "CORE_PEER_TLS_ROOTCERT_FILE", "/etc/hyperledger/fabric/tls/ca.crt"),
 		fmt.Sprintf("%s=%s", "CORE_PEER_ID", fmt.Sprintf("peer0.org%d.example.com", fabricPeerNode.Id)),
-
-		fmt.Sprintf("%s=%s", "CORE_PEER_ADDRESS", fmt.Sprintf("%s:%d", firstInterfaceAddress, peerListenPort)),                 // 这个地址是 peer 之间交互的地址
-		fmt.Sprintf("%s=%s", "CORE_PEER_LISTENADDRESS", fmt.Sprintf("0.0.0.0:%d", peerListenPort)),                             // 这个地址一定需要设置成 0.0.0.0, 让宿主机访问
-		fmt.Sprintf("%s=%s", "CORE_PEER_CHAINCODEADDRESS", fmt.Sprintf("%s:%d", firstInterfaceAddress, peerChainCodePort)),     // 这个地址是交互的地址
-		fmt.Sprintf("%s=%s", "CORE_PEER_CHAINCODELISTENADDRESS", fmt.Sprintf("0.0.0.0:%d", peerChainCodePort)),                 // 这个地址一定要设置成 0.0.0.0, 让宿主机访问
-		fmt.Sprintf("%s=%s", "CORE_PEER_GOSSIP_EXTERNALENDPOINT", fmt.Sprintf("%s:%d", firstInterfaceAddress, peerListenPort)), // 这个地址是交互的地址
-		fmt.Sprintf("%s=%s", "CORE_PEER_GOSSIP_BOOTSTRAP", fmt.Sprintf("%s:%d", firstInterfaceAddress, peerListenPort)),        // 这个地址是交互的地址
-		fmt.Sprintf("%s=%s", "CORE_OPERATIONS_LISTENADDRESS", fmt.Sprintf("%s:%d", firstInterfaceAddress, peerOperationPort)),  // 这个地址一定要设置成 firstInterfaceAddress
-
+		fmt.Sprintf("%s=%s", "CORE_PEER_ADDRESS", fmt.Sprintf("peer0.org%d.example.com:%d", fabricPeerNode.Id, peerListenPort)),
+		// fmt.Sprintf("%s=%s", "CORE_PEER_ADDRESS", fmt.Sprintf("%s:%d", ipv4, peerListenPort)),
+		fmt.Sprintf("%s=%s", "CORE_PEER_LISTENADDRESS", fmt.Sprintf("0.0.0.0:%d", peerListenPort)),
+		fmt.Sprintf("%s=%s", "CORE_PEER_CHAINCODEADDRESS", fmt.Sprintf("peer0.org%d.example.com:%d", fabricPeerNode.Id, peerChainCodePort)),
+		// fmt.Sprintf("%s:%s", "CORE_PEER_CHAINCODEADDRESS", fmt.Sprintf("%s:%d", ipv4, peerChainCodePort)),
+		fmt.Sprintf("%s=%s", "CORE_PEER_CHAINCODELISTENADDRESS", fmt.Sprintf("0.0.0.0:%d", peerChainCodePort)),
+		fmt.Sprintf("%s=%s", "CORE_PEER_GOSSIP_EXTERNALENDPOINT", fmt.Sprintf("peer0.org%d.example.com:%d", fabricPeerNode.Id, peerListenPort)),
+		// fmt.Sprintf("%s:%s", "CORE_PEER_GOSSIP_EXTERNALENDPOINT", fmt.Sprintf("%s:%d", ipv4, peerListenPort)),
+		fmt.Sprintf("%s=%s", "CORE_PEER_GOSSIP_BOOTSTRAP", fmt.Sprintf("peer0.org%d.example.com:%d", fabricPeerNode.Id, peerListenPort)),
+		// fmt.Sprintf("%s:%s", "CORE_PEER_GOSSIP_BOOTSTRAP", fmt.Sprintf("%s:%d", ipv4, peerListenPort)),
 		fmt.Sprintf("%s=%s", "CORE_PEER_LOCALMSPID", fmt.Sprintf("Org%dMSP", fabricPeerNode.Id)),
 		fmt.Sprintf("%s=%s", "CORE_PEER_MSPCONFIGPATH", "/etc/hyperledger/fabric/msp"),
+		fmt.Sprintf("%s=%s", "CORE_OPERATIONS_LISTENADDRESS", fmt.Sprintf("peer0.org%d.example.com:%d", fabricPeerNode.Id, peerOperationPort)),
+		// fmt.Sprintf("%s:%s", "CORE_OPERATIONS_LISTENADDRESS", fmt.Sprintf("%s:%d", ipv4, peerOperationPort)),
 		fmt.Sprintf("%s=%s", "CORE_METRICS_PROVIDER", "prometheus"),
 		fmt.Sprintf("%s=%s", "CHAINCODE_AS_A_SERVICE_BUILDER_CONFIG", fmt.Sprintf("{\"peername\":\"peer0org%d\"}", fabricPeerNode.Id)),
 		fmt.Sprintf("%s=%s", "CORE_CHAINCODE_EXECUTETIMEOUT", "300s"),
 		fmt.Sprintf("%s=%s", "CORE_VM_ENDPOINT", "unix:///host/var/run/docker.sock"),
+		// fmt.Sprintf("%s=%s", "CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE", "fabric_test"),
 	}
 
 	// 6. 资源限制

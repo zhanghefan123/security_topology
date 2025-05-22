@@ -3,6 +3,10 @@ package topology
 import (
 	"context"
 	"fmt"
+	"github.com/docker/docker/api/types"
+	dockerTypes "github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/volume"
 	"github.com/vishvananda/netlink"
 	"os"
@@ -27,11 +31,13 @@ const (
 	StopNodeContainers          = "StopNodeContainers"
 	RemoveNodeContainers        = "RemoveNodeContainers"
 	RemoveLinks                 = "RemoveLinks"
+	RemoveChainCodeContainers   = "RemoveChainCodeContainers"
 	RemoveEtcdService           = "RemoveEtcdService"
 	RemoveConfigurationFiles    = "RemoveConfigurationFiles"
 	RemoveChainMakerFiles       = "RemoveChainMakerFiles"
 	RemoveFabricFiles           = "RemoveFabricFiles"
 	RemoveVolumes               = "RemoveVolumes"
+	RemoveDefaultRoutes         = "RemoveDefaultRoutes"
 )
 
 // RemoveFunction 删除函数
@@ -48,19 +54,26 @@ func (t *Topology) Remove() error {
 
 	removeChainMaker := configs.TopConfiguration.ChainMakerConfig.Enabled
 
-	removeFabric := configs.TopConfiguration.FabricConfig.Enabled
+	var enabledFabric bool
+	if len(t.FabricOrdererNodes) > 0 {
+		enabledFabric = true
+	} else {
+		enabledFabric = false
+	}
 
 	removeSteps := []map[string]RemoveModule{
 		{DeleteWebShells: RemoveModule{true, t.DeleteWebShells}},
 		{RemoveInterfaceRateMonitors: RemoveModule{true, t.RemoveInterfaceRateMonitor}},
+		{RemoveChainCodeContainers: RemoveModule{true, t.RemoveChaincodeContainers}},
 		{StopNodeContainers: RemoveModule{true, t.StopNodeContainers}},
 		{RemoveNodeContainers: RemoveModule{true, t.RemoveNodeContainers}},
 		{RemoveLinks: RemoveModule{true, t.RemoveLinks}},
 		{RemoveEtcdService: RemoveModule{true, t.RemoveEtcdService}},
 		{RemoveConfigurationFiles: RemoveModule{true, t.RemoveConfigurationFiles}},
 		{RemoveChainMakerFiles: RemoveModule{removeChainMaker, t.RemoveChainMakerFiles}},
-		{RemoveFabricFiles: RemoveModule{removeFabric, t.RemoveFabricFiles}},
+		{RemoveFabricFiles: RemoveModule{enabledFabric, t.RemoveFabricFiles}},
 		{RemoveVolumes: RemoveModule{true, t.RemoveVolumes}},
+		{RemoveDefaultRoutes: RemoveModule{enabledFabric, t.RemoveDefaultRoutes}},
 	}
 	err := t.removeSteps(removeSteps)
 	if err != nil {
@@ -231,6 +244,48 @@ func (t *Topology) RemoveLinks() error {
 	return multithread.RunInMultiThread(description, taskFunc, t.Links)
 }
 
+func (t *Topology) RemoveChaincodeContainers() error {
+	if _, ok := t.topologyStopSteps[RemoveChainCodeContainers]; ok {
+		topologyLogger.Infof("already execute remove chaincode containers")
+		return nil
+	}
+
+	chainCodeContainerFilter := filters.NewArgs(filters.KeyValuePair{
+		Key:   "name",
+		Value: "dev-peer",
+	})
+
+	containers, err := t.client.ContainerList(context.Background(), types.ContainerListOptions{
+		All:     true,
+		Filters: chainCodeContainerFilter,
+	})
+	if err != nil {
+		return fmt.Errorf("get chaincode containers failed: %w", err)
+	}
+
+	for _, chainCodeContainer := range containers {
+		err = t.client.ContainerStop(
+			context.Background(),
+			chainCodeContainer.ID,
+			container.StopOptions{})
+		if err != nil {
+			return fmt.Errorf("stop container error: %w", err)
+		}
+		err = t.client.ContainerRemove(
+			context.Background(),
+			chainCodeContainer.ID,
+			dockerTypes.ContainerRemoveOptions{})
+		if err != nil {
+			return fmt.Errorf("container remove failed: %v", err)
+		}
+	}
+
+	t.topologyStopSteps[RemoveConfigurationFiles] = struct{}{}
+	topologyLogger.Infof("execute remove chaincode containers")
+
+	return nil
+}
+
 // RemoveConfigurationFiles 进行配置文件的删除
 func (t *Topology) RemoveConfigurationFiles() error {
 
@@ -335,5 +390,30 @@ func (t *Topology) RemoveVolumes() error {
 
 	t.topologyStopSteps[RemoveVolumes] = struct{}{}
 	topologyLogger.Infof("execute remove volumes")
+	return nil
+}
+
+func (t *Topology) RemoveDefaultRoutes() error {
+	if _, ok := t.topologyStopSteps[RemoveDefaultRoutes]; ok {
+		topologyLogger.Infof("already execute remove default routes")
+		return nil
+	}
+
+	for _, abstractNode := range t.AllAbstractNodes {
+		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
+		if err != nil {
+			return err
+		}
+		firstInterface := normalNode.Interfaces[0]
+		deleteRouteCommand := fmt.Sprintf("del -host %s gw %s", firstInterface.SourceIpv4Addr[:len(firstInterface.SourceIpv4Addr)-3], normalNode.DockerZeroNetworkAddress)
+		fmt.Println(deleteRouteCommand)
+		err = execute.Command("route", strings.Split(deleteRouteCommand, " "))
+		if err != nil {
+			return fmt.Errorf("del default route failed: %w", err)
+		}
+	}
+
+	t.topologyStopSteps[RemoveDefaultRoutes] = struct{}{}
+	topologyLogger.Infof("execute remove default routes")
 	return nil
 }

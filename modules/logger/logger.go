@@ -7,7 +7,8 @@ import (
 
 const (
 	ModuleMainCmdRaspberrypiClient = "MAIN_CMD_RASPBERRYPI_CLIENT"
-	ModuleMainCmdRaspberrypiServer = "MAIN_CMD_RASPBERRYPI_SERVER"
+	ModuleMainCmdFabric            = "MAIN_CMD_FABRIC"
+	ModuleMainFabricApi            = "MAIN_CMD_FABRIC_API"
 	ModuleMainCmdHttpService       = "MAIN_CMD_HTTP_SERVICE"
 	ModuleMainCmdImages            = "MAIN_CMD_IMAGES"
 	ModuleMainCmdTest              = "MAIN_CMD_TEST"
