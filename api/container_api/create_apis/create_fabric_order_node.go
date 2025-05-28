@@ -13,7 +13,7 @@ import (
 )
 
 // CreateFabricOrderNode 创建 CreateFabriOrderNode
-func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricOrderNode) error {
+func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricOrderNode, graphNodeId int) error {
 	// 1. 检查状态
 	if fabricOrderNode.Status != types.NetworkNodeStatus_Logic {
 		return fmt.Errorf("fabric orderer node not in logic status cannot create")
@@ -52,6 +52,7 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 	orderGeneralListenStartPort := configs.TopConfiguration.FabricConfig.OrderGeneralListenStartPort + fabricOrderNode.Id
 	orderAdminListenStartPort := configs.TopConfiguration.FabricConfig.OrderAdminListenStartPort + fabricOrderNode.Id
 	orderOperationListenStartPort := configs.TopConfiguration.FabricConfig.OrderOperationListenStartPort + fabricOrderNode.Id
+	webPort := configs.TopConfiguration.ServicesConfig.WebConfig.StartPort + graphNodeId
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	nodeDir := filepath.Join(simulationDir, fabricOrderNode.ContainerName)
 	// ipv4 := strings.Split(fabricOrdererNode.Interfaces[0].Ipv4Addr, "/")[0]
@@ -72,13 +73,11 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 		// zhf add code
 		fmt.Sprintf("%s=%s", "FIRST_INTERFACE_NAME", firstInterfaceName),
 		fmt.Sprintf("%s=%s", "FIRST_INTERFACE_ADDR", firstInterfaceAddress),
-
 		fmt.Sprintf("%s=%d", "NODE_ID", fabricOrderNode.Id),
 		fmt.Sprintf("%s=%s", "CONTAINER_NAME", fabricOrderNode.ContainerName),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
 		fmt.Sprintf("%s=%s", "INTERFACE_NAME", fmt.Sprintf("%s%d_idx%d", types.GetPrefix(fabricOrderNode.Type), fabricOrderNode.Id, 1)),
-		//add
-		fmt.Sprintf("%s=%s", "FABRIC_LOGGING_SPEC", "INFO"),
+		fmt.Sprintf("%s=%s", "FABRIC_LOGGING_SPEC", "DEBUG"),
 		fmt.Sprintf("%s=%s", "ORDERER_GENERAL_LISTENADDRESS", "0.0.0.0"),
 		fmt.Sprintf("%s=%d", "ORDERER_GENERAL_LISTENPORT", orderGeneralListenStartPort),
 		fmt.Sprintf("%s=%s", "ORDERER_GENERAL_LOCALMSPID", "OrdererMSP"),
@@ -101,6 +100,8 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 		fmt.Sprintf("%s=%s", "ORDERER_ADMIN_LISTENADDRESS", fmt.Sprintf("0.0.0.0:%d", orderAdminListenStartPort)), // 这个地址需要设置成 0.0.0.0 供宿主机访问
 		fmt.Sprintf("%s=%s", "ORDERER_OPERATIONS_LISTENADDRESS", fmt.Sprintf("orderer%d.example.com:%d", fabricOrderNode.Id, orderOperationListenStartPort)),
 		fmt.Sprintf("%s=%s", "ORDERER_METRICS_PROVIDER", "prometheus"),
+		// zhf add code
+		fmt.Sprintf("%s=%d", "WEB_SERVER_LISTEN_PORT", webPort),
 	}
 
 	// 6. 资源限制
@@ -113,11 +114,13 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 	generalPort := nat.Port(fmt.Sprintf("%d/tcp", orderGeneralListenStartPort))
 	adminPort := nat.Port(fmt.Sprintf("%d/tcp", orderAdminListenStartPort))
 	operationPort := nat.Port(fmt.Sprintf("%d/tcp", orderOperationListenStartPort))
+	webServerPort := nat.Port(fmt.Sprintf("%d/tcp", webPort))
 
 	exposedPorts := nat.PortSet{
 		generalPort:   {},
 		adminPort:     {},
 		operationPort: {},
+		webServerPort: {},
 	}
 
 	portBindings := nat.PortMap{
@@ -137,6 +140,12 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 			{
 				HostIP:   "0.0.0.0",
 				HostPort: string(operationPort),
+			},
+		},
+		webServerPort: []nat.PortBinding{
+			{
+				HostIP:   "0.0.0.0",
+				HostPort: string(webServerPort),
 			},
 		},
 	}

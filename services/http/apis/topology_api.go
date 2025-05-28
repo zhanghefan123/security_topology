@@ -14,6 +14,7 @@ import (
 	"zhanghefan123/security_topology/api/etcd_api"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/docker/client"
+	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/topology"
 	"zhanghefan123/security_topology/modules/performance_monitor"
 	"zhanghefan123/security_topology/modules/utils/dir"
@@ -160,19 +161,31 @@ func GetTopologyState(c *gin.Context) {
 		})
 		return
 	}
+
+	// 如果当前拓扑为空的话, 就直接返回
 	if topology.TopologyInstance == nil {
 		c.JSON(http.StatusOK, gin.H{
 			"state":              "down",
 			"all_topology_names": AllTopologyNames,
 		})
-	} else {
-		c.JSON(http.StatusOK, gin.H{
-			"state":              "up",
-			"topology_params":    topology.TopologyInstance.TopologyParams, // 如果已经创建完成了, 还需要进行创建的参数的返回
-			"links":              topology.TopologyInstance.AllLinksMap,    // 直接返回一个 map
-			"all_topology_names": AllTopologyNames,
-		})
+		return
 	}
+
+	containerNameToPortMapping := make(map[string]int)
+
+	for _, abstractNode := range topology.TopologyInstance.AllAbstractNodes {
+		var normalNode *normal_node.NormalNode
+		normalNode, _ = abstractNode.GetNormalNodeFromAbstractNode()
+		containerNameToPortMapping[normalNode.ContainerName] = configs.TopConfiguration.ServicesConfig.WebConfig.StartPort + int(abstractNode.Node.ID()) + 1
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"state":                          "up",
+		"topology_params":                topology.TopologyInstance.TopologyParams, // 如果已经创建完成了, 还需要进行创建的参数的返回
+		"links":                          topology.TopologyInstance.AllLinksMap,    // 直接返回一个 map
+		"all_topology_names":             AllTopologyNames,
+		"container_name_to_port_mapping": containerNameToPortMapping,
+	})
 }
 
 // StartTopology 进行拓扑的启动

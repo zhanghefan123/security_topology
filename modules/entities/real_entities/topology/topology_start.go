@@ -308,7 +308,9 @@ func (t *Topology) AddDefaultRouteToFirstInterface() error {
 		return nil
 	}
 
-	for _, abstractNode := range t.AllAbstractNodes {
+	// 只需要创建到 peer 以及到第一个 orderer 的路由即可 (一定要等路由收敛之后再安装链码)
+	// ----------------------------------------------------------------
+	for _, abstractNode := range t.FabricPeerAbstractNodes {
 		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
 		if err != nil {
 			return err
@@ -321,6 +323,20 @@ func (t *Topology) AddDefaultRouteToFirstInterface() error {
 			return fmt.Errorf("add default route failed: %w", err)
 		}
 	}
+
+	//normalNode, err := t.FabricOrderAbstractNodes[0].GetNormalNodeFromAbstractNode()
+	//if err != nil {
+	//	return err
+	//}
+	//fmt.Printf("remove route to %s \n", normalNode.ContainerName)
+	//firstInterface := normalNode.Interfaces[0]
+	//addRouteCommand := fmt.Sprintf("add -host %s gw %s", firstInterface.SourceIpv4Addr[:len(firstInterface.SourceIpv4Addr)-3], normalNode.DockerZeroNetworkAddress)
+	//fmt.Println(addRouteCommand)
+	//err = execute.Command("route", strings.Split(addRouteCommand, " "))
+	//if err != nil {
+	//	return fmt.Errorf("add default route failed: %w", err)
+	//}
+	// ----------------------------------------------------------------
 
 	t.topologyStartSteps[AddDefaultRouteToFirstInterface] = struct{}{}
 	topologyLogger.Infof("execute add default route")

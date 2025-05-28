@@ -99,6 +99,8 @@ services_config:
         ground_stations_prefix: "/security_topology/gnds"
         isls_prefix: "/security_topology/isls"
         gsls_prefix: "/security_topology/gsls"
+  web_config:
+    start_port: 36666
 
   position_update_config:
     interval: 1

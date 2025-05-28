@@ -12,7 +12,7 @@ import (
 	"zhanghefan123/security_topology/modules/entities/types"
 )
 
-func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPeerNode) error {
+func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPeerNode, graphNodeId int) error {
 	// 1. 检查状态
 	if fabricPeerNode.Status != types.NetworkNodeStatus_Logic {
 		return fmt.Errorf("fabric peer node not in logic status cannot create")
@@ -51,13 +51,12 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 	peerListenPort := configs.TopConfiguration.FabricConfig.PeerListenStartPort + fabricPeerNode.Id
 	peerChainCodePort := configs.TopConfiguration.FabricConfig.PeerChaincodeStartPort + fabricPeerNode.Id
 	peerOperationPort := configs.TopConfiguration.FabricConfig.PeerOperationStartPort + fabricPeerNode.Id
+	webPort := configs.TopConfiguration.ServicesConfig.WebConfig.StartPort + graphNodeId
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	nodeDir := filepath.Join(simulationDir, fabricPeerNode.ContainerName)
-	// ipv4 := strings.Split(fabricPeerNode.Interfaces[0].Ipv4Addr, "/")[0]
 
 	// 4. 创建容器卷映射
 	volumes := []string{
-		// fmt.Sprintf("%s:%s", nodeDir, fmt.Sprintf("/configuration/%s", fabricPeerNode.ContainerName)),
 		fmt.Sprintf("%s:%s", fmt.Sprintf("%s/organizations/peerOrganizations/org%d.example.com/peers/peer0.org%d.example.com", fabricNetwork,
 			fabricPeerNode.Id, fabricPeerNode.Id),
 			"/etc/hyperledger/fabric"),
@@ -74,15 +73,13 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 		// zhf 添加的环境变量
 		fmt.Sprintf("%s=%s", "FIRST_INTERFACE_NAME", firstInterfaceName),
 		fmt.Sprintf("%s=%s", "FIRST_INTERFACE_ADDR", firstInterfaceAddress),
-
 		fmt.Sprintf("%s=%d", "NODE_ID", fabricPeerNode.Id),
 		fmt.Sprintf("%s=%s", "CONTAINER_NAME", fabricPeerNode.ContainerName),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
 		fmt.Sprintf("%s=%s", "INTERFACE_NAME", fmt.Sprintf("%s%d_idx%d", types.GetPrefix(fabricPeerNode.Type), fabricPeerNode.Id, 1)),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
-		//add
 		fmt.Sprintf("%s=%s", "FABRIC_CFG_PATH", "/etc/hyperledger/peercfg"),
-		fmt.Sprintf("%s=%s", "FABRIC_LOGGING_SPEC", "INFO"),
+		fmt.Sprintf("%s=%s", "FABRIC_LOGGING_SPEC", "DEBUG"),
 		fmt.Sprintf("%s=%s", "CORE_PEER_TLS_ENABLED", "true"),
 		fmt.Sprintf("%s=%s", "CORE_PEER_PROFILE_ENABLED", "false"),
 		fmt.Sprintf("%s=%s", "CORE_PEER_TLS_CERT_FILE", "/etc/hyperledger/fabric/tls/server.crt"),
@@ -90,24 +87,20 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 		fmt.Sprintf("%s=%s", "CORE_PEER_TLS_ROOTCERT_FILE", "/etc/hyperledger/fabric/tls/ca.crt"),
 		fmt.Sprintf("%s=%s", "CORE_PEER_ID", fmt.Sprintf("peer0.org%d.example.com", fabricPeerNode.Id)),
 		fmt.Sprintf("%s=%s", "CORE_PEER_ADDRESS", fmt.Sprintf("peer0.org%d.example.com:%d", fabricPeerNode.Id, peerListenPort)),
-		// fmt.Sprintf("%s=%s", "CORE_PEER_ADDRESS", fmt.Sprintf("%s:%d", ipv4, peerListenPort)),
 		fmt.Sprintf("%s=%s", "CORE_PEER_LISTENADDRESS", fmt.Sprintf("0.0.0.0:%d", peerListenPort)),
 		fmt.Sprintf("%s=%s", "CORE_PEER_CHAINCODEADDRESS", fmt.Sprintf("peer0.org%d.example.com:%d", fabricPeerNode.Id, peerChainCodePort)),
-		// fmt.Sprintf("%s:%s", "CORE_PEER_CHAINCODEADDRESS", fmt.Sprintf("%s:%d", ipv4, peerChainCodePort)),
 		fmt.Sprintf("%s=%s", "CORE_PEER_CHAINCODELISTENADDRESS", fmt.Sprintf("0.0.0.0:%d", peerChainCodePort)),
 		fmt.Sprintf("%s=%s", "CORE_PEER_GOSSIP_EXTERNALENDPOINT", fmt.Sprintf("peer0.org%d.example.com:%d", fabricPeerNode.Id, peerListenPort)),
-		// fmt.Sprintf("%s:%s", "CORE_PEER_GOSSIP_EXTERNALENDPOINT", fmt.Sprintf("%s:%d", ipv4, peerListenPort)),
 		fmt.Sprintf("%s=%s", "CORE_PEER_GOSSIP_BOOTSTRAP", fmt.Sprintf("peer0.org%d.example.com:%d", fabricPeerNode.Id, peerListenPort)),
-		// fmt.Sprintf("%s:%s", "CORE_PEER_GOSSIP_BOOTSTRAP", fmt.Sprintf("%s:%d", ipv4, peerListenPort)),
 		fmt.Sprintf("%s=%s", "CORE_PEER_LOCALMSPID", fmt.Sprintf("Org%dMSP", fabricPeerNode.Id)),
 		fmt.Sprintf("%s=%s", "CORE_PEER_MSPCONFIGPATH", "/etc/hyperledger/fabric/msp"),
 		fmt.Sprintf("%s=%s", "CORE_OPERATIONS_LISTENADDRESS", fmt.Sprintf("peer0.org%d.example.com:%d", fabricPeerNode.Id, peerOperationPort)),
-		// fmt.Sprintf("%s:%s", "CORE_OPERATIONS_LISTENADDRESS", fmt.Sprintf("%s:%d", ipv4, peerOperationPort)),
 		fmt.Sprintf("%s=%s", "CORE_METRICS_PROVIDER", "prometheus"),
 		fmt.Sprintf("%s=%s", "CHAINCODE_AS_A_SERVICE_BUILDER_CONFIG", fmt.Sprintf("{\"peername\":\"peer0org%d\"}", fabricPeerNode.Id)),
 		fmt.Sprintf("%s=%s", "CORE_CHAINCODE_EXECUTETIMEOUT", "300s"),
 		fmt.Sprintf("%s=%s", "CORE_VM_ENDPOINT", "unix:///host/var/run/docker.sock"),
-		// fmt.Sprintf("%s=%s", "CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE", "fabric_test"),
+		// zhf add code
+		fmt.Sprintf("%s=%d", "WEB_SERVER_LISTEN_PORT", webPort),
 	}
 
 	// 6. 资源限制
@@ -119,10 +112,12 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 	// 7. 创建端口映射
 	listenPort := nat.Port(fmt.Sprintf("%d/tcp", peerListenPort))
 	operationPort := nat.Port(fmt.Sprintf("%d/tcp", peerOperationPort))
+	webServerPort := nat.Port(fmt.Sprintf("%d/tcp", webPort))
 
 	exposedPorts := nat.PortSet{
 		listenPort:    {},
 		operationPort: {},
+		webServerPort: {},
 	}
 
 	portBindings := nat.PortMap{
@@ -136,6 +131,12 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 			{
 				HostIP:   "0.0.0.0",
 				HostPort: string(operationPort),
+			},
+		},
+		webServerPort: []nat.PortBinding{
+			{
+				HostIP:   "0.0.0.0",
+				HostPort: string(webServerPort),
 			},
 		},
 	}

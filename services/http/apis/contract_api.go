@@ -108,7 +108,6 @@ func StartTxRateTestRequest(c *gin.Context) {
 		})
 		return
 	}
-
 }
 
 func StopTxRateTestRequest(c *gin.Context) {

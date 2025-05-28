@@ -89,9 +89,9 @@ Profiles:
       SmartBFT:
         RequestBatchMaxCount: 100
         RequestBatchMaxInterval: 50ms
-        RequestForwardTimeout: 2s
-        RequestComplainTimeout: 20s
-        RequestAutoRemoveTimeout: 3m0s
+        RequestForwardTimeout: 15s
+        RequestComplainTimeout: 15s
+        RequestAutoRemoveTimeout: 15s
         ViewChangeResendInterval: 5s
         ViewChangeTimeout: 20s
         LeaderHeartbeatTimeout: 1m0s

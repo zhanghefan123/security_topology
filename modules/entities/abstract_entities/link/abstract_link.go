@@ -327,14 +327,18 @@ func (absLink *AbstractLink) SetLinkParams() error {
 		if err != nil {
 			return fmt.Errorf("failed to get target normal node: %w", err)
 		}
-		err = linux_tc_api.SetInterfaceBandwidth(absLink.SourceInterface, sourceNode.Pid, absLink.BandWidth)
-		if err != nil {
-			return fmt.Errorf("failed to set link params: %w", err)
+		// 只有 access link 才需要进行带宽的设置
+		if absLink.Type == types.NetworkLinkType_AccessLink {
+			err = linux_tc_api.SetInterfaceBandwidth(absLink.SourceInterface, sourceNode.Pid, absLink.BandWidth)
+			if err != nil {
+				return fmt.Errorf("failed to set link params: %w", err)
+			}
+			err = linux_tc_api.SetInterfaceBandwidth(absLink.TargetInterface, targetNode.Pid, absLink.BandWidth)
+			if err != nil {
+				return fmt.Errorf("failed to set link params: %w", err)
+			}
 		}
-		err = linux_tc_api.SetInterfaceBandwidth(absLink.TargetInterface, targetNode.Pid, absLink.BandWidth)
-		if err != nil {
-			return fmt.Errorf("failed to set link params: %w", err)
-		}
+
 	}
 	return nil
 }

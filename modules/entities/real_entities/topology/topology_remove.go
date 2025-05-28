@@ -38,6 +38,7 @@ const (
 	RemoveFabricFiles           = "RemoveFabricFiles"
 	RemoveVolumes               = "RemoveVolumes"
 	RemoveDefaultRoutes         = "RemoveDefaultRoutes"
+	RemoveAllChainCodeImages    = "RemoveAllChainCodeImages"
 )
 
 // RemoveFunction 删除函数
@@ -74,6 +75,7 @@ func (t *Topology) Remove() error {
 		{RemoveFabricFiles: RemoveModule{enabledFabric, t.RemoveFabricFiles}},
 		{RemoveVolumes: RemoveModule{true, t.RemoveVolumes}},
 		{RemoveDefaultRoutes: RemoveModule{enabledFabric, t.RemoveDefaultRoutes}},
+		{RemoveAllChainCodeImages: RemoveModule{enabledFabric, t.RemoveAllChainCodeImages}},
 	}
 	err := t.removeSteps(removeSteps)
 	if err != nil {
@@ -399,7 +401,9 @@ func (t *Topology) RemoveDefaultRoutes() error {
 		return nil
 	}
 
-	for _, abstractNode := range t.AllAbstractNodes {
+	// 只需要到 peer 以及到第一个 orderer 的路由即可  (一定要等路由收敛之后再安装链码)
+	// -----------------------------------------------------------------
+	for _, abstractNode := range t.FabricPeerAbstractNodes {
 		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
 		if err != nil {
 			return err
@@ -413,7 +417,52 @@ func (t *Topology) RemoveDefaultRoutes() error {
 		}
 	}
 
+	//normalNode, err := t.FabricOrderAbstractNodes[0].GetNormalNodeFromAbstractNode()
+	//if err != nil {
+	//	return err
+	//}
+	//fmt.Printf("add route to %s \n", normalNode.ContainerName)
+	//firstInterface := normalNode.Interfaces[0]
+	//deleteRouteCommand := fmt.Sprintf("del -host %s gw %s", firstInterface.SourceIpv4Addr[:len(firstInterface.SourceIpv4Addr)-3], normalNode.DockerZeroNetworkAddress)
+	//fmt.Println(deleteRouteCommand)
+	//err = execute.Command("route", strings.Split(deleteRouteCommand, " "))
+	//if err != nil {
+	//	return fmt.Errorf("del default route failed: %w", err)
+	//}
+	// -----------------------------------------------------------------
+
 	t.topologyStopSteps[RemoveDefaultRoutes] = struct{}{}
 	topologyLogger.Infof("execute remove default routes")
+	return nil
+}
+
+func (t *Topology) RemoveAllChainCodeImages() error {
+	if _, ok := t.topologyStopSteps[RemoveAllChainCodeImages]; ok {
+		topologyLogger.Infof("already execute remove all chaincode images")
+		return nil
+	}
+
+	images, err := t.client.ImageList(context.Background(), dockerTypes.ImageListOptions{})
+	if err != nil {
+		return fmt.Errorf("get chaincode images failed: %w", err)
+	}
+
+	for _, image := range images {
+		if len(image.RepoTags) != 0 {
+			if strings.Contains(image.RepoTags[0], "dev-peer") {
+				_, err = t.client.ImageRemove(context.Background(), image.ID, dockerTypes.ImageRemoveOptions{
+					Force:         true,
+					PruneChildren: true,
+				})
+				if err != nil {
+					return fmt.Errorf("remove chaincode image failed: %w", err)
+				}
+				fmt.Printf("remove chaincode image %s success\n", image.RepoTags[0])
+			}
+		}
+	}
+
+	t.topologyStopSteps[RemoveAllChainCodeImages] = struct{}{}
+	topologyLogger.Infof("execute remove all chaincode images")
 	return nil
 }

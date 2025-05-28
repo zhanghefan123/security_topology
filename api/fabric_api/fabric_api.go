@@ -40,6 +40,7 @@ func GetContract() (*client.Contract, error) {
 	clientConnection := newGrpcConnection()
 	id := newIdentity()
 	sign := newSign()
+
 	// Create a Gateway connection for a specific client identity
 	gw, err := client.Connect(
 		id,
@@ -69,15 +70,6 @@ func GetContract() (*client.Contract, error) {
 
 	network := gw.GetNetwork(channelName)
 	contract := network.GetContract(chaincodeName)
-
-	//err = gw.Close()
-	//if err != nil {
-	//	return nil, fmt.Errorf("failed to close gateway connection: %w", err)
-	//}
-	//err = clientConnection.Close()
-	//if err != nil {
-	//	return nil, fmt.Errorf("failed to close gRPC connection: %w", err)
-	//}
 
 	return contract, nil
 }
@@ -187,15 +179,16 @@ func GetAllAssets(contract *client.Contract) {
 }
 
 // CreateAsset Submit a transaction synchronously, blocking until it has been committed to the ledger.
-func CreateAsset(contract *client.Contract, assetId string) {
+func CreateAsset(contract *client.Contract, assetId string) error {
 	//fmt.Printf("\n--> Submit Transaction: CreateAsset, creates new asset with ID, Color, Size, Owner and AppraisedValue arguments \n")
 
 	_, err := contract.SubmitTransaction("CreateAsset", assetId, "yellow", "5", "Tom", "1300")
 	if err != nil {
-		panic(fmt.Errorf("failed to submit transaction: %w", err))
+		return fmt.Errorf("failed to submit transaction: %v\n", err)
+	} else {
+		fmt.Printf("*** Transaction committed successfully\n")
 	}
-
-	//fmt.Printf("*** Transaction committed successfully\n")
+	return nil
 }
 
 // ReadAssetByID Evaluate a transaction by assetID to query ledger state.
@@ -218,16 +211,17 @@ func TransferAssetAsync(contract *client.Contract, assetId string, owner string)
 
 	_, commit, err := contract.SubmitAsync("TransferAsset", client.WithArguments(assetId, owner))
 	if err != nil {
-		panic(fmt.Errorf("failed to submit transaction asynchronously: %w", err))
+		fmt.Printf("failed to submit transaction asynchronously: %w", err)
 	}
 
 	//fmt.Printf("\n*** Successfully submitted transaction to transfer ownership from %s to Mark. \n", string(submitResult))
 	//fmt.Println("*** Waiting for transaction commit.")
 
-	if commitStatus, err := commit.Status(); err != nil {
-		panic(fmt.Errorf("failed to get commit status: %w", err))
+	var commitStatus *client.Status
+	if commitStatus, err = commit.Status(); err != nil {
+		fmt.Printf("failed to get commit status: %w", err)
 	} else if !commitStatus.Successful {
-		panic(fmt.Errorf("transaction %s failed to commit with status: %d", commitStatus.TransactionID, int32(commitStatus.Code)))
+		fmt.Printf("transaction %s failed to commit with status: %d", commitStatus.TransactionID, int32(commitStatus.Code))
 	}
 
 	//fmt.Printf("*** Transaction committed successfully\n")

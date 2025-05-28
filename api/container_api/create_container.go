@@ -53,10 +53,10 @@ var createFuncs = map[types.NetworkNodeType]createFuncTemplate{
 		return create_apis.CreateEntrance(client, abstractNode.ActualNode.(*nodes.Entrance))
 	},
 	types.NetworkNodeType_FabricPeerNode: func(client *docker.Client, abstractNode *node.AbstractNode) error {
-		return create_apis.CreateFabricPeerNode(client, abstractNode.ActualNode.(*nodes.FabricPeerNode))
+		return create_apis.CreateFabricPeerNode(client, abstractNode.ActualNode.(*nodes.FabricPeerNode), int(abstractNode.Node.ID())+1)
 	},
 	types.NetworkNodeType_FabricOrderNode: func(client *docker.Client, abstractNode *node.AbstractNode) error {
-		return create_apis.CreateFabricOrderNode(client, abstractNode.ActualNode.(*nodes.FabricOrderNode))
+		return create_apis.CreateFabricOrderNode(client, abstractNode.ActualNode.(*nodes.FabricOrderNode), int(abstractNode.Node.ID())+1)
 	},
 	types.NetworkNodeType_LiRSatellite: func(client *docker.Client, abstractNode *node.AbstractNode) error {
 		return create_apis.CreateLiRSatellite(client, abstractNode.ActualNode.(*satellites.LiRSatellite), int(abstractNode.Node.ID())+1)
