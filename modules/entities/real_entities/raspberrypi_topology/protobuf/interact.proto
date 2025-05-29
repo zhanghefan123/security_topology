@@ -12,6 +12,7 @@ service Interact {
   rpc AddRoute (AddRouteRequest) returns (NormalResponse) {}
   rpc TransmitFile (TransmitFileRequest) returns (NormalResponse) {}
   rpc SetEnv(SetEnvRequest) returns (NormalResponse) {}
+  rpc SetSysctls(SetSysctlsRequest) returns (NormalResponse) {}
   rpc LoadKernelInfo(LoadKernelInfoRequest) returns (NormalResponse) {}
 }
 
@@ -23,6 +24,7 @@ message NormalResponse {
 message SetAddrRequest {
   string interfaceName = 1;
   string interfaceAddr = 2;
+  string addrType = 3; // "ipv4" 或 "ipv6"
 }
 
 // 添加路由消息
@@ -35,6 +37,11 @@ message AddRouteRequest {
 message TransmitFileRequest {
   string destinationPath = 1;
   string content = 2;
+}
+
+message SetSysctlsRequest {
+  repeated string sysctlFields = 1; // 系统控制参数字段
+  repeated int32 sysctlValues = 2; // 系统控制参数值
 }
 
 message LoadKernelInfoRequest {

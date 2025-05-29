@@ -23,7 +23,9 @@ const (
 	CalculateAndWriteLiRRoutes            = "CalculateAndWriteLiRRoutes"
 	GenerateIfnameToLinkIdentifierMapping = "GenerateIfnameToLinkIdentifierMapping"
 	GenerateAddressMapping                = "GenerateAddressMapping"
+	GenerateSRv6Routes                    = "GenerateSRv6Routes"
 	SetEnvs                               = "SetEnvs"
+	SetSysctls                            = "SetSysctls"
 	LoadKernelInfo                        = "LoadKernelInfo"
 )
 
@@ -34,7 +36,9 @@ func (rpt *RaspberrypiTopology) Start() error {
 		{GenerateIfnameToLinkIdentifierMapping: StartModule{true, rpt.GenerateIfnameToLinkIdentifierMapping}},
 		{CalculateAndWriteLiRRoutes: StartModule{true, rpt.CalculateAndWriteLiRRoutes}},
 		{GenerateAddressMapping: StartModule{true, rpt.GenerateAddressMapping}},
+		{GenerateSRv6Routes: StartModule{true, rpt.GenerateSRv6Routes}},
 		{SetEnvs: StartModule{true, rpt.SetEnv}},
+		{SetSysctls: StartModule{true, rpt.SetSysctls}},
 		{LoadKernelInfo: StartModule{true, rpt.LoadKernelInfo}},
 	}
 	err := rpt.startSteps(startSteps)
@@ -100,12 +104,14 @@ func (rpt *RaspberrypiTopology) SetInterfaceAddr() error {
 
 		for _, networkInterface := range normalNode.Interfaces {
 			fmt.Printf("set network interface: %s, addr: %s\n", networkInterface.IfName, networkInterface.SourceIpv4Addr)
-			//var response *protobuf.NormalResponse
-			_, err = raspberrypiClient.SetAddr(context.Background(), &protobuf.SetAddrRequest{InterfaceName: networkInterface.IfName, InterfaceAddr: networkInterface.SourceIpv4Addr})
-			//if err != nil {
-			//	return fmt.Errorf("error setting addr %v", err)
-			//}
-			//fmt.Println(response.Reply)
+			_, err = raspberrypiClient.SetAddr(context.Background(),
+				&protobuf.SetAddrRequest{InterfaceName: networkInterface.IfName,
+					InterfaceAddr: networkInterface.SourceIpv4Addr,
+					AddrType:      "ipv4"})
+			_, err = raspberrypiClient.SetAddr(context.Background(),
+				&protobuf.SetAddrRequest{InterfaceName: networkInterface.IfName,
+					InterfaceAddr: networkInterface.SourceIpv6Addr,
+					AddrType:      "ipv6"})
 		}
 
 		err = raspberrypiConn.Close()
@@ -330,9 +336,84 @@ func (rpt *RaspberrypiTopology) GenerateIfnameToLinkIdentifierMapping() error {
 	return nil
 }
 
+func (rpt *RaspberrypiTopology) GenerateSRv6Routes() error {
+	if _, ok := rpt.topologyStartSteps[GenerateSRv6Routes]; ok {
+		raspberrypiTopologyLogger.Infof("already generate srv6 routes")
+		return nil
+	}
+
+	// 监听端口
+	grpcPort := configs.TopConfiguration.RaspberryPiConfig.GrpcPort
+
+	for index, abstractNode := range rpt.AllAbstractNodes {
+		ipRouteStrings, destinationIpv6AddressMapping, destinationPathLengthMapping, err := route.GenerateSegmentRoutingStrings(abstractNode, &(rpt.AllLinksMap), rpt.TopologyGraph)
+		if err != nil {
+			return fmt.Errorf("generate segment routing strings failed: %w", err)
+		}
+		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
+		if err != nil {
+			return fmt.Errorf("get normal node from abstract node failed: %w", err)
+		}
+
+		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.RaspberryPiConfig.IpAddresses[index], grpcPort))
+		if err != nil {
+			return fmt.Errorf("create raspberrypi connection failed")
+		}
+		raspberrypiClient, err := CreateRaspberrypiClient(raspberrypiConn)
+		if err != nil {
+			return fmt.Errorf("create raspberrypi client failed")
+		}
+
+		ipv6DestinationMappingString := ""
+		var response *protobuf.NormalResponse
+		for key, value := range destinationIpv6AddressMapping {
+			ipv6DestinationMappingString += fmt.Sprintf("%s->%s->%s\n", key, value[0], value[1])
+		}
+		response, err = raspberrypiClient.TransmitFile(context.Background(), &protobuf.TransmitFileRequest{
+			DestinationPath: fmt.Sprintf("/configuration/%s/route/ipv6_destination.txt", normalNode.ContainerName),
+			Content:         ipv6DestinationMappingString,
+		})
+		if err != nil {
+			return fmt.Errorf("error generating ipv6_destination.txt")
+		}
+		fmt.Println(response.Reply)
+
+		srv6RouteString := strings.Join(ipRouteStrings, "\n")
+		response, err = raspberrypiClient.TransmitFile(context.Background(), &protobuf.TransmitFileRequest{
+			DestinationPath: fmt.Sprintf("/configuration/%s/route/srv6.txt", normalNode.ContainerName),
+			Content:         srv6RouteString,
+		})
+		if err != nil {
+			return fmt.Errorf("error generating srv6.txt")
+		}
+		fmt.Println(response.Reply)
+
+		pathLengthMappingString := ""
+		for key, value := range destinationPathLengthMapping {
+			pathLengthMappingString += fmt.Sprintf("%s->%d\n", key, value)
+		}
+		response, err = raspberrypiClient.TransmitFile(context.Background(), &protobuf.TransmitFileRequest{
+			DestinationPath: fmt.Sprintf("/configuration/%s/route/destination_path_length.txt", normalNode.ContainerName),
+			Content:         pathLengthMappingString,
+		})
+		if err != nil {
+			return fmt.Errorf("error generating destination_path_length.txt")
+		}
+		fmt.Println(response.Reply)
+
+		err = raspberrypiConn.Close()
+		if err != nil {
+			return fmt.Errorf("close error")
+		}
+	}
+
+	rpt.topologyStartSteps[GenerateSRv6Routes] = struct{}{}
+	return nil
+}
+
 // SetEnv 进行环境变量的设置
 func (rpt *RaspberrypiTopology) SetEnv() error {
-	if _, ok := rpt.topologyStartSteps["SetEnv"]; ok {
+	if _, ok := rpt.topologyStartSteps[SetEnvs]; ok {
 		raspberrypiTopologyLogger.Infof("already set env")
 		return nil
 	}
@@ -392,8 +473,77 @@ func (rpt *RaspberrypiTopology) SetEnv() error {
 		fmt.Println(response.Reply)
 	}
 
-	rpt.topologyStartSteps["SetEnv"] = struct{}{}
+	rpt.topologyStartSteps[SetEnvs] = struct{}{}
 	raspberrypiTopologyLogger.Infof("set env")
+	return nil
+}
+
+func (rpt *RaspberrypiTopology) SetSysctls() error {
+	if _, ok := rpt.topologyStartSteps[SetSysctls]; ok {
+		raspberrypiTopologyLogger.Infof("already set sysctls")
+		return nil
+	}
+
+	// 监听端口
+	grpcPort := configs.TopConfiguration.RaspberryPiConfig.GrpcPort
+
+	for index, abstractNode := range rpt.AllAbstractNodes {
+		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
+		if err != nil {
+			return fmt.Errorf("get normal node failed, %s", err)
+		}
+		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.RaspberryPiConfig.IpAddresses[index], grpcPort))
+		if err != nil {
+			return fmt.Errorf("create raspberrypi connection failed")
+		}
+		raspberrypiClient, err := CreateRaspberrypiClient(raspberrypiConn)
+		if err != nil {
+			return fmt.Errorf("create raspberrypi client failed")
+		}
+
+		var response *protobuf.NormalResponse
+		sysctlFields := []string{
+			// ipv4 相关配置
+			"net.ipv4.ip_forward",
+			"net.ipv4.conf.all.forwarding",
+			// ipv6 相关配置
+			"net.ipv6.conf.default.disable_ipv6",
+			"net.ipv6.conf.all.disable_ipv6",
+			"net.ipv6.conf.all.forwarding",
+			"net.ipv6.conf.default.seg6_enabled",
+			"net.ipv6.conf.all.seg6_enabled",
+			"net.ipv6.conf.all.keep_addr_on_down",
+			"net.ipv6.route.skip_notify_on_dev_down",
+			"net.ipv4.conf.all.rp_filter",
+			"net.ipv6.seg6_flowlabel",
+		}
+		sysctlValues := []int32{
+			1, 1, 0, 0,
+			1, 1, 1, 1,
+			1, 0, 1,
+		}
+		for _, networkIntf := range normalNode.Interfaces {
+			sysctlFields = append(sysctlFields, fmt.Sprintf("net.ipv6.conf.%s.seg6_enabled", networkIntf.IfName))
+			sysctlValues = append(sysctlValues, 1)
+		}
+
+		response, err = raspberrypiClient.SetSysctls(context.Background(), &protobuf.SetSysctlsRequest{
+			SysctlFields: sysctlFields,
+			SysctlValues: sysctlValues,
+		})
+
+		if err != nil {
+			return fmt.Errorf("error setting addr %v", err)
+		}
+		fmt.Println(response.Reply)
+
+		err = raspberrypiConn.Close()
+		if err != nil {
+			return fmt.Errorf("close error")
+		}
+	}
+
+	rpt.topologyStartSteps[SetSysctls] = struct{}{}
 	return nil
 }
 

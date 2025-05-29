@@ -23,6 +23,7 @@ const (
 	Interact_AddRoute_FullMethodName       = "/protobuf.Interact/AddRoute"
 	Interact_TransmitFile_FullMethodName   = "/protobuf.Interact/TransmitFile"
 	Interact_SetEnv_FullMethodName         = "/protobuf.Interact/SetEnv"
+	Interact_SetSysctls_FullMethodName     = "/protobuf.Interact/SetSysctls"
 	Interact_LoadKernelInfo_FullMethodName = "/protobuf.Interact/LoadKernelInfo"
 )
 
@@ -37,6 +38,7 @@ type InteractClient interface {
 	AddRoute(ctx context.Context, in *AddRouteRequest, opts ...grpc.CallOption) (*NormalResponse, error)
 	TransmitFile(ctx context.Context, in *TransmitFileRequest, opts ...grpc.CallOption) (*NormalResponse, error)
 	SetEnv(ctx context.Context, in *SetEnvRequest, opts ...grpc.CallOption) (*NormalResponse, error)
+	SetSysctls(ctx context.Context, in *SetSysctlsRequest, opts ...grpc.CallOption) (*NormalResponse, error)
 	LoadKernelInfo(ctx context.Context, in *LoadKernelInfoRequest, opts ...grpc.CallOption) (*NormalResponse, error)
 }
 
@@ -88,6 +90,16 @@ func (c *interactClient) SetEnv(ctx context.Context, in *SetEnvRequest, opts ...
 	return out, nil
 }
 
+func (c *interactClient) SetSysctls(ctx context.Context, in *SetSysctlsRequest, opts ...grpc.CallOption) (*NormalResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NormalResponse)
+	err := c.cc.Invoke(ctx, Interact_SetSysctls_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *interactClient) LoadKernelInfo(ctx context.Context, in *LoadKernelInfoRequest, opts ...grpc.CallOption) (*NormalResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NormalResponse)
@@ -109,6 +121,7 @@ type InteractServer interface {
 	AddRoute(context.Context, *AddRouteRequest) (*NormalResponse, error)
 	TransmitFile(context.Context, *TransmitFileRequest) (*NormalResponse, error)
 	SetEnv(context.Context, *SetEnvRequest) (*NormalResponse, error)
+	SetSysctls(context.Context, *SetSysctlsRequest) (*NormalResponse, error)
 	LoadKernelInfo(context.Context, *LoadKernelInfoRequest) (*NormalResponse, error)
 	mustEmbedUnimplementedInteractServer()
 }
@@ -131,6 +144,9 @@ func (UnimplementedInteractServer) TransmitFile(context.Context, *TransmitFileRe
 }
 func (UnimplementedInteractServer) SetEnv(context.Context, *SetEnvRequest) (*NormalResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetEnv not implemented")
+}
+func (UnimplementedInteractServer) SetSysctls(context.Context, *SetSysctlsRequest) (*NormalResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetSysctls not implemented")
 }
 func (UnimplementedInteractServer) LoadKernelInfo(context.Context, *LoadKernelInfoRequest) (*NormalResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoadKernelInfo not implemented")
@@ -228,6 +244,24 @@ func _Interact_SetEnv_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Interact_SetSysctls_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetSysctlsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InteractServer).SetSysctls(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Interact_SetSysctls_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InteractServer).SetSysctls(ctx, req.(*SetSysctlsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Interact_LoadKernelInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(LoadKernelInfoRequest)
 	if err := dec(in); err != nil {
@@ -268,6 +302,10 @@ var Interact_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetEnv",
 			Handler:    _Interact_SetEnv_Handler,
+		},
+		{
+			MethodName: "SetSysctls",
+			Handler:    _Interact_SetSysctls_Handler,
 		},
 		{
 			MethodName: "LoadKernelInfo",
