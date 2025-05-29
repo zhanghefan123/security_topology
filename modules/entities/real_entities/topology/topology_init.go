@@ -440,7 +440,7 @@ func (t *Topology) GenerateAddressMapping() error {
 
 	addressMapping, err := t.GetContainerNameToAddressMapping()
 	if err != nil {
-		return fmt.Errorf("generate address mapping files failed, %w", err)
+		return fmt.Errorf("get container name to address mapping failed, %w", err)
 	}
 
 	idMapping, err := t.GetContainerNameToGraphIdMapping()

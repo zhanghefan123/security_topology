@@ -22,6 +22,7 @@ const (
 	CalculateAndInstallStaticRoutes       = "CalculateAndInstallStaticRoutes"
 	CalculateAndWriteLiRRoutes            = "CalculateAndWriteLiRRoutes"
 	GenerateIfnameToLinkIdentifierMapping = "GenerateIfnameToLinkIdentifierMapping"
+	GenerateAddressMapping                = "GenerateAddressMapping"
 	SetEnvs                               = "SetEnvs"
 	LoadKernelInfo                        = "LoadKernelInfo"
 )
@@ -32,6 +33,7 @@ func (rpt *RaspberrypiTopology) Start() error {
 		{CalculateAndInstallStaticRoutes: StartModule{true, rpt.CalculateStaticRoutes}},
 		{GenerateIfnameToLinkIdentifierMapping: StartModule{true, rpt.GenerateIfnameToLinkIdentifierMapping}},
 		{CalculateAndWriteLiRRoutes: StartModule{true, rpt.CalculateAndWriteLiRRoutes}},
+		{GenerateAddressMapping: StartModule{true, rpt.GenerateAddressMapping}},
 		{SetEnvs: StartModule{true, rpt.SetEnv}},
 		{LoadKernelInfo: StartModule{true, rpt.LoadKernelInfo}},
 	}
@@ -97,12 +99,13 @@ func (rpt *RaspberrypiTopology) SetInterfaceAddr() error {
 		}
 
 		for _, networkInterface := range normalNode.Interfaces {
-			var response *protobuf.NormalResponse
-			response, err = raspberrypiClient.SetAddr(context.Background(), &protobuf.SetAddrRequest{InterfaceName: networkInterface.IfName, InterfaceAddr: networkInterface.SourceIpv4Addr})
-			if err != nil {
-				return fmt.Errorf("error setting addr %v", err)
-			}
-			fmt.Println(response.Reply)
+			fmt.Printf("set network interface: %s, addr: %s\n", networkInterface.IfName, networkInterface.SourceIpv4Addr)
+			//var response *protobuf.NormalResponse
+			_, err = raspberrypiClient.SetAddr(context.Background(), &protobuf.SetAddrRequest{InterfaceName: networkInterface.IfName, InterfaceAddr: networkInterface.SourceIpv4Addr})
+			//if err != nil {
+			//	return fmt.Errorf("error setting addr %v", err)
+			//}
+			//fmt.Println(response.Reply)
 		}
 
 		err = raspberrypiConn.Close()
@@ -181,7 +184,11 @@ func (rpt *RaspberrypiTopology) CalculateAndWriteLiRRoutes() error {
 	// 监听端口
 	grpcPort := configs.TopConfiguration.RaspberryPiConfig.GrpcPort
 
-	for index, _ := range configs.TopConfiguration.RaspberryPiConfig.IpAddresses {
+	for index, abstractNode := range rpt.AllAbstractNodes {
+		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
+		if err != nil {
+			return fmt.Errorf("get normal node failed, %s", err)
+		}
 		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.RaspberryPiConfig.IpAddresses[index], grpcPort))
 		if err != nil {
 			return fmt.Errorf("create raspberrypi connection failed")
@@ -192,7 +199,7 @@ func (rpt *RaspberrypiTopology) CalculateAndWriteLiRRoutes() error {
 		}
 		var response *protobuf.NormalResponse
 		response, err = raspberrypiClient.TransmitFile(context.Background(), &protobuf.TransmitFileRequest{
-			DestinationPath: "/home/zeusnet/Projects/configuration/route/lir.txt",
+			DestinationPath: fmt.Sprintf("/configuration/%s/route/lir.txt", normalNode.ContainerName),
 			Content:         allLiRRoutes[index],
 		})
 		if err != nil {
@@ -201,7 +208,7 @@ func (rpt *RaspberrypiTopology) CalculateAndWriteLiRRoutes() error {
 		fmt.Println(response.Reply)
 
 		response, err = raspberrypiClient.TransmitFile(context.Background(), &protobuf.TransmitFileRequest{
-			DestinationPath: "/home/zeusnet/Projects/configuration/route/all_lir.txt",
+			DestinationPath: fmt.Sprintf("/configuration/%s/route/all_lir.txt", normalNode.ContainerName),
 			Content:         allLirRoutesString,
 		})
 		if err != nil {
@@ -215,6 +222,66 @@ func (rpt *RaspberrypiTopology) CalculateAndWriteLiRRoutes() error {
 	}
 
 	rpt.topologyStartSteps[CalculateAndWriteLiRRoutes] = struct{}{}
+	return nil
+}
+
+func (rpt *RaspberrypiTopology) GenerateAddressMapping() error {
+	if _, ok := rpt.topologyStartSteps[GenerateAddressMapping]; ok {
+		raspberrypiTopologyLogger.Infof("already generate address mapping")
+		return nil
+	}
+
+	// 监听端口
+	grpcPort := configs.TopConfiguration.RaspberryPiConfig.GrpcPort
+
+	for index, abstractNode := range rpt.AllAbstractNodes {
+		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
+		if err != nil {
+			return fmt.Errorf("get normal node failed, %s", err)
+		}
+
+		finalString := ""
+
+		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.RaspberryPiConfig.IpAddresses[index], grpcPort))
+		if err != nil {
+			return fmt.Errorf("create raspberrypi connection failed")
+		}
+		raspberrypiClient, err := CreateRaspberrypiClient(raspberrypiConn)
+		if err != nil {
+			return fmt.Errorf("create raspberrypi client failed")
+		}
+
+		addressMapping, err := rpt.GetContainerNameToAddressMapping()
+		if err != nil {
+			return fmt.Errorf("get container name to address mapping failed, %v", err)
+		}
+
+		idMapping, err := rpt.GetContainerNameToGraphIdMapping()
+		if err != nil {
+			return fmt.Errorf("get container name to graph id mapping failed, %v", err)
+		}
+
+		for containerName, ipv4andipv6 := range addressMapping {
+			graphId := idMapping[containerName]
+			finalString += fmt.Sprintf("%s->%d->%s->%s\n", containerName, graphId, ipv4andipv6[0], ipv4andipv6[1])
+		}
+
+		var response *protobuf.NormalResponse
+		response, err = raspberrypiClient.TransmitFile(context.Background(), &protobuf.TransmitFileRequest{
+			DestinationPath: fmt.Sprintf("/configuration/%s/route/address_mapping.conf", normalNode.ContainerName),
+			Content:         finalString,
+		})
+		if err != nil {
+			return fmt.Errorf("error generating address mapping file %v", err)
+		}
+		fmt.Println(response.Reply)
+		err = raspberrypiConn.Close()
+		if err != nil {
+			return fmt.Errorf("close error")
+		}
+	}
+
+	rpt.topologyStartSteps[GenerateAddressMapping] = struct{}{}
 	return nil
 }
 
@@ -246,7 +313,7 @@ func (rpt *RaspberrypiTopology) GenerateIfnameToLinkIdentifierMapping() error {
 		}
 		var response *protobuf.NormalResponse
 		response, err = raspberrypiClient.TransmitFile(context.Background(), &protobuf.TransmitFileRequest{
-			DestinationPath: "/home/zeusnet/Projects/configuration/interface/interface.txt",
+			DestinationPath: fmt.Sprintf("/configuration/%s/interface/interface.txt", normalNode.ContainerName),
 			Content:         finalString,
 		})
 		if err != nil {
@@ -290,6 +357,7 @@ func (rpt *RaspberrypiTopology) SetEnv() error {
 
 		// 创建环境变量列表
 		envFields := []string{
+			"CONTAINER_NAME",
 			"BF_EFFECTIVE_BITS",
 			"PVF_EFFECTIVE_BITS",
 			"HASH_SEED",
@@ -301,6 +369,7 @@ func (rpt *RaspberrypiTopology) SetEnv() error {
 			"ENABLE_SRV6",
 		}
 		envValues := []string{
+			normalNode.ContainerName,
 			strconv.Itoa(configs.TopConfiguration.PathValidationConfig.BfEffectiveBits),
 			strconv.Itoa(configs.TopConfiguration.PathValidationConfig.PVFEffectiveBits),
 			strconv.Itoa(configs.TopConfiguration.PathValidationConfig.HashSeed),
