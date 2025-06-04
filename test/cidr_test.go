@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net"
+	"strconv"
 	"testing"
 )
 
@@ -17,4 +18,9 @@ func TestExample(t *testing.T) {
 	for _, index := range rand.Perm(5) {
 		fmt.Println(index)
 	}
+}
+
+func TestTime(t *testing.T) {
+	value, _ := strconv.ParseBool("true")
+	fmt.Println(value)
 }

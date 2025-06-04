@@ -52,6 +52,7 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 	orderGeneralListenStartPort := configs.TopConfiguration.FabricConfig.OrderGeneralListenStartPort + fabricOrderNode.Id
 	orderAdminListenStartPort := configs.TopConfiguration.FabricConfig.OrderAdminListenStartPort + fabricOrderNode.Id
 	orderOperationListenStartPort := configs.TopConfiguration.FabricConfig.OrderOperationListenStartPort + fabricOrderNode.Id
+	enableRoutine := configs.TopConfiguration.FabricConfig.EnableRoutine
 	webPort := configs.TopConfiguration.ServicesConfig.WebConfig.StartPort + graphNodeId
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	nodeDir := filepath.Join(simulationDir, fabricOrderNode.ContainerName)
@@ -77,7 +78,7 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 		fmt.Sprintf("%s=%s", "CONTAINER_NAME", fabricOrderNode.ContainerName),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
 		fmt.Sprintf("%s=%s", "INTERFACE_NAME", fmt.Sprintf("%s%d_idx%d", types.GetPrefix(fabricOrderNode.Type), fabricOrderNode.Id, 1)),
-		fmt.Sprintf("%s=%s", "FABRIC_LOGGING_SPEC", "DEBUG"),
+		fmt.Sprintf("%s=%s", "FABRIC_LOGGING_SPEC", "INFO"),
 		fmt.Sprintf("%s=%s", "ORDERER_GENERAL_LISTENADDRESS", "0.0.0.0"),
 		fmt.Sprintf("%s=%d", "ORDERER_GENERAL_LISTENPORT", orderGeneralListenStartPort),
 		fmt.Sprintf("%s=%s", "ORDERER_GENERAL_LOCALMSPID", "OrdererMSP"),
@@ -102,6 +103,7 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 		fmt.Sprintf("%s=%s", "ORDERER_METRICS_PROVIDER", "prometheus"),
 		// zhf add code
 		fmt.Sprintf("%s=%d", "WEB_SERVER_LISTEN_PORT", webPort),
+		fmt.Sprintf("%s=%t", "ENABLE_ROUTINE", enableRoutine),
 	}
 
 	// 6. 资源限制

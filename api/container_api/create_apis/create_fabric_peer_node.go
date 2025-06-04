@@ -51,6 +51,7 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 	peerListenPort := configs.TopConfiguration.FabricConfig.PeerListenStartPort + fabricPeerNode.Id
 	peerChainCodePort := configs.TopConfiguration.FabricConfig.PeerChaincodeStartPort + fabricPeerNode.Id
 	peerOperationPort := configs.TopConfiguration.FabricConfig.PeerOperationStartPort + fabricPeerNode.Id
+	enableRoutine := configs.TopConfiguration.FabricConfig.EnableRoutine
 	webPort := configs.TopConfiguration.ServicesConfig.WebConfig.StartPort + graphNodeId
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	nodeDir := filepath.Join(simulationDir, fabricPeerNode.ContainerName)
@@ -79,7 +80,7 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 		fmt.Sprintf("%s=%s", "INTERFACE_NAME", fmt.Sprintf("%s%d_idx%d", types.GetPrefix(fabricPeerNode.Type), fabricPeerNode.Id, 1)),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
 		fmt.Sprintf("%s=%s", "FABRIC_CFG_PATH", "/etc/hyperledger/peercfg"),
-		fmt.Sprintf("%s=%s", "FABRIC_LOGGING_SPEC", "DEBUG"),
+		fmt.Sprintf("%s=%s", "FABRIC_LOGGING_SPEC", "INFO"),
 		fmt.Sprintf("%s=%s", "CORE_PEER_TLS_ENABLED", "true"),
 		fmt.Sprintf("%s=%s", "CORE_PEER_PROFILE_ENABLED", "false"),
 		fmt.Sprintf("%s=%s", "CORE_PEER_TLS_CERT_FILE", "/etc/hyperledger/fabric/tls/server.crt"),
@@ -101,6 +102,7 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 		fmt.Sprintf("%s=%s", "CORE_VM_ENDPOINT", "unix:///host/var/run/docker.sock"),
 		// zhf add code
 		fmt.Sprintf("%s=%d", "WEB_SERVER_LISTEN_PORT", webPort),
+		fmt.Sprintf("%s=%t", "ENABLE_ROUTINE", enableRoutine),
 	}
 
 	// 6. 资源限制

@@ -6,6 +6,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"zhanghefan123/security_topology/modules/utils/file"
 )
 
 var (
@@ -13,9 +14,11 @@ var (
 )
 
 type TxRateRecorder struct {
-	TimeList    []int
-	RateList    []float64
-	fixedLength int
+	TimeList    []int     // 存储固定长度的时间序列
+	RateList    []float64 // 存储固定长度的速率
+	fixedLength int       // 固定的长度
+	TimeListAll []int     // 存储所有的时间序列
+	RateListAll []float64 // 存储所有的速率序列
 	stopQueue   chan struct{}
 	waitGroup   *sync.WaitGroup
 	done        chan struct{}
@@ -27,6 +30,8 @@ func NewTxRateRecorder() *TxRateRecorder {
 		TimeList:    make([]int, 0),
 		RateList:    make([]float64, 0),
 		fixedLength: 10,
+		TimeListAll: make([]int, 0),
+		RateListAll: make([]float64, 0),
 		stopQueue:   make(chan struct{}),
 		waitGroup:   &sync.WaitGroup{},
 		done:        make(chan struct{}, 1),
@@ -80,6 +85,8 @@ func (trr *TxRateRecorder) StartTxRateTestCore(contract *client.Contract, corout
 						trr.RateList = append(trr.RateList, tpsRate)
 						trr.TimeList = append(trr.TimeList, count)
 					}
+					trr.RateListAll = append(trr.RateListAll, tpsRate)
+					trr.TimeListAll = append(trr.TimeListAll, count)
 					fmt.Println(trr.RateList)
 					count += 1
 					time.Sleep(calcTpsDuration)
@@ -94,6 +101,23 @@ func (trr *TxRateRecorder) StartTxRateTestCore(contract *client.Contract, corout
 func (trr *TxRateRecorder) StopTxRateTestCore() {
 	close(trr.stopQueue)
 	fmt.Println("stop tx rate test")
+}
+
+func (trr *TxRateRecorder) WriteResultIntoFile() error {
+	finalString := ""
+	for index := 0; index < len(trr.RateListAll); index++ {
+		if index == len(trr.RateListAll)-1 {
+			finalString += fmt.Sprintf("%f", trr.RateListAll[index])
+		} else {
+			finalString += fmt.Sprintf("%f", trr.RateListAll[index]) + ","
+		}
+	}
+	// 将所有的序列放到一个文件之中
+	err := file.WriteStringIntoFile("./fabric_result.txt", finalString)
+	if err != nil {
+		return fmt.Errorf("write result into file failed: %v", err)
+	}
+	return nil
 }
 
 // StartTxRateTest 启动 Tx rate 测试

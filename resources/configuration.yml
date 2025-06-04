@@ -4,7 +4,7 @@ network_config:
   http_listen_port: 8080
   enable_frr: true # 这里设置成为false是不想要影响接口的接收速率
   ospf_version: ospfv2
-  enable_srv6: false
+  enable_srv6: true
   # attention (only one of enable_frr and enable_srv6) can be true
 
 constellation_config:
@@ -135,6 +135,7 @@ fabric_config:
   peer_listen_start_port: 5050
   peer_chaincode_start_port: 5550
   peer_operation_start_port: 6050
+  enable_routine: false
   consensus_type: 1
   log_level: ERROR
   enable_broadcast_defence: false

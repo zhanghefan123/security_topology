@@ -140,9 +140,21 @@ func StopTxRateTestRequest(c *gin.Context) {
 			return
 		}
 		fabric_api.TxRateRecorderInstance.StopTxRateTestCore()
+		err := fabric_api.TxRateRecorderInstance.WriteResultIntoFile()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": "write result into file error",
+			})
+			fmt.Printf("write result into file error: %v", err)
+			return
+		}
 		fabric_api.TxRateRecorderInstance = nil
 	} else {
-
+		fmt.Println("non blockchain nodes, cannot start contract test")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "already not in a test state",
+		})
+		return
 	}
 
 	// 3. 返回正在测试的结果
