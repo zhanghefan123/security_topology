@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"zhanghefan123/security_topology/modules/entities/real_entities/topology"
-	"zhanghefan123/security_topology/modules/entities/types"
 	"zhanghefan123/security_topology/modules/performance_monitor"
+	"zhanghefan123/security_topology/modules/utils/judge"
 )
 
 type CapturePerformanceRequest struct {
@@ -37,7 +37,9 @@ func StartCaptureInstancePerformance(c *gin.Context) {
 	// 2. 判断是否已经存在了相应的监听实例, 如果已经存在就进行数据的返回
 	if performanceMonitor, ok = performance_monitor.PerformanceMonitorMapping[captureRateRequest.ContainerName]; ok {
 		// 判断节点的类型
-		if performanceMonitor.NormalNode.Type == types.NetworkNodeType_ChainMakerNode {
+		// 判断是否是区块链的类型
+
+		if judge.IsBlockChainType(performanceMonitor.NormalNode.Type) {
 			c.JSON(http.StatusOK, gin.H{
 				"time_list":           performanceMonitor.TimeList,
 				"interface_rate_list": performanceMonitor.InterfaceRateList,

@@ -106,14 +106,15 @@ func (pm *PerformanceMonitor) KeepGettingPerformance() {
 					break InternalLoop
 				}
 				// 更新区块链的高度信息
-				// 判断节点类型 -> 只有共识节点才需要进行写入
-				if pm.NormalNode.Type == types.NetworkNodeType_ChainMakerNode {
+				// 判断节点类型 -> 只有长安链/HyperledgerFabric才需要进行写入
+				if pm.NormalNode.Type == types.NetworkNodeType_ChainMakerNode || pm.NormalNode.Type == types.NetworkNodeType_FabricOrderNode {
 					err = pm.UpdateBlockHeightInfo()
 					if err != nil {
 						fmt.Printf("UpdateBlockHeightInfo failed: %v\n", err)
 						break InternalLoop
 					}
 				}
+
 				// 进行队列长度的控制
 				if len(pm.TimeList) == pm.FixedLength {
 					pm.TimeList = pm.TimeList[1:]

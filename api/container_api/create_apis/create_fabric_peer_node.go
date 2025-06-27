@@ -80,7 +80,7 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 		fmt.Sprintf("%s=%s", "INTERFACE_NAME", fmt.Sprintf("%s%d_idx%d", types.GetPrefix(fabricPeerNode.Type), fabricPeerNode.Id, 1)),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
 		fmt.Sprintf("%s=%s", "FABRIC_CFG_PATH", "/etc/hyperledger/peercfg"),
-		fmt.Sprintf("%s=%s", "FABRIC_LOGGING_SPEC", "INFO"),
+		fmt.Sprintf("%s=%s", "FABRIC_LOGGING_SPEC", "ERROR"),
 		fmt.Sprintf("%s=%s", "CORE_PEER_TLS_ENABLED", "true"),
 		fmt.Sprintf("%s=%s", "CORE_PEER_PROFILE_ENABLED", "false"),
 		fmt.Sprintf("%s=%s", "CORE_PEER_TLS_CERT_FILE", "/etc/hyperledger/fabric/tls/server.crt"),
