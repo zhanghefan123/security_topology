@@ -10,6 +10,7 @@ type FabricConfig struct {
 	PeerChaincodeStartPort        int    `mapstructure:"peer_chaincode_start_port"`
 	PeerOperationStartPort        int    `mapstructure:"peer_operation_start_port"`
 	EnableRoutine                 bool   `mapstructure:"enable_routine"`
+	EnableAdvancedMessageHandler  bool   `mapstructure:"enable_advanced_message_handler"`
 	ConsensusType                 int    `mapstructure:"consensus_type"`
 	LogLevel                      string `mapstructure:"log_level"`
 	EnableBroadcastDefence        bool   `mapstructure:"enable_broadcast_defence"`

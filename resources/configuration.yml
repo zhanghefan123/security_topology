@@ -135,7 +135,8 @@ fabric_config:
   peer_listen_start_port: 5050
   peer_chaincode_start_port: 5550
   peer_operation_start_port: 6050
-  enable_routine: false
+  enable_routine: true
+  enable_advanced_message_handler: true
   consensus_type: 1
   log_level: ERROR
   enable_broadcast_defence: false

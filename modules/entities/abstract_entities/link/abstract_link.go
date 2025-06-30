@@ -338,7 +338,7 @@ func (absLink *AbstractLink) SetLinkParams() error {
 				return fmt.Errorf("failed to set link params: %w", err)
 			}
 		}
-
+		fmt.Println("set link bandwidth")
 	}
 	return nil
 }
