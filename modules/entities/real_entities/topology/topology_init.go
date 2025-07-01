@@ -42,6 +42,7 @@ const (
 	CalculateAndWriteSegmentRoutes        = "CalculateAndWriteSegmentRoutes"        // 生成 srv6 路由文件
 	CalculateAndWriteLiRRoutes            = "CalculateAndWriteLiRRoutes"            // 生成 path_validation 路由文件
 	GenerateIfnameToLinkIdentifierMapping = "GenerateIfnameToLinkIdentifierMapping" // 生成从接口名称到 link identifier 的映射文件
+	GenerateFabricNodeIDtoAddressMapping  = "GenerateFabricNodeIDtoAddressMapping"  // 生成从 fabric 节点 id 到对应的 ip 地址的映射文件
 )
 
 // Init 进行初始化
@@ -56,6 +57,7 @@ func (t *Topology) Init() error {
 		{GenerateFrrConfigurationFiles: InitModule{true, t.GenerateFrrConfigurationFiles}},
 		{GenerateChainMakerConfig: InitModule{enabledChainMaker, t.GenerateChainMakerConfig}},
 		{GenerateFabricConfig: InitModule{enabledFabric, t.GenerateFabricConfig}},
+		{GenerateFabricNodeIDtoAddressMapping: InitModule{enabledFabric, t.GenerateFabricNodeIDtoAddressMapping}},
 		{GenerateAddressMapping: InitModule{true, t.GenerateAddressMapping}},
 		{GeneratePortMapping: InitModule{true, t.GeneratePortMapping}},
 		{CalculateAndWriteSegmentRoutes: InitModule{true, t.CalculateAndWriteSegmentRoutes}},
@@ -428,6 +430,50 @@ func (t *Topology) GenerateFabricConfig() error {
 
 	t.topologyInitSteps[GenerateFabricConfig] = struct{}{}
 	topologyLogger.Infof("generate fabric config")
+	return nil
+}
+
+func (t *Topology) GenerateFabricNodeIDtoAddressMapping() error {
+	if _, ok := t.topologyInitSteps[GenerateFabricNodeIDtoAddressMapping]; ok {
+		topologyLogger.Infof("already generate fabricNodeIDtoAddressMapping")
+	}
+
+	finalString := ""
+	for index, fabricOrdererNode := range t.FabricOrdererNodes {
+		ordererDomainName := fmt.Sprintf("orderer%d.example.com", fabricOrdererNode.Id)
+		ordererGeneralListenPort := configs.TopConfiguration.FabricConfig.OrderGeneralListenStartPort + fabricOrdererNode.Id
+		if index != (len(t.FabricOrdererNodes) - 1) {
+			finalString += fmt.Sprintf("%d,%s:%d\n", fabricOrdererNode.Id, ordererDomainName, ordererGeneralListenPort)
+		} else {
+			finalString += fmt.Sprintf("%d,%s:%d", fabricOrdererNode.Id, ordererDomainName, ordererGeneralListenPort)
+		}
+	}
+
+	for _, fabricOrdererNode := range t.FabricOrdererNodes {
+		var outputFilePath string
+		containerName := fabricOrdererNode.ContainerName
+		containerDir := filepath.Join(configs.TopConfiguration.PathConfig.ConfigGeneratePath, containerName)
+		fabricDir := filepath.Join(containerDir, "fabric")
+
+		err := dir.Generate(fabricDir)
+		if err != nil {
+			return fmt.Errorf("generate fabric dir failed")
+		}
+		outputFilePath = filepath.Join(fabricDir, "fabric_id_to_address.conf")
+		// 创建一个文件
+		// /simulation/containerName/fabric_id_to_address.conf
+		f, err := os.Create(outputFilePath)
+		if err != nil {
+			return fmt.Errorf("error create file %v", err)
+		}
+		_, err = f.WriteString(finalString)
+		if err != nil {
+			return fmt.Errorf("error write file %w", err)
+		}
+	}
+
+	t.topologyInitSteps[GenerateFabricNodeIDtoAddressMapping] = struct{}{}
+	topologyLogger.Infof("generate fabricNodeID to address mapping")
 	return nil
 }
 
