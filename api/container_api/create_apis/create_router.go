@@ -35,7 +35,18 @@ func CreateRouter(client *docker.Client, router *nodes.Router) error {
 		"net.ipv6.route.skip_notify_on_dev_down": "1",
 		"net.ipv4.conf.all.rp_filter":            "0",
 		"net.ipv6.seg6_flowlabel":                "1",
+		"net.mpls.conf.lo.input":                 "1",
+		"net.mpls.platform_labels":               "1048575",
 	}
+
+	// 添加 sysctls
+	//for _, intf := range router.Interfaces {
+	//	sysctls[fmt.Sprintf("net.mpls.conf.%s.input", intf.IfName)] = "1"
+	//}
+
+	// sysctl -w net.mpls.conf.lo.input=1
+	//sysctl -w net.mpls.conf.eth1.input=1
+	//sysctl -w net.mpls.platform_labels=1048575
 
 	// 3. 获取配置
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath

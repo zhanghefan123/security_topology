@@ -39,6 +39,7 @@ const (
 	RemoveVolumes               = "RemoveVolumes"
 	RemoveDefaultRoutes         = "RemoveDefaultRoutes"
 	RemoveAllChainCodeImages    = "RemoveAllChainCodeImages"
+	RemoveSimulationFiles       = "RemoveSimulationFiles"
 )
 
 // RemoveFunction 删除函数

@@ -49,9 +49,10 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 	var memoryLimit float64
 	enableFrr := configs.TopConfiguration.NetworkConfig.EnableFrr
 	fabricNetwork := configs.TopConfiguration.FabricConfig.FabricNetworkPath
-	orderGeneralListenStartPort := configs.TopConfiguration.FabricConfig.OrderGeneralListenStartPort + fabricOrderNode.Id
-	orderAdminListenStartPort := configs.TopConfiguration.FabricConfig.OrderAdminListenStartPort + fabricOrderNode.Id
-	orderOperationListenStartPort := configs.TopConfiguration.FabricConfig.OrderOperationListenStartPort + fabricOrderNode.Id
+	orderGeneralListenPort := configs.TopConfiguration.FabricConfig.OrderGeneralListenStartPort + fabricOrderNode.Id
+	orderAdminListenPort := configs.TopConfiguration.FabricConfig.OrderAdminListenStartPort + fabricOrderNode.Id
+	orderOperationListenPort := configs.TopConfiguration.FabricConfig.OrderOperationListenStartPort + fabricOrderNode.Id
+	orderPprofListenPort := configs.TopConfiguration.FabricConfig.PprofOrdererStartListenPort + fabricOrderNode.Id
 	enableRoutine := configs.TopConfiguration.FabricConfig.EnableRoutine
 	enableAdvancedMessageHandler := configs.TopConfiguration.FabricConfig.EnableAdvancedMessageHandler
 	webPort := configs.TopConfiguration.ServicesConfig.WebConfig.StartPort + graphNodeId
@@ -81,7 +82,7 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 		fmt.Sprintf("%s=%s", "INTERFACE_NAME", fmt.Sprintf("%s%d_idx%d", types.GetPrefix(fabricOrderNode.Type), fabricOrderNode.Id, 1)),
 		fmt.Sprintf("%s=%s", "FABRIC_LOGGING_SPEC", "ERROR"),
 		fmt.Sprintf("%s=%s", "ORDERER_GENERAL_LISTENADDRESS", "0.0.0.0"),
-		fmt.Sprintf("%s=%d", "ORDERER_GENERAL_LISTENPORT", orderGeneralListenStartPort),
+		fmt.Sprintf("%s=%d", "ORDERER_GENERAL_LISTENPORT", orderGeneralListenPort),
 		fmt.Sprintf("%s=%s", "ORDERER_GENERAL_LOCALMSPID", "OrdererMSP"),
 		fmt.Sprintf("%s=%s", "ORDERER_GENERAL_LOCALMSPDIR", "/var/hyperledger/orderer/msp"),
 		fmt.Sprintf("%s=%s", "ORDERER_GENERAL_TLS_ENABLED", "true"),
@@ -99,13 +100,14 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 		fmt.Sprintf("%s=%s", "ORDERER_ADMIN_TLS_ROOTCAS", "[/var/hyperledger/orderer/tls/ca.crt]"),
 		fmt.Sprintf("%s=%s", "ORDERER_ADMIN_TLS_CLIENTROOTCAS", "[/var/hyperledger/orderer/tls/ca.crt]"),
 		// 现在的版本
-		fmt.Sprintf("%s=%s", "ORDERER_ADMIN_LISTENADDRESS", fmt.Sprintf("0.0.0.0:%d", orderAdminListenStartPort)), // 这个地址需要设置成 0.0.0.0 供宿主机访问
-		fmt.Sprintf("%s=%s", "ORDERER_OPERATIONS_LISTENADDRESS", fmt.Sprintf("orderer%d.example.com:%d", fabricOrderNode.Id, orderOperationListenStartPort)),
+		fmt.Sprintf("%s=%s", "ORDERER_ADMIN_LISTENADDRESS", fmt.Sprintf("0.0.0.0:%d", orderAdminListenPort)), // 这个地址需要设置成 0.0.0.0 供宿主机访问
+		fmt.Sprintf("%s=%s", "ORDERER_OPERATIONS_LISTENADDRESS", fmt.Sprintf("orderer%d.example.com:%d", fabricOrderNode.Id, orderOperationListenPort)),
 		fmt.Sprintf("%s=%s", "ORDERER_METRICS_PROVIDER", "prometheus"),
 		// zhf add code
 		fmt.Sprintf("%s=%d", "WEB_SERVER_LISTEN_PORT", webPort),
 		fmt.Sprintf("%s=%t", "ENABLE_ROUTINE", enableRoutine),
 		fmt.Sprintf("%s=%t", "ENABLE_ADVANCED_MESSAGE_HANDLER", enableAdvancedMessageHandler),
+		fmt.Sprintf("%s=%d", "PPROF_ORDERER_LISTEN_PORT", orderPprofListenPort),
 	}
 
 	// 6. 资源限制
@@ -115,16 +117,18 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 	}
 
 	// 7. 创建端口映射
-	generalPort := nat.Port(fmt.Sprintf("%d/tcp", orderGeneralListenStartPort))
-	adminPort := nat.Port(fmt.Sprintf("%d/tcp", orderAdminListenStartPort))
-	operationPort := nat.Port(fmt.Sprintf("%d/tcp", orderOperationListenStartPort))
+	generalPort := nat.Port(fmt.Sprintf("%d/tcp", orderGeneralListenPort))
+	adminPort := nat.Port(fmt.Sprintf("%d/tcp", orderAdminListenPort))
+	operationPort := nat.Port(fmt.Sprintf("%d/tcp", orderOperationListenPort))
 	webServerPort := nat.Port(fmt.Sprintf("%d/tcp", webPort))
+	pprofListenPort := nat.Port(fmt.Sprintf("%d/tcp", orderPprofListenPort))
 
 	exposedPorts := nat.PortSet{
-		generalPort:   {},
-		adminPort:     {},
-		operationPort: {},
-		webServerPort: {},
+		generalPort:     {},
+		adminPort:       {},
+		operationPort:   {},
+		webServerPort:   {},
+		pprofListenPort: {},
 	}
 
 	portBindings := nat.PortMap{
@@ -150,6 +154,12 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 			{
 				HostIP:   "0.0.0.0",
 				HostPort: string(webServerPort),
+			},
+		},
+		pprofListenPort: []nat.PortBinding{
+			{
+				HostIP:   "0.0.0.0",
+				HostPort: string(pprofListenPort),
 			},
 		},
 	}

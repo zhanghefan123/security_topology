@@ -229,7 +229,8 @@ func (t *Topology) GenerateLinks() error {
 		var bandWidth int
 		if linkTmp.LinkType == "access" {
 			linkType = types.NetworkLinkType_AccessLink
-			bandWidth = t.TopologyParams.AccessLinkBandwidth * 1e6
+			//bandWidth = t.TopologyParams.AccessLinkBandwidth * 1e6
+			bandWidth = 50 * 1e6
 		} else {
 			linkType = types.NetworkLinkType_BackboneLink
 			bandWidth = linux_tc_api.LargeBandwidth // 没有限制

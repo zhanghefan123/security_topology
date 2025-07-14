@@ -51,6 +51,7 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 	peerListenPort := configs.TopConfiguration.FabricConfig.PeerListenStartPort + fabricPeerNode.Id
 	peerChainCodePort := configs.TopConfiguration.FabricConfig.PeerChaincodeStartPort + fabricPeerNode.Id
 	peerOperationPort := configs.TopConfiguration.FabricConfig.PeerOperationStartPort + fabricPeerNode.Id
+	peerPprofListenPort := configs.TopConfiguration.FabricConfig.PeerListenStartPort + fabricPeerNode.Id
 	enableRoutine := configs.TopConfiguration.FabricConfig.EnableRoutine
 	enableAdvancedMessageHandler := configs.TopConfiguration.FabricConfig.EnableAdvancedMessageHandler
 	webPort := configs.TopConfiguration.ServicesConfig.WebConfig.StartPort + graphNodeId
@@ -105,6 +106,7 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 		fmt.Sprintf("%s=%d", "WEB_SERVER_LISTEN_PORT", webPort),
 		fmt.Sprintf("%s=%t", "ENABLE_ROUTINE", enableRoutine),
 		fmt.Sprintf("%s=%t", "ENABLE_ADVANCED_MESSAGE_HANDLER", enableAdvancedMessageHandler),
+		fmt.Sprintf("%s=%d", "PPROF_PEER_LISTEN_PORT", peerPprofListenPort),
 	}
 
 	// 6. 资源限制
@@ -117,11 +119,13 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 	listenPort := nat.Port(fmt.Sprintf("%d/tcp", peerListenPort))
 	operationPort := nat.Port(fmt.Sprintf("%d/tcp", peerOperationPort))
 	webServerPort := nat.Port(fmt.Sprintf("%d/tcp", webPort))
+	pprofListenPort := nat.Port(fmt.Sprintf("%d/tcp", peerPprofListenPort))
 
 	exposedPorts := nat.PortSet{
-		listenPort:    {},
-		operationPort: {},
-		webServerPort: {},
+		listenPort:      {},
+		operationPort:   {},
+		webServerPort:   {},
+		pprofListenPort: {},
 	}
 
 	portBindings := nat.PortMap{
@@ -141,6 +145,12 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 			{
 				HostIP:   "0.0.0.0",
 				HostPort: string(webServerPort),
+			},
+		},
+		pprofListenPort: []nat.PortBinding{
+			{
+				HostIP:   "0.0.0.0",
+				HostPort: string(pprofListenPort),
 			},
 		},
 	}
