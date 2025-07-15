@@ -53,6 +53,7 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 	orderAdminListenPort := configs.TopConfiguration.FabricConfig.OrderAdminListenStartPort + fabricOrderNode.Id
 	orderOperationListenPort := configs.TopConfiguration.FabricConfig.OrderOperationListenStartPort + fabricOrderNode.Id
 	orderPprofListenPort := configs.TopConfiguration.FabricConfig.PprofOrdererStartListenPort + fabricOrderNode.Id
+	enablePprof := configs.TopConfiguration.FabricConfig.EnablePprof
 	enableRoutine := configs.TopConfiguration.FabricConfig.EnableRoutine
 	enableAdvancedMessageHandler := configs.TopConfiguration.FabricConfig.EnableAdvancedMessageHandler
 	webPort := configs.TopConfiguration.ServicesConfig.WebConfig.StartPort + graphNodeId
@@ -104,9 +105,10 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 		fmt.Sprintf("%s=%s", "ORDERER_OPERATIONS_LISTENADDRESS", fmt.Sprintf("orderer%d.example.com:%d", fabricOrderNode.Id, orderOperationListenPort)),
 		fmt.Sprintf("%s=%s", "ORDERER_METRICS_PROVIDER", "prometheus"),
 		// zhf add code
-		fmt.Sprintf("%s=%d", "WEB_SERVER_LISTEN_PORT", webPort),
 		fmt.Sprintf("%s=%t", "ENABLE_ROUTINE", enableRoutine),
 		fmt.Sprintf("%s=%t", "ENABLE_ADVANCED_MESSAGE_HANDLER", enableAdvancedMessageHandler),
+		fmt.Sprintf("%s=%t", "ENABLE_PPROF", enablePprof),
+		fmt.Sprintf("%s=%d", "WEB_SERVER_LISTEN_PORT", webPort),
 		fmt.Sprintf("%s=%d", "PPROF_ORDERER_LISTEN_PORT", orderPprofListenPort),
 	}
 

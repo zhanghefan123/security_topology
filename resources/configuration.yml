@@ -48,7 +48,7 @@ chain_maker_config:
   log_level: ERROR
   vm_go_runtime_port: 32351
   vm_go_engine_port: 22351
-  enable_broadcast_defence: true
+  enable_broadcast_defence: false
   direct_remove_attacked_node: false
   speed_check: false
   blocks_per_proposer: 1
@@ -113,9 +113,10 @@ apps_config:
   ipv6_config:
     server_port: 8080
 
+# 进行长安链的资源配置
 resources_config:
-  cpu_limit: 1
-  memory_limit: 1
+  cpu_limit: 2
+  memory_limit: 2
   topologies_dir: "../resources/topologies/"
 
 path_validation_config:
@@ -137,8 +138,9 @@ fabric_config:
   peer_operation_start_port: 6050
   pprof_orderer_start_listen_port: 14300
   pprof_peer_start_listen_port: 15300
+  enable_pprof: false
   enable_routine: false
-  enable_advanced_message_handler: false
+  enable_advanced_message_handler: true
   consensus_type: 1
   log_level: ERROR
   enable_broadcast_defence: false

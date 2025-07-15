@@ -3,6 +3,7 @@ package performance_monitor
 import (
 	"fmt"
 	"time"
+	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/entities/types"
@@ -25,8 +26,12 @@ type PerformanceMonitor struct {
 
 	CpuRatioList []float64 // cpu 利用率
 	LastCpuBusy  float64   // 上一次的 cpu 繁忙时间
-
 	MemoryMBList []float64 // 内存占用
+
+	RequestTimeoutList     []int // 请求超时列表
+	MessageCountList       []int // 消息总线消息数量
+	ConnectedCountList     []int // 已经建立的 tcp 连接的数量
+	HalfConnectedCountList []int // 半开 tcp 连接的数量
 
 	BlockHeightPercentageList []float64 // 区块高度占比
 
@@ -105,16 +110,29 @@ func (pm *PerformanceMonitor) KeepGettingPerformance() {
 					fmt.Printf("UpdateInstanceCpuAndMemoryRatio failed: %v\n", err)
 					break InternalLoop
 				}
+				// 进行信息的获取
+				informationFilePath := fmt.Sprintf("%s/%s/information.stat",
+					configs.TopConfiguration.PathConfig.ConfigGeneratePath,
+					pm.NormalNode.ContainerName)
+				information, err := ReadInformation(informationFilePath)
+				if err != nil {
+					fmt.Printf("read connected and half connected conns count: %v", err)
+				}
+				// 进行信息的更新
+				err = pm.UpdateInformation(information)
+				if err != nil {
+					fmt.Printf("UpdateInformation failed: %v\n", err)
+					break InternalLoop
+				}
 				// 更新区块链的高度信息
 				// 判断节点类型 -> 只有长安链/HyperledgerFabric才需要进行写入
 				if pm.NormalNode.Type == types.NetworkNodeType_ChainMakerNode || pm.NormalNode.Type == types.NetworkNodeType_FabricOrderNode {
-					err = pm.UpdateBlockHeightInfo()
+					err = pm.UpdateBlockHeightInfo(information.BlockHeight)
 					if err != nil {
 						fmt.Printf("UpdateBlockHeightInfo failed: %v\n", err)
 						break InternalLoop
 					}
 				}
-
 				// 进行队列长度的控制
 				if len(pm.TimeList) == pm.FixedLength {
 					pm.TimeList = pm.TimeList[1:]

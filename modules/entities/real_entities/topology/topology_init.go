@@ -124,6 +124,14 @@ func (t *Topology) GenerateNodes() error {
 			t.RouterAbstractNodes = append(t.RouterAbstractNodes, abstractRouter)
 			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractRouter)
 			t.AbstractNodesMap[routerTmp.ContainerName] = abstractRouter
+		case types.NetworkNodeType_ChainMakerNode:
+			chainmakerTmp := nodes.NewChainmakerNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
+			t.ChainmakerNodes = append(t.ChainmakerNodes, chainmakerTmp)
+			// 注意只能唯一创建一次
+			abstractChainmaker := node.NewAbstractNode(types.NetworkNodeType_ChainMakerNode, chainmakerTmp, TopologyInstance.TopologyGraph)
+			t.ChainMakerAbstractNodes = append(t.ChainMakerAbstractNodes, abstractChainmaker)
+			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractChainmaker)
+			t.AbstractNodesMap[chainmakerTmp.ContainerName] = abstractChainmaker
 		case types.NetworkNodeType_LirNode:
 			lirNodeTmp := nodes.NewLiRNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
 			t.LirNodes = append(t.LirNodes, lirNodeTmp)
@@ -158,6 +166,15 @@ func (t *Topology) GenerateNodes() error {
 			t.FabricOrderAbstractNodes = append(t.FabricOrderAbstractNodes, abstractFabricOrder)
 			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractFabricOrder)
 			t.AbstractNodesMap[fabricOrderTmp.ContainerName] = abstractFabricOrder
+		case types.NetworkNodeType_MaliciousNode:
+			fmt.Println("create malicious node")
+			maliciousTmp := nodes.NewMaliciousNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
+			t.MaliciousNodes = append(t.MaliciousNodes, maliciousTmp)
+			// 注意只能进行一次抽象节点的创建
+			abstractMalicious := node.NewAbstractNode(types.NetworkNodeType_MaliciousNode, maliciousTmp, TopologyInstance.TopologyGraph)
+			t.MaliciousAbstractNodes = append(t.MaliciousAbstractNodes, abstractMalicious)
+			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractMalicious)
+			t.AbstractNodesMap[maliciousTmp.ContainerName] = abstractMalicious
 		}
 	}
 
@@ -228,9 +245,11 @@ func (t *Topology) GenerateLinks() error {
 		var linkType types.NetworkLinkType
 		var bandWidth int
 		if linkTmp.LinkType == "access" {
-			linkType = types.NetworkLinkType_AccessLink
-			//bandWidth = t.TopologyParams.AccessLinkBandwidth * 1e6
-			bandWidth = 50 * 1e6
+			//linkType = types.NetworkLinkType_AccessLink
+			////bandWidth = t.TopologyParams.AccessLinkBandwidth * 1e6
+			//bandWidth = 50 * 1e6
+			linkType = types.NetworkLinkType_BackboneLink
+			bandWidth = linux_tc_api.LargeBandwidth // 没有限制
 		} else {
 			linkType = types.NetworkLinkType_BackboneLink
 			bandWidth = linux_tc_api.LargeBandwidth // 没有限制
@@ -301,6 +320,8 @@ func (t *Topology) getSourceNodeAndTargetNode(sourceNodeParam, targetNodeParam p
 	case types.NetworkNodeType_ChainMakerNode:
 		sourceNode = t.ChainMakerAbstractNodes[sourceNodeParam.Index-1]
 	case types.NetworkNodeType_MaliciousNode:
+		fmt.Println("INDEX:", sourceNodeParam.Index-1)
+		fmt.Println("MaliciousAbstractNodes: ", len(t.MaliciousAbstractNodes))
 		sourceNode = t.MaliciousAbstractNodes[sourceNodeParam.Index-1]
 	case types.NetworkNodeType_LirNode:
 		sourceNode = t.LirAbstractNodes[sourceNodeParam.Index-1]
@@ -537,14 +558,22 @@ func (t *Topology) GeneratePortMapping() error {
 		return nil
 	}
 
-	portMapping, err := t.GetContainerNameToPortMapping()
+	chainMakerPortMapping, err := t.GetContainerNameToChainPortMapping()
 	if err != nil {
-		return fmt.Errorf("generate port mapping files failed, %w", err)
+		return fmt.Errorf("generate port mapping files failed: %w", err)
+	}
+
+	fabricPortMapping, err := t.GetContainerNameToFabricPortMapping()
+	if err != nil {
+		return fmt.Errorf("generate fabric port mapping files failed: %w", err)
 	}
 
 	finalString := ""
-	for key, value := range portMapping {
+	for key, value := range chainMakerPortMapping {
 		finalString += fmt.Sprintf("%s->%d->%d\n", key, value.p2pPort, value.rpcPort)
+	}
+	for key, value := range fabricPortMapping {
+		finalString += fmt.Sprintf("%s->%d->%d\n", key, value.OrdererAdminListenPort, value.OrdererGeneralListenPort)
 	}
 
 	// 进行所有节点的遍历

@@ -52,6 +52,7 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 	peerChainCodePort := configs.TopConfiguration.FabricConfig.PeerChaincodeStartPort + fabricPeerNode.Id
 	peerOperationPort := configs.TopConfiguration.FabricConfig.PeerOperationStartPort + fabricPeerNode.Id
 	peerPprofListenPort := configs.TopConfiguration.FabricConfig.PeerListenStartPort + fabricPeerNode.Id
+	enablePprof := configs.TopConfiguration.FabricConfig.EnablePprof
 	enableRoutine := configs.TopConfiguration.FabricConfig.EnableRoutine
 	enableAdvancedMessageHandler := configs.TopConfiguration.FabricConfig.EnableAdvancedMessageHandler
 	webPort := configs.TopConfiguration.ServicesConfig.WebConfig.StartPort + graphNodeId
@@ -107,6 +108,7 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 		fmt.Sprintf("%s=%t", "ENABLE_ROUTINE", enableRoutine),
 		fmt.Sprintf("%s=%t", "ENABLE_ADVANCED_MESSAGE_HANDLER", enableAdvancedMessageHandler),
 		fmt.Sprintf("%s=%d", "PPROF_PEER_LISTEN_PORT", peerPprofListenPort),
+		fmt.Sprintf("%s=%t", "ENABLE_PPROF", enablePprof),
 	}
 
 	// 6. 资源限制

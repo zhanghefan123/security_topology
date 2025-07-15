@@ -41,11 +41,15 @@ func StartCaptureInstancePerformance(c *gin.Context) {
 
 		if judge.IsBlockChainType(performanceMonitor.NormalNode.Type) {
 			c.JSON(http.StatusOK, gin.H{
-				"time_list":           performanceMonitor.TimeList,
-				"interface_rate_list": performanceMonitor.InterfaceRateList,
-				"cpu_ratio_list":      performanceMonitor.CpuRatioList,
-				"memory_list":         performanceMonitor.MemoryMBList,
-				"block_ratio_list":    performanceMonitor.BlockHeightPercentageList,
+				"time_list":                 performanceMonitor.TimeList,
+				"interface_rate_list":       performanceMonitor.InterfaceRateList,
+				"cpu_ratio_list":            performanceMonitor.CpuRatioList,
+				"memory_list":               performanceMonitor.MemoryMBList,
+				"block_ratio_list":          performanceMonitor.BlockHeightPercentageList,
+				"connected_count_list":      performanceMonitor.ConnectedCountList,
+				"half_connected_count_list": performanceMonitor.HalfConnectedCountList,
+				"time_out_list":             performanceMonitor.RequestTimeoutList,
+				"message_count_list":        performanceMonitor.MessageCountList,
 			})
 		} else {
 			// 如果是其他类型 (并非长安链节点类型)

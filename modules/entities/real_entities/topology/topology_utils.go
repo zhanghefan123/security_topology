@@ -11,6 +11,11 @@ type ChainmakerPorts struct {
 	rpcPort int
 }
 
+type FabricPorts struct {
+	OrdererAdminListenPort   int
+	OrdererGeneralListenPort int
+}
+
 // GetChainMakerNodeListenAddresses 获取长安链节点的监听地址
 func (t *Topology) GetChainMakerNodeListenAddresses() []string {
 	listeningAddresses := make([]string, 0)
@@ -58,15 +63,28 @@ func (t *Topology) GetContainerNameToGraphIdMapping() (map[string]int, error) {
 	return idMapping, nil
 }
 
-// GetContainerNameToPortMapping 获取所有共识节点从容器名到
-func (t *Topology) GetContainerNameToPortMapping() (map[string]*ChainmakerPorts, error) {
+// GetContainerNameToChainPortMapping 获取所有共识节点从容器名到
+func (t *Topology) GetContainerNameToChainPortMapping() (map[string]*ChainmakerPorts, error) {
 	portMapping := make(map[string]*ChainmakerPorts)
 	p2pStartPort := configs.TopConfiguration.ChainMakerConfig.P2pStartPort
 	rpcStartPort := configs.TopConfiguration.ChainMakerConfig.RpcStartPort
+	// 进行 chainMaker 的 port Mapping 的添加
 	for _, chainMakerNode := range t.ChainmakerNodes {
 		p2pPort := chainMakerNode.Id + p2pStartPort - 1
 		rpcPort := chainMakerNode.Id + rpcStartPort - 1
 		portMapping[chainMakerNode.ContainerName] = &ChainmakerPorts{p2pPort, rpcPort}
+	}
+	return portMapping, nil
+}
+
+func (t *Topology) GetContainerNameToFabricPortMapping() (map[string]*FabricPorts, error) {
+	portMapping := make(map[string]*FabricPorts)
+	// 进行 Fabric 的 portMapping 的添加
+	for _, fabricOrder := range t.FabricOrdererNodes {
+		fabricAdminListenPort := configs.TopConfiguration.FabricConfig.OrderAdminListenStartPort + fabricOrder.Id
+		fabricGeneralListenPort := configs.TopConfiguration.FabricConfig.OrderGeneralListenStartPort + fabricOrder.Id
+		portMapping[fabricOrder.ContainerName] = &FabricPorts{fabricAdminListenPort,
+			fabricGeneralListenPort}
 	}
 	return portMapping, nil
 }
