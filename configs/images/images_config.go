@@ -15,4 +15,5 @@ type ImagesConfig struct {
 	FabricPeerImageName      string `mapstructure:"fabric_peer_image_name"`
 	FabricOrderImageName     string `mapstructure:"fabric_order_image_name"`
 	LiRSatelliteImageName    string `mapstructure:"lir_satellite_image_name"`
+	FiscoBcosImageName       string `mapstructure:"fisco_bcos_image_name"`
 }

@@ -35,6 +35,14 @@ func (t *Topology) GetChainMakerNodeContainerNames() []string {
 	return chainMakerNodeNames
 }
 
+func (t *Topology) GetFabricNodeContainerNames() []string {
+	fabricNodeNames := make([]string, 0)
+	for _, node := range t.FabricOrdererNodes {
+		fabricNodeNames = append(fabricNodeNames, node.ContainerName)
+	}
+	return fabricNodeNames
+}
+
 // GetContainerNameToAddressMapping 获取所有节点的从容器名称到地址的一个映射 (修改成了从容器名称到 ipv4 和 ipv6 地址的映射)
 func (t *Topology) GetContainerNameToAddressMapping() (map[string][]string, error) {
 	addressMapping := make(map[string][]string)

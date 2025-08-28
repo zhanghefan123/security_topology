@@ -18,6 +18,7 @@ var (
 type ChainMakerPrepare struct {
 	nodeCount             int
 	peerIdList            []string
+	PeerIdToIndexMapping  map[string]int
 	generateSteps         map[string]struct{}
 	pathMapping           map[string]string
 	ipv4Addresses         []string
@@ -29,6 +30,7 @@ func NewChainMakerPrepare(nodeCount int, ipv4Addresses []string, selectedConsens
 	return &ChainMakerPrepare{
 		nodeCount:             nodeCount,
 		peerIdList:            make([]string, 0),
+		PeerIdToIndexMapping:  make(map[string]int),
 		generateSteps:         make(map[string]struct{}),
 		pathMapping:           make(map[string]string),
 		ipv4Addresses:         ipv4Addresses,

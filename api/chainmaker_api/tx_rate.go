@@ -6,6 +6,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"zhanghefan123/security_topology/modules/utils/file"
 )
 
 var (
@@ -16,6 +17,8 @@ var (
 type TxRateRecorder struct {
 	TimeList    []int
 	RateList    []float64
+	TimeListAll []int
+	RateListAll []float64
 	fixedLength int
 	stopQueue   chan struct{}
 	waitGroup   *sync.WaitGroup
@@ -26,6 +29,8 @@ func NewTxRateRecorder() *TxRateRecorder {
 	return &TxRateRecorder{
 		TimeList:    make([]int, 0),
 		RateList:    make([]float64, 0),
+		TimeListAll: make([]int, 0),
+		RateListAll: make([]float64, 0),
 		fixedLength: 10,
 		stopQueue:   make(chan struct{}),
 		waitGroup:   &sync.WaitGroup{},
@@ -96,12 +101,31 @@ func (trr *TxRateRecorder) StartTxRateTest(threadCount int) error {
 					trr.RateList = append(trr.RateList, tpsRate)
 					trr.TimeList = append(trr.TimeList, count)
 				}
+				trr.RateListAll = append(trr.RateListAll, tpsRate)
+				trr.TimeListAll = append(trr.TimeListAll, count)
 				count += 1
 				time.Sleep(calcTpsDuration)
 			}
 		}
 	}(trr.stopQueue)
 
+	return nil
+}
+
+func (trr *TxRateRecorder) WriteResultIntoFile() error {
+	finalString := ""
+	for index := 0; index < len(trr.RateListAll); index++ {
+		if index == len(trr.RateListAll)-1 {
+			finalString += fmt.Sprintf("%f", trr.RateListAll[index])
+		} else {
+			finalString += fmt.Sprintf("%f", trr.RateListAll[index]) + ","
+		}
+	}
+	// 将所有的序列放到一个文件之中
+	err := file.WriteStringIntoFile("./chainmaker_result.txt", finalString)
+	if err != nil {
+		return fmt.Errorf("write result into file failed: %v", err)
+	}
 	return nil
 }
 

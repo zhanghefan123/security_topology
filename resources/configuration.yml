@@ -5,6 +5,7 @@ network_config:
   enable_frr: true # 这里设置成为false是不想要影响接口的接收速率
   ospf_version: ospfv2
   enable_srv6: true
+  ddos_warning_rate: 7 # Mbps
   # attention (only one of enable_frr and enable_srv6) can be true
 
 constellation_config:
@@ -44,15 +45,13 @@ chain_maker_config:
   enabled: true
   p2p_start_port: 11301
   rpc_start_port: 12301
-  http_start_port: 13301
   log_level: ERROR
   vm_go_runtime_port: 32351
   vm_go_engine_port: 22351
-  enable_broadcast_defence: false
+  enable_broadcast_defence: true
   direct_remove_attacked_node: false
   speed_check: false
   blocks_per_proposer: 1
-  ddos_warning_rate: 7 # Mbps
   chainmaker_go_project_path: /home/zhf/Projects/emulator/chainmaker-go
   chainmaker_build: ./build
   templates_file_path: ../resources/templates
@@ -76,6 +75,7 @@ images_config:
   entrance_image_name: "normal_node"
   fabric_peer_image_name: "hyperledger/fabric-peer"
   fabric_order_image_name: "hyperledger/fabric-orderer"
+  fisco_bcos_image_name: "fiscoorg/fiscobcos:v3.12.1"
 
 
 path_config:
@@ -142,7 +142,7 @@ fabric_config:
   enable_routine: false
   enable_advanced_message_handler: true
   consensus_type: 1
-  log_level: ERROR
+  log_level: WARN
   enable_broadcast_defence: false
   direct_remove_attacked_node: false
   speed_check: false

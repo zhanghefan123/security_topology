@@ -164,4 +164,7 @@ require (
 	lukechampine.com/uint128 v1.3.0 // indirect
 )
 
-replace github.com/coreos/bbolt => go.etcd.io/bbolt v1.3.6
+replace (
+	github.com/coreos/bbolt => go.etcd.io/bbolt v1.3.6
+	github.com/hyperledger/fabric-gateway v1.7.1 => ./gateway
+)

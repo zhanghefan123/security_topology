@@ -66,7 +66,8 @@ func StartCaptureInstancePerformance(c *gin.Context) {
 		abstractNode := topology.TopologyInstance.AbstractNodesMap[captureRateRequest.ContainerName]
 		// 获取所有的 chainMakerContainer 的 name
 		performanceMonitor, err = performance_monitor.NewInstancePerformanceMonitor(abstractNode,
-			topology.TopologyInstance.GetChainMakerNodeContainerNames())
+			topology.TopologyInstance.GetChainMakerNodeContainerNames(),
+			topology.TopologyInstance.GetFabricNodeContainerNames())
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"message": "could not create performance_monitor monitor",

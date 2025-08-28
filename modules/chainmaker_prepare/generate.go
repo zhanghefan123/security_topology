@@ -229,6 +229,7 @@ func (p *ChainMakerPrepare) ResolvePeerIds() error {
 			return fmt.Errorf("failed to resolve peer id: %w", err)
 		}
 		p.peerIdList = append(p.peerIdList, peerId)
+		p.PeerIdToIndexMapping[peerId] = i - 1
 	}
 
 	chainmakerPrepareWorkLogger.Infof("successfully resolve peer ids")

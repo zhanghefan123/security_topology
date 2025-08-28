@@ -1,0 +1,55 @@
+network_config:
+  base_v4_network_address: 192.168.0.0/16
+  base_v6_network_address: 2001:db8:1234:5678::/112
+  http_listen_port: 8080
+  enable_frr: true # 这里设置成为false是不想要影响接口的接收速率
+  ospf_version: ospfv2
+  enable_srv6: true
+  # attention (only one of enable_frr and enable_srv6) can be true
+
+
+chain_maker_config:
+  enabled: true
+  p2p_start_port: 11301
+  rpc_start_port: 12301
+  log_level: ERROR
+  vm_go_runtime_port: 32351
+  vm_go_engine_port: 22351
+  enable_broadcast_defence: false
+  direct_remove_attacked_node: false
+  speed_check: false
+  blocks_per_proposer: 100000
+  ddos_warning_rate: 7 # Mbps
+  chainmaker_go_project_path: /home/zhf/Projects/emulator/chainmaker-go
+  chainmaker_build: ./build
+  templates_file_path: ../resources/templates
+  start_defence_key: "start_defence"
+
+
+path_config:
+  resources_path: "../resources"
+  config_generate_path: "../simulation"
+  frr_path:
+    frr_host_path: ../simulation/frr
+    frr_container_path: /configuration/frr
+  address_mapping_path: /configuration/address
+  real_time_position_dir: satellites_position
+  gotty_path: ./gotty
+
+
+  position_update_config:
+    interval: 1
+    enabled: true
+
+  delay_update_config:
+    enabled: true
+
+apps_config:
+  ipv6_config:
+    server_port: 8080
+
+# 进行长安链的资源配置
+resources_config:
+  cpu_limit: 2
+  memory_limit: 2
+  topologies_dir: "../resources/topologies/"

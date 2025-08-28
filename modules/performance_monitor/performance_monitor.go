@@ -18,6 +18,7 @@ type PerformanceMonitor struct {
 	AbstractNode                *node.AbstractNode      // 监听的抽象节点
 	NormalNode                  *normal_node.NormalNode // 监听的普通节点
 	AllChainMakerContainerNames []string                // 所有长安链节点的名称
+	AllFabricContainerNames     []string                // 所有fabric节点的名称
 
 	TimeList []int // 时间列表
 
@@ -41,7 +42,7 @@ type PerformanceMonitor struct {
 }
 
 // NewInstancePerformanceMonitor 创建新的接口监听器
-func NewInstancePerformanceMonitor(abstractNode *node.AbstractNode, allChainMakerContainerNames []string) (*PerformanceMonitor, error) {
+func NewInstancePerformanceMonitor(abstractNode *node.AbstractNode, allChainMakerContainerNames []string, allFabricOrderContainerNames []string) (*PerformanceMonitor, error) {
 	normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
 	if err != nil {
 		return nil, fmt.Errorf("GetNormalNodeFromAbstractNode failed: %w", err)
@@ -50,6 +51,7 @@ func NewInstancePerformanceMonitor(abstractNode *node.AbstractNode, allChainMake
 		AbstractNode:                abstractNode,
 		NormalNode:                  normalNode,
 		AllChainMakerContainerNames: allChainMakerContainerNames,
+		AllFabricContainerNames:     allFabricOrderContainerNames,
 		TimeList:                    make([]int, 0),
 
 		InterfaceRateList: make([]float64, 0),

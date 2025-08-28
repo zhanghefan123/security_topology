@@ -24,6 +24,7 @@ enum NetworkNodeType {
   FabricPeerNode = 11;
   FabricOrderNode = 12;
   LiRSatellite = 13;
+  FiscoBcosNode = 14;
 }
 
 enum NetworkLinkType {

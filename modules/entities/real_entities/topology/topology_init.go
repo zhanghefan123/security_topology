@@ -43,6 +43,7 @@ const (
 	CalculateAndWriteLiRRoutes            = "CalculateAndWriteLiRRoutes"            // 生成 path_validation 路由文件
 	GenerateIfnameToLinkIdentifierMapping = "GenerateIfnameToLinkIdentifierMapping" // 生成从接口名称到 link identifier 的映射文件
 	GenerateFabricNodeIDtoAddressMapping  = "GenerateFabricNodeIDtoAddressMapping"  // 生成从 fabric 节点 id 到对应的 ip 地址的映射文件
+	GenerateChainMakerIDtoNameMapping     = "GenerateChainMakerIDtoNameMapping"
 )
 
 // Init 进行初始化
@@ -63,6 +64,7 @@ func (t *Topology) Init() error {
 		{CalculateAndWriteSegmentRoutes: InitModule{true, t.CalculateAndWriteSegmentRoutes}},
 		{CalculateAndWriteLiRRoutes: InitModule{true, t.CalculateAndWriteLiRRoutes}},
 		{GenerateIfnameToLinkIdentifierMapping: InitModule{true, t.GenerateIfnameToLinkIdentifierMapping}},
+		{GenerateChainMakerIDtoNameMapping: InitModule{true, t.GenerateChainMakerIDtoNameMapping}},
 	}
 	err := t.initializeSteps(initSteps)
 	if err != nil {
@@ -175,6 +177,15 @@ func (t *Topology) GenerateNodes() error {
 			t.MaliciousAbstractNodes = append(t.MaliciousAbstractNodes, abstractMalicious)
 			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractMalicious)
 			t.AbstractNodesMap[maliciousTmp.ContainerName] = abstractMalicious
+		case types.NetworkNodeType_FiscoBcosNode:
+			fmt.Println("create fisco bcos node")
+			fiscoBcosNodeTmp := nodes.NewFiscoBcosNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
+			t.FiscoBcosNodes = append(t.FiscoBcosNodes, fiscoBcosNodeTmp)
+			// 注意只能进行一次抽象节点的创建
+			abstractFiscoBcosNode := node.NewAbstractNode(types.NetworkNodeType_FiscoBcosNode, fiscoBcosNodeTmp, TopologyInstance.TopologyGraph)
+			t.FiscoBcosAbstractNodes = append(t.FiscoBcosAbstractNodes, abstractFiscoBcosNode)
+			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractFiscoBcosNode)
+			t.AbstractNodesMap[fiscoBcosNodeTmp.ContainerName] = abstractFiscoBcosNode
 		}
 	}
 
@@ -248,8 +259,8 @@ func (t *Topology) GenerateLinks() error {
 			//linkType = types.NetworkLinkType_AccessLink
 			////bandWidth = t.TopologyParams.AccessLinkBandwidth * 1e6
 			//bandWidth = 50 * 1e6
-			linkType = types.NetworkLinkType_BackboneLink
-			bandWidth = linux_tc_api.LargeBandwidth // 没有限制
+			linkType = types.NetworkLinkType_AccessLink
+			bandWidth = 10 * 1e6 // 没有限制
 		} else {
 			linkType = types.NetworkLinkType_BackboneLink
 			bandWidth = linux_tc_api.LargeBandwidth // 没有限制
@@ -320,9 +331,9 @@ func (t *Topology) getSourceNodeAndTargetNode(sourceNodeParam, targetNodeParam p
 	case types.NetworkNodeType_ChainMakerNode:
 		sourceNode = t.ChainMakerAbstractNodes[sourceNodeParam.Index-1]
 	case types.NetworkNodeType_MaliciousNode:
-		fmt.Println("INDEX:", sourceNodeParam.Index-1)
-		fmt.Println("MaliciousAbstractNodes: ", len(t.MaliciousAbstractNodes))
 		sourceNode = t.MaliciousAbstractNodes[sourceNodeParam.Index-1]
+	case types.NetworkNodeType_FiscoBcosNode:
+		sourceNode = t.FiscoBcosAbstractNodes[sourceNodeParam.Index-1]
 	case types.NetworkNodeType_LirNode:
 		sourceNode = t.LirAbstractNodes[sourceNodeParam.Index-1]
 	case types.NetworkNodeType_Entrance:
@@ -347,6 +358,8 @@ func (t *Topology) getSourceNodeAndTargetNode(sourceNodeParam, targetNodeParam p
 		targetNode = t.ChainMakerAbstractNodes[targetNodeParam.Index-1]
 	case types.NetworkNodeType_MaliciousNode:
 		targetNode = t.MaliciousAbstractNodes[targetNodeParam.Index-1]
+	case types.NetworkNodeType_FiscoBcosNode:
+		targetNode = t.FiscoBcosAbstractNodes[targetNodeParam.Index-1]
 	case types.NetworkNodeType_LirNode:
 		targetNode = t.LirAbstractNodes[targetNodeParam.Index-1]
 	case types.NetworkNodeType_Entrance:
@@ -412,8 +425,8 @@ func (t *Topology) GenerateChainMakerConfig() error {
 	}
 
 	ipv4Addresses := t.GetChainMakerNodeListenAddresses()
-	chainMakerPrepare := chainmaker_prepare.NewChainMakerPrepare(chainMakerNodeCount, ipv4Addresses, t.TopologyParams.ConsensusType)
-	err := chainMakerPrepare.Generate()
+	t.chainMakerPrepare = chainmaker_prepare.NewChainMakerPrepare(chainMakerNodeCount, ipv4Addresses, t.TopologyParams.ConsensusType)
+	err := t.chainMakerPrepare.Generate()
 	if err != nil {
 		return fmt.Errorf("generate chain maker config files failed, %s", err)
 	}
@@ -703,5 +716,38 @@ func (t *Topology) GenerateIfnameToLinkIdentifierMapping() error {
 
 	t.topologyInitSteps[GenerateIfnameToLinkIdentifierMapping] = struct{}{}
 	topologyLogger.Infof("generate ifname to link identifier")
+	return nil
+}
+
+func (t *Topology) GenerateChainMakerIDtoNameMapping() error {
+	if _, ok := t.topologyInitSteps[GenerateChainMakerIDtoNameMapping]; ok {
+		topologyLogger.Infof("already generate chainmaker id to name mapping")
+		return nil
+	}
+
+	// 将 mapping 写入文件之中
+	finalString := ""
+	count := 0
+	for peerId, index := range t.chainMakerPrepare.PeerIdToIndexMapping {
+		if count != (len(t.chainMakerPrepare.PeerIdToIndexMapping) - 1) {
+			finalString += fmt.Sprintf("%s,%s\n", peerId, t.ChainmakerNodes[index].ContainerName)
+		} else {
+			finalString += fmt.Sprintf("%s,%s", peerId, t.ChainmakerNodes[index].ContainerName)
+		}
+	}
+	// 需要进行所有的长安链节点的遍历
+	for _, chainMakerNode := range t.ChainmakerNodes {
+		mappingFilePath := fmt.Sprintf("%s/%s/peerIdToContainerName.txt",
+			configs.TopConfiguration.PathConfig.ConfigGeneratePath,
+			chainMakerNode.ContainerName)
+		err := file.WriteStringIntoFile(mappingFilePath, finalString)
+		fmt.Println(mappingFilePath)
+		if err != nil {
+			return fmt.Errorf("write string into file error: %v", err)
+		}
+	}
+
+	t.topologyInitSteps[GenerateChainMakerIDtoNameMapping] = struct{}{}
+	topologyLogger.Infof("generate chainmaker id to name mapping")
 	return nil
 }

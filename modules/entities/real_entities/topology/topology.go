@@ -5,6 +5,7 @@ import (
 	docker "github.com/docker/docker/client"
 	"go.etcd.io/etcd/client/v3"
 	"gonum.org/v1/gonum/graph/simple"
+	"zhanghefan123/security_topology/modules/chainmaker_prepare"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/nodes"
@@ -25,6 +26,8 @@ type TopologyParameters struct {
 }
 
 type Topology struct {
+	chainMakerPrepare *chainmaker_prepare.ChainMakerPrepare
+
 	client         *docker.Client
 	EtcdClient     *clientv3.Client
 	TopologyParams *params.TopologyParams
@@ -37,6 +40,7 @@ type Topology struct {
 	ConsensusNodes     []*nodes.ConsensusNode
 	ChainmakerNodes    []*nodes.ChainmakerNode
 	MaliciousNodes     []*nodes.MaliciousNode
+	FiscoBcosNodes     []*nodes.FiscoBcosNode
 	LirNodes           []*nodes.LiRNode
 	Entrances          []*nodes.Entrance
 	FabricPeerNodes    []*nodes.FabricPeerNode
@@ -50,6 +54,7 @@ type Topology struct {
 	ConsensusAbstractNodes   []*node.AbstractNode
 	ChainMakerAbstractNodes  []*node.AbstractNode
 	MaliciousAbstractNodes   []*node.AbstractNode
+	FiscoBcosAbstractNodes   []*node.AbstractNode
 	LirAbstractNodes         []*node.AbstractNode
 	EntranceAbstractNodes    []*node.AbstractNode
 	FabricPeerAbstractNodes  []*node.AbstractNode
@@ -83,6 +88,7 @@ func NewTopology(client *docker.Client, etcdClient *clientv3.Client, params *par
 		ConsensusNodes:  make([]*nodes.ConsensusNode, 0),
 		ChainmakerNodes: make([]*nodes.ChainmakerNode, 0),
 		MaliciousNodes:  make([]*nodes.MaliciousNode, 0),
+		FiscoBcosNodes:  make([]*nodes.FiscoBcosNode, 0),
 		LirNodes:        make([]*nodes.LiRNode, 0),
 		Entrances:       make([]*nodes.Entrance, 0),
 
@@ -91,6 +97,7 @@ func NewTopology(client *docker.Client, etcdClient *clientv3.Client, params *par
 		ConsensusAbstractNodes:  make([]*node.AbstractNode, 0),
 		ChainMakerAbstractNodes: make([]*node.AbstractNode, 0),
 		MaliciousAbstractNodes:  make([]*node.AbstractNode, 0),
+		FiscoBcosAbstractNodes:  make([]*node.AbstractNode, 0),
 		LirAbstractNodes:        make([]*node.AbstractNode, 0),
 		EntranceAbstractNodes:   make([]*node.AbstractNode, 0),
 

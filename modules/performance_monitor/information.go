@@ -99,7 +99,7 @@ func (pm *PerformanceMonitor) UpdateBlockHeightInfo(currentBlockHeight int) (err
 	}
 	// ----------------------------------------------------------------------
 
-	// 获取其他节点的区块高度
+	// 长安链 获取其他节点的区块高度
 	// ----------------------------------------------------------------------
 	for _, chainMakerContainerName := range pm.AllChainMakerContainerNames {
 		if chainMakerContainerName != pm.NormalNode.ContainerName {
@@ -120,6 +120,26 @@ func (pm *PerformanceMonitor) UpdateBlockHeightInfo(currentBlockHeight int) (err
 		}
 	}
 	// ----------------------------------------------------------------------
+
+	// fabric 获取其他节点的区块高度
+	for _, fabricContainerName := range pm.AllFabricContainerNames {
+		if fabricContainerName != pm.NormalNode.ContainerName {
+			otherBlockHeightFilePath := fmt.Sprintf("%s/%s/information.stat",
+				configs.TopConfiguration.PathConfig.ConfigGeneratePath,
+				fabricContainerName)
+			var information *Information
+			information, err = ReadInformation(otherBlockHeightFilePath)
+			if err != nil {
+				fmt.Printf("cannot retrieve block height")
+				otherBlockHeight = 0
+			} else {
+				otherBlockHeight = information.BlockHeight
+			}
+			if otherBlockHeight > largestBlockHeight {
+				largestBlockHeight = otherBlockHeight
+			}
+		}
+	}
 
 	// 计算当前节点的区块高度占整个区块高度的百分比
 	// ----------------------------------------------------------------------

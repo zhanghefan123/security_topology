@@ -41,10 +41,13 @@ var createFuncs = map[types.NetworkNodeType]createFuncTemplate{
 		return create_apis.CreateConsensusNode(client, abstractNode.ActualNode.(*nodes.ConsensusNode))
 	},
 	types.NetworkNodeType_ChainMakerNode: func(client *docker.Client, abstractNode *node.AbstractNode) error {
-		return create_apis.CreateChainMakerNode(client, abstractNode.ActualNode.(*nodes.ChainmakerNode))
+		return create_apis.CreateChainMakerNode(client, abstractNode.ActualNode.(*nodes.ChainmakerNode), int(abstractNode.Node.ID())+1)
 	},
 	types.NetworkNodeType_MaliciousNode: func(client *docker.Client, abstractNode *node.AbstractNode) error {
 		return create_apis.CreateMaliciousNode(client, abstractNode.ActualNode.(*nodes.MaliciousNode))
+	},
+	types.NetworkNodeType_FiscoBcosNode: func(client *docker.Client, abstractNode *node.AbstractNode) error {
+		return create_apis.CreateFiscoBcosNode(client, abstractNode.ActualNode.(*nodes.FiscoBcosNode), int(abstractNode.Node.ID())+1)
 	},
 	types.NetworkNodeType_LirNode: func(client *docker.Client, abstractNode *node.AbstractNode) error {
 		return create_apis.CreateLirNode(client, abstractNode.ActualNode.(*nodes.LiRNode), int(abstractNode.Node.ID())+1)

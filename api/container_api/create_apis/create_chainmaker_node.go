@@ -14,7 +14,7 @@ import (
 )
 
 // CreateChainMakerNode 创建长安链容器
-func CreateChainMakerNode(client *docker.Client, chainMakerNode *nodes.ChainmakerNode) error {
+func CreateChainMakerNode(client *docker.Client, chainMakerNode *nodes.ChainmakerNode, graphNodeId int) error {
 	// 1. 检查状态
 	if chainMakerNode.Status != types.NetworkNodeStatus_Logic {
 		return fmt.Errorf("consensus node not in logic status cannot create")
@@ -44,12 +44,14 @@ func CreateChainMakerNode(client *docker.Client, chainMakerNode *nodes.Chainmake
 	var cpuLimit float64
 	var memoryLimit float64
 	chainMakerConfig := configs.TopConfiguration.ChainMakerConfig
+	networkConfig := configs.TopConfiguration.NetworkConfig
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	nodeDir := filepath.Join(simulationDir, chainMakerNode.ContainerName)
 	enableFrr := configs.TopConfiguration.NetworkConfig.EnableFrr
 	absOfMultiNode := path.Join(chainMakerConfig.ChainMakerGoProjectPath, "scripts/docker/multi_node")
 	cpuLimit = configs.TopConfiguration.ResourcesConfig.CpuLimit
 	memoryLimit = configs.TopConfiguration.ResourcesConfig.MemoryLimit
+	webPort := configs.TopConfiguration.ServicesConfig.WebConfig.StartPort + graphNodeId
 
 	// 4. 创建容器卷映射
 	volumes := []string{
@@ -72,18 +74,18 @@ func CreateChainMakerNode(client *docker.Client, chainMakerNode *nodes.Chainmake
 	envs := []string{
 		fmt.Sprintf("%s=%d", "NODE_ID", chainMakerNode.Id),
 		fmt.Sprintf("%s=%s", "CONTAINER_NAME", chainMakerNode.ContainerName),
-		fmt.Sprintf("%s=%d", "HTTP_PORT", chainMakerConfig.HttpStartPort+chainMakerNode.Id-1),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
 		fmt.Sprintf("%s=%s", "INTERFACE_NAME", fmt.Sprintf("%s%d_idx%d", types.GetPrefix(chainMakerNode.Type), chainMakerNode.Id, 1)),
 		fmt.Sprintf("%s=%s", "LISTEN_ADDR", chainMakerNode.Interfaces[0].SourceIpv4Addr),
+		fmt.Sprintf("%s=%f", "DDOS_WARNING_RATE", networkConfig.DdosWarningRate),
 		fmt.Sprintf("%s=%t", "SPEED_CHECK", chainMakerConfig.SpeedCheck),
 		fmt.Sprintf("%s=%t", "ENABLE_BROADCAST_DEFENCE", chainMakerConfig.EnableBroadcastDefence),
-		fmt.Sprintf("%s=%f", "DDOS_WARNING_RATE", chainMakerConfig.DdosWarningRate),
 		fmt.Sprintf("%s=%t", "DIRECT_REMOVE", chainMakerConfig.DirectRemoveAttackedNode),
 		fmt.Sprintf("%s=%d", "BLOCKS_PER_PROPOSER", chainMakerConfig.BlocksPerProposer),
 		fmt.Sprintf("%s=%s", "ETCD_LISTEN_ADDR", configs.TopConfiguration.NetworkConfig.LocalNetworkAddress),
 		fmt.Sprintf("%s=%d", "ETCD_LISTEN_PORT", configs.TopConfiguration.ServicesConfig.EtcdConfig.ClientPort),
 		fmt.Sprintf("%s=%s", "START_DEFENCE_KEY", configs.TopConfiguration.ChainMakerConfig.StartDefenceKey),
+		fmt.Sprintf("%s=%d", "WEB_SERVER_LISTEN_PORT", webPort),
 		//fmt.Sprintf("%s=%d", "CHAINMAKER_NODE_COUNT", len(topology.TopologyInstance.ChainmakerNodes)),
 	}
 
@@ -95,11 +97,11 @@ func CreateChainMakerNode(client *docker.Client, chainMakerNode *nodes.Chainmake
 
 	// 7. 创建端口映射
 	rpcPort := nat.Port(fmt.Sprintf("%d/tcp", chainMakerConfig.RpcStartPort+chainMakerNode.Id-1))
-	httpPort := nat.Port(fmt.Sprintf("%d/tcp", chainMakerConfig.HttpStartPort+chainMakerNode.Id-1))
+	webServerPort := nat.Port(fmt.Sprintf("%d/tcp", webPort))
 
 	exposedPorts := nat.PortSet{
-		rpcPort:  {},
-		httpPort: {},
+		rpcPort:       {},
+		webServerPort: {},
 	}
 
 	portBindings := nat.PortMap{
@@ -109,10 +111,10 @@ func CreateChainMakerNode(client *docker.Client, chainMakerNode *nodes.Chainmake
 				HostPort: string(rpcPort),
 			},
 		},
-		httpPort: []nat.PortBinding{
+		webServerPort: []nat.PortBinding{
 			{
 				HostIP:   "0.0.0.0",
-				HostPort: string(httpPort),
+				HostPort: string(webServerPort),
 			},
 		},
 	}

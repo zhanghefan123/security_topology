@@ -1,0 +1,37 @@
+# See https://golangci-lint.run/usage/configuration/
+
+run:
+  build-tags:
+    - pkcs11
+  timeout: 5m
+
+linters:
+  disable-all: true
+  enable:
+    - errcheck
+    - gocognit
+    - gocyclo
+    - gofmt
+    - goheader
+    - goimports
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - testifylint
+    - typecheck
+    - unused
+
+linters-settings:
+  gocognit:
+    min-complexity: 15
+  gocyclo:
+    min-complexity: 10
+  goheader:
+    values:
+      const:
+        COMPANY: IBM Corp.
+    template: |-
+      Copyright {{ COMPANY }} All Rights Reserved.
+      SPDX-License-Identifier: Apache-2.0

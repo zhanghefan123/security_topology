@@ -63,6 +63,7 @@ func (trr *TxRateRecorder) StartTxRateTestCore(contract *client.Contract, corout
 							fmt.Printf("create asset error: %v\n", err)
 							return
 						}
+						time.Sleep(time.Second)
 					}
 				}
 			}()

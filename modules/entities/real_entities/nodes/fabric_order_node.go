@@ -14,7 +14,7 @@ type FabricOrderNode struct {
 func NewFabricOrderNode(nodeId int, X, Y float64) *FabricOrderNode {
 	fabricPeerNodeType := types.NetworkNodeType_FabricOrderNode
 	normalNode := normal_node.NewNormalNode(
-		types.NetworkNodeType_FabricOrderNode,
+		fabricPeerNodeType,
 		nodeId,
 		fmt.Sprintf("%s-%d", fabricPeerNodeType.String(), nodeId),
 	)

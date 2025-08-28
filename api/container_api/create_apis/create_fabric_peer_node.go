@@ -19,7 +19,6 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 	}
 
 	firstInterfaceName := fabricPeerNode.Interfaces[0].IfName
-	//firstInterfaceAddress := fabricPeerNode.DockerZeroNetworkAddress
 	firstInterfaceAddress := fabricPeerNode.Interfaces[0].SourceIpv4Addr[:len(fabricPeerNode.Interfaces[0].SourceIpv4Addr)-3]
 	fmt.Printf("Node Name: %s Addr: %s \n", fabricPeerNode.ContainerName, firstInterfaceAddress)
 
@@ -83,7 +82,7 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 		fmt.Sprintf("%s=%s", "INTERFACE_NAME", fmt.Sprintf("%s%d_idx%d", types.GetPrefix(fabricPeerNode.Type), fabricPeerNode.Id, 1)),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
 		fmt.Sprintf("%s=%s", "FABRIC_CFG_PATH", "/etc/hyperledger/peercfg"),
-		fmt.Sprintf("%s=%s", "FABRIC_LOGGING_SPEC", "ERROR"),
+		fmt.Sprintf("%s=%s", "FABRIC_LOGGING_SPEC", configs.TopConfiguration.FabricConfig.LogLevel),
 		fmt.Sprintf("%s=%s", "CORE_PEER_TLS_ENABLED", "true"),
 		fmt.Sprintf("%s=%s", "CORE_PEER_PROFILE_ENABLED", "false"),
 		fmt.Sprintf("%s=%s", "CORE_PEER_TLS_CERT_FILE", "/etc/hyperledger/fabric/tls/server.crt"),
@@ -109,6 +108,7 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 		fmt.Sprintf("%s=%t", "ENABLE_ADVANCED_MESSAGE_HANDLER", enableAdvancedMessageHandler),
 		fmt.Sprintf("%s=%d", "PPROF_PEER_LISTEN_PORT", peerPprofListenPort),
 		fmt.Sprintf("%s=%t", "ENABLE_PPROF", enablePprof),
+		fmt.Sprintf("%s=%f", "DDOS_WARNING_RATE", configs.TopConfiguration.NetworkConfig.DdosWarningRate),
 	}
 
 	// 6. 资源限制

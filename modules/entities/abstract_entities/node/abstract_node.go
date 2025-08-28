@@ -84,6 +84,10 @@ func (abstractNode *AbstractNode) GetNormalNodeFromAbstractNode() (*normal_node.
 		if maliciousNode, ok := abstractNode.ActualNode.(*nodes.MaliciousNode); ok {
 			return maliciousNode.NormalNode, nil
 		}
+	case types.NetworkNodeType_FiscoBcosNode:
+		if fiscoBcosNode, ok := abstractNode.ActualNode.(*nodes.FiscoBcosNode); ok {
+			return fiscoBcosNode.NormalNode, nil
+		}
 	case types.NetworkNodeType_LirNode:
 		if lirNode, ok := abstractNode.ActualNode.(*nodes.LiRNode); ok {
 			return lirNode.NormalNode, nil

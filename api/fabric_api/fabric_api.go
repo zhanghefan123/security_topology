@@ -48,9 +48,9 @@ func GetContract() (*client.Contract, error) {
 		client.WithHash(hash.SHA256),
 		client.WithClientConnection(clientConnection),
 		// Default timeouts for different gRPC calls
-		client.WithEvaluateTimeout(100*time.Second),
-		client.WithEndorseTimeout(100*time.Second),
-		client.WithSubmitTimeout(100*time.Second),
+		client.WithEvaluateTimeout(15*time.Second),
+		client.WithEndorseTimeout(10*time.Second),
+		client.WithSubmitTimeout(5*time.Second),
 		client.WithCommitStatusTimeout(100*time.Minute),
 	)
 	if err != nil {
@@ -182,7 +182,9 @@ func GetAllAssets(contract *client.Contract) {
 func CreateAsset(contract *client.Contract, assetId string) error {
 	//fmt.Printf("\n--> Submit Transaction: CreateAsset, creates new asset with ID, Color, Size, Owner and AppraisedValue arguments \n")
 
-	_, err := contract.SubmitTransaction("CreateAsset", assetId, "yellow", "5", "Tom", "1300")
+	startTime := time.Now()
+	_, err := contract.SubmitTransaction("CreateAsset", assetId, "yellow", "5", "Tom", "1300") // 如果没有执行完成就将一直阻塞在这里
+	fmt.Printf("submitTransaction finished elapsed %v\n", time.Since(startTime))               // 攻击主节点的时候，最久阻塞了 30 多秒
 	if err != nil {
 		return fmt.Errorf("failed to submit transaction: %v\n", err)
 	} else {

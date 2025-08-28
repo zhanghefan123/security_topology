@@ -50,7 +50,6 @@ RUN cd /libtins \
 
 RUN curl -s https://deb.frrouting.org/frr/keys.gpg | tee /usr/share/keyrings/frrouting.gpg > /dev/null
 ENV FRRVER="frr-9.1"
-RUN echo deb '[signed-by=/usr/share/keyrings/frrouting.gpg]' https://deb.frrouting.org/frr \
-     $(lsb_release -s -c) $FRRVER | tee -a /etc/apt/sources.list.d/frr.list
+RUN echo deb '[signed-by=/usr/share/keyrings/frrouting.gpg]' https://deb.frrouting.org/frr $(lsb_release -s -c) $FRRVER | tee -a /etc/apt/sources.list.d/frr.list
 RUN apt update && apt install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" frr frr-pythontools
 

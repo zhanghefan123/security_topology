@@ -81,7 +81,7 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 		fmt.Sprintf("%s=%s", "CONTAINER_NAME", fabricOrderNode.ContainerName),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
 		fmt.Sprintf("%s=%s", "INTERFACE_NAME", fmt.Sprintf("%s%d_idx%d", types.GetPrefix(fabricOrderNode.Type), fabricOrderNode.Id, 1)),
-		fmt.Sprintf("%s=%s", "FABRIC_LOGGING_SPEC", "ERROR"),
+		fmt.Sprintf("%s=%s", "FABRIC_LOGGING_SPEC", configs.TopConfiguration.FabricConfig.LogLevel),
 		fmt.Sprintf("%s=%s", "ORDERER_GENERAL_LISTENADDRESS", "0.0.0.0"),
 		fmt.Sprintf("%s=%d", "ORDERER_GENERAL_LISTENPORT", orderGeneralListenPort),
 		fmt.Sprintf("%s=%s", "ORDERER_GENERAL_LOCALMSPID", "OrdererMSP"),
@@ -110,6 +110,7 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 		fmt.Sprintf("%s=%t", "ENABLE_PPROF", enablePprof),
 		fmt.Sprintf("%s=%d", "WEB_SERVER_LISTEN_PORT", webPort),
 		fmt.Sprintf("%s=%d", "PPROF_ORDERER_LISTEN_PORT", orderPprofListenPort),
+		fmt.Sprintf("%s=%f", "DDOS_WARNING_RATE", configs.TopConfiguration.NetworkConfig.DdosWarningRate),
 	}
 
 	// 6. 资源限制

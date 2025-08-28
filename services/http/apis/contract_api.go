@@ -130,6 +130,12 @@ func StopTxRateTestRequest(c *gin.Context) {
 		}
 
 		chainmaker_api.TxRateRecorderInstance.StopTxRateTest()
+		err := chainmaker_api.TxRateRecorderInstance.WriteResultIntoFile()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": "write result into file error",
+			})
+		}
 		chainmaker_api.TxRateRecorderInstance = nil
 	} else if topology.TopologyInstance.TopologyParams.BlockChainType == "fabric" {
 		// 2.2 判断是否已经没有处在测试状态
