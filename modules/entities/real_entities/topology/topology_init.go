@@ -17,6 +17,7 @@ import (
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/entities/types"
 	"zhanghefan123/security_topology/modules/fabric_prepare"
+	"zhanghefan123/security_topology/modules/fisco_bcos_prepare"
 	"zhanghefan123/security_topology/modules/utils/dir"
 	"zhanghefan123/security_topology/modules/utils/file"
 	"zhanghefan123/security_topology/modules/utils/network"
@@ -33,6 +34,7 @@ type InitModule struct {
 const (
 	GenerateChainMakerConfig              = "GenerateChainMakerConfig"              // 生成长安链配置
 	GenerateFabricConfig                  = "GenerateFabricConfig"                  // 生成 fabric 配置
+	GenerateFiscoBcosConfig               = "GenerateFiscoBcosConfig"               // 生成 fisco bcos 配置
 	GenerateNodes                         = "GenerateNodes"                         // 生成节点
 	GenerateSubnets                       = "GenerateSubnets"                       // 创建子网
 	GenerateLinks                         = "GenerateISLs"                          // 生成链路
@@ -43,30 +45,36 @@ const (
 	CalculateAndWriteLiRRoutes            = "CalculateAndWriteLiRRoutes"            // 生成 path_validation 路由文件
 	GenerateIfnameToLinkIdentifierMapping = "GenerateIfnameToLinkIdentifierMapping" // 生成从接口名称到 link identifier 的映射文件
 	GenerateFabricNodeIDtoAddressMapping  = "GenerateFabricNodeIDtoAddressMapping"  // 生成从 fabric 节点 id 到对应的 ip 地址的映射文件
-	GenerateChainMakerIDtoNameMapping     = "GenerateChainMakerIDtoNameMapping"
+	GenerateChainMakerIDtoNameMapping     = "GenerateChainMakerIDtoNameMapping"     // 生成从 id 到 name 的映射
+
 )
 
 // Init 进行初始化
 func (t *Topology) Init() error {
-	enabledChainMaker := configs.TopConfiguration.ChainMakerConfig.Enabled
-	enabledFabric := configs.TopConfiguration.FabricConfig.Enabled
+
+	// 1. GenerateNodes 需要单独执行是因为其会更新 t.ChainMakerEnabled / t.FabricEnabled / t.FiscoBcosEnabled
+	err := t.GenerateNodes()
+	if err != nil {
+		return fmt.Errorf("generate nodes failed")
+	}
 
 	initSteps := []map[string]InitModule{
-		{GenerateNodes: InitModule{true, t.GenerateNodes}},
 		{GenerateSubnets: InitModule{true, t.GenerateSubnets}},
 		{GenerateLinks: InitModule{true, t.GenerateLinks}},
 		{GenerateFrrConfigurationFiles: InitModule{true, t.GenerateFrrConfigurationFiles}},
-		{GenerateChainMakerConfig: InitModule{enabledChainMaker, t.GenerateChainMakerConfig}},
-		{GenerateFabricConfig: InitModule{enabledFabric, t.GenerateFabricConfig}},
-		{GenerateFabricNodeIDtoAddressMapping: InitModule{enabledFabric, t.GenerateFabricNodeIDtoAddressMapping}},
+		{GenerateChainMakerConfig: InitModule{t.ChainMakerEnabled, t.GenerateChainMakerConfig}},
+		{GenerateFabricConfig: InitModule{t.FabricEnabled, t.GenerateFabricConfig}},
+		{GenerateFabricNodeIDtoAddressMapping: InitModule{t.FabricEnabled, t.GenerateFabricNodeIDtoAddressMapping}},
+		{GenerateFiscoBcosConfig: InitModule{t.FiscoBcosEnabled, t.GenerateFiscoBcosConfig}},
 		{GenerateAddressMapping: InitModule{true, t.GenerateAddressMapping}},
 		{GeneratePortMapping: InitModule{true, t.GeneratePortMapping}},
 		{CalculateAndWriteSegmentRoutes: InitModule{true, t.CalculateAndWriteSegmentRoutes}},
 		{CalculateAndWriteLiRRoutes: InitModule{true, t.CalculateAndWriteLiRRoutes}},
 		{GenerateIfnameToLinkIdentifierMapping: InitModule{true, t.GenerateIfnameToLinkIdentifierMapping}},
-		{GenerateChainMakerIDtoNameMapping: InitModule{true, t.GenerateChainMakerIDtoNameMapping}},
+		{GenerateChainMakerIDtoNameMapping: InitModule{t.ChainMakerEnabled, t.GenerateChainMakerIDtoNameMapping}},
 	}
-	err := t.initializeSteps(initSteps)
+
+	err = t.initializeSteps(initSteps)
 	if err != nil {
 		// 所有的错误都添加了完整的上下文信息并在这里进行打印
 		return fmt.Errorf("constellation init failed: %w", err)
@@ -188,6 +196,11 @@ func (t *Topology) GenerateNodes() error {
 			t.AbstractNodesMap[fiscoBcosNodeTmp.ContainerName] = abstractFiscoBcosNode
 		}
 	}
+
+	// 判断哪些链的配置应该被激活
+	t.ChainMakerEnabled = len(t.ChainmakerNodes) > 0
+	t.FabricEnabled = (len(t.FabricOrdererNodes) > 0) && (len(t.FabricPeerNodes) > 0)
+	t.FiscoBcosEnabled = len(t.FiscoBcosNodes) > 0
 
 	t.topologyInitSteps[GenerateNodes] = struct{}{}
 	topologyLogger.Infof("generate nodes")
@@ -468,9 +481,46 @@ func (t *Topology) GenerateFabricConfig() error {
 	return nil
 }
 
+func (t *Topology) GenerateFiscoBcosConfig() error {
+	if _, ok := t.topologyInitSteps[GenerateFiscoBcosConfig]; ok {
+		topologyLogger.Infof("already generate fisco bcos config")
+		return nil
+	}
+
+	// 进行总的 fisco bcos 节点数量的获取
+	fiscoBcosNodesCount := len(t.FiscoBcosNodes)
+
+	// 如果为空, 直接进行返回
+	if fiscoBcosNodesCount == 0 {
+		topologyLogger.Infof("no fisco bcos nodes -> not generate")
+		return nil
+	}
+
+	// 获取 fisco bcos 的 ip address
+	ipAddresses := make([]string, 0)
+	for _, fiscoBcosNode := range t.FiscoBcosNodes {
+		ipAddresses = append(ipAddresses, fiscoBcosNode.Interfaces[0].SourceIpv4Addr)
+	}
+
+	// 获取 p2p start port
+	p2pStartPort := configs.TopConfiguration.FiscoBcosConfig.P2pStartPort
+
+	// 创建 fisco bcos prepare
+	fiscoBcosPrepare := fisco_bcos_prepare.NewFiscoBcosPrepare(fiscoBcosNodesCount, ipAddresses, p2pStartPort)
+	err := fiscoBcosPrepare.Generate()
+	if err != nil {
+		return fmt.Errorf("generate fisco bcos config files failed, %s", err)
+	}
+
+	t.topologyInitSteps[GenerateFiscoBcosConfig] = struct{}{}
+	topologyLogger.Infof("generate fisco bcos config")
+	return nil
+}
+
 func (t *Topology) GenerateFabricNodeIDtoAddressMapping() error {
 	if _, ok := t.topologyInitSteps[GenerateFabricNodeIDtoAddressMapping]; ok {
 		topologyLogger.Infof("already generate fabricNodeIDtoAddressMapping")
+		return nil
 	}
 
 	finalString := ""

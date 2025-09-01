@@ -96,3 +96,15 @@ func (t *Topology) GetContainerNameToFabricPortMapping() (map[string]*FabricPort
 	}
 	return portMapping, nil
 }
+
+//func (t *Topology) ChainMakerEnabled() bool {
+//	return len(t.ChainmakerNodes) > 0
+//}
+//
+//func (t *Topology) FabricEnabled() bool {
+//	return len(t.FabricOrdererNodes) > 0 && len(t.FabricPeerNodes) > 0
+//}
+//
+//func (t *Topology) FiscoBcosEnabled() bool {
+//	return len(t.FiscoBcosNodes) > 0
+//}

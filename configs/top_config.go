@@ -12,6 +12,7 @@ import (
 	"zhanghefan123/security_topology/configs/chainmaker"
 	"zhanghefan123/security_topology/configs/constellation"
 	"zhanghefan123/security_topology/configs/fabric"
+	"zhanghefan123/security_topology/configs/fisco_bcos"
 	"zhanghefan123/security_topology/configs/images"
 	"zhanghefan123/security_topology/configs/network"
 	"zhanghefan123/security_topology/configs/path"
@@ -41,6 +42,7 @@ type TopConfig struct {
 	PathValidationConfig path_validation.PathValidationConfig `mapstructure:"path_validation_config"`
 	FabricConfig         fabric.FabricConfig                  `mapstructure:"fabric_config"`
 	RaspberryPiConfig    raspberrypi.RaspberryPiConfig        `mapstructure:"raspberrypi_config"`
+	FiscoBcosConfig      fisco_bcos.FiscoBcosConfig           `mapstructure:"fisco_bcos_config"`
 }
 
 var availableOspfVersions = map[string]struct{}{

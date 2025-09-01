@@ -17,6 +17,7 @@ const (
 	ImageNameChainMaker         = "chainmaker"
 	ImageNameFabricOrder        = "fabric-orderer"
 	ImageNameFabricPeer         = "fabric-peer"
+	ImageNameFiscoBcos          = "fiscoorg/fiscobcos"
 	AllImages                   = "all_images"
 )
 
@@ -42,7 +43,7 @@ var (
 		ImageNameFabricOrder, ImageNameFabricPeer,
 		ImageNamePythonEnv, ImageNameGoEnv, ImageNameChainMakerEnv,
 		ImageNameNormalNode, ImageNameGroundStation, ImageNameRouter, ImageNameConsensusNode, ImageNameNormalSatellite, ImageNameChainMaker,
-		ImageNameMaliciousNode, ImageNameLiRNode, ImageNameRealTimePosition,
+		ImageNameMaliciousNode, ImageNameLiRNode, ImageNameRealTimePosition, ImageNameFiscoBcos,
 	}
 	AvailableOperations = map[string]interface{}{
 		OperationBuild:   struct{}{},
@@ -72,6 +73,8 @@ var (
 
 		ImageNameChainMaker: struct{}{},
 
+		ImageNameFiscoBcos: struct{}{},
+
 		AllImages: struct{}{},
 	}
 
@@ -97,5 +100,6 @@ var (
 		ImageNameRealTimePosition: false,
 
 		ImageNameChainMaker: false,
+		ImageNameFiscoBcos:  false,
 	}
 )

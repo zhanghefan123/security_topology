@@ -36,26 +36,15 @@ type StartModule struct {
 
 // Start 启动
 func (t *Topology) Start() error {
-
-	// 如果已经启动了 hosts 则不需要进行启动了
-	// ----------------------------------
-	var enabledFabric bool
-	if len(t.FabricOrdererNodes) > 0 {
-		enabledFabric = true
-	} else {
-		enabledFabric = false
-	}
-	// ----------------------------------
-
 	startSteps := []map[string]StartModule{
 		{StartEtcdService: StartModule{true, t.StartEtcdService}},
-		{StoreToEtcd: StartModule{true, t.StoreToEtcd}},                                                  // step1 将要存储的东西放到 etcd 之中
-		{GenerateNodesVethPairs: StartModule{true, t.GenerateNodesVethPairs}},                            // step2 先创建 veth pair 然后改变链路的命名空间
-		{StartNodeContainers: StartModule{true, t.StartNodeContainers}},                                  // step3 一定要在 step1 之后，因为创建了容器后才有命名空间
-		{SetVethNameSpaces: StartModule{true, t.SetVethNamespaces}},                                      // step4 一定要在 step2 之后，因为创建了容器才能设置 veth 的 namespace
-		{SetLinkParameters: StartModule{true, t.SetLinkParameters}},                                      // step5 进行链路属性的设置
-		{UpdateHosts: StartModule{enabledFabric, t.UpdateHosts}},                                         // step6 进行 hosts 文件的更新, 只有启动了 fabric 之后才需要进行 hosts 文件的更新
-		{AddDefaultRouteToFirstInterface: StartModule{enabledFabric, t.AddDefaultRouteToFirstInterface}}, // step7 进行默认路由的添加
+		{StoreToEtcd: StartModule{true, t.StoreToEtcd}},                                                    // step1 将要存储的东西放到 etcd 之中
+		{GenerateNodesVethPairs: StartModule{true, t.GenerateNodesVethPairs}},                              // step2 先创建 veth pair 然后改变链路的命名空间
+		{StartNodeContainers: StartModule{true, t.StartNodeContainers}},                                    // step3 一定要在 step1 之后，因为创建了容器后才有命名空间
+		{SetVethNameSpaces: StartModule{true, t.SetVethNamespaces}},                                        // step4 一定要在 step2 之后，因为创建了容器才能设置 veth 的 namespace
+		{SetLinkParameters: StartModule{true, t.SetLinkParameters}},                                        // step5 进行链路属性的设置
+		{UpdateHosts: StartModule{t.FabricEnabled, t.UpdateHosts}},                                         // step6 进行 hosts 文件的更新, 只有启动了 fabric 之后才需要进行 hosts 文件的更新
+		{AddDefaultRouteToFirstInterface: StartModule{t.FabricEnabled, t.AddDefaultRouteToFirstInterface}}, // step7 进行默认路由的添加
 	}
 	err := t.startSteps(startSteps)
 	if err != nil {

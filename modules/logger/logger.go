@@ -18,6 +18,7 @@ const (
 	ModuleChainmakerPrepare        = "CHAINMAKER_PREPARE"
 	ModuleFabricPrepare            = "FABRIC_PREPARE"
 	ModuleRaspberrypiConfigure     = "RASPBERRYPI_CONFIGURE"
+	ModuleFiscoBcosPrepare         = "FISCO_BCOS_PREPARE"
 )
 
 func init() {

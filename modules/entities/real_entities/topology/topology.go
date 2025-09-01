@@ -73,6 +73,10 @@ type Topology struct {
 	topologyStopSteps  map[string]struct{} // 拓扑停止步骤
 
 	NetworkInterfaces int // 网络接口数量
+
+	ChainMakerEnabled bool
+	FabricEnabled     bool
+	FiscoBcosEnabled  bool
 }
 
 // NewTopology 创建新的拓扑
@@ -113,6 +117,10 @@ func NewTopology(client *docker.Client, etcdClient *clientv3.Client, params *par
 		topologyStopSteps:  make(map[string]struct{}),
 
 		NetworkInterfaces: 0,
+
+		ChainMakerEnabled: false,
+		FabricEnabled:     false,
+		FiscoBcosEnabled:  false,
 	}
 	topologyLogger.Infof("create new images")
 	return topology

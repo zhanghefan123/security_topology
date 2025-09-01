@@ -20,7 +20,7 @@ func StartContainer(client *docker.Client, node *node.AbstractNode) error {
 
 	// 2. 判断节点状态
 	if normalNode.Status != types.NetworkNodeStatus_Created {
-		return fmt.Errorf("not in started state, cannot stop")
+		return fmt.Errorf("not in created state, cannot start")
 	}
 
 	// 3. 获取容器 id 进行容器的停止

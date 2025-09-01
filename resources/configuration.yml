@@ -42,7 +42,6 @@ constellation_config:
 
 
 chain_maker_config:
-  enabled: true
   p2p_start_port: 11301
   rpc_start_port: 12301
   log_level: ERROR
@@ -128,7 +127,6 @@ path_validation_config:
   lir_single_time_encoding_count: -1 # 设置的每次封装的元素个数
 
 fabric_config:
-  enabled: true
   order_general_listen_start_port: 7050
   order_admin_listen_start_port: 8050
   order_operation_listen_start_port: 9050
@@ -149,6 +147,12 @@ fabric_config:
   fabric_project_path: /home/zhf/Projects/emulator/fabric
   fabric_samples_path: /home/zhf/Projects/emulator/fabric-samples
   fabric_network_path: /home/zhf/Projects/emulator/fabric-samples/test-network
+
+fisco_bcos_config:
+  project_path: /home/zhf/Projects/emulator/FISCO-BCOS
+  example_path: /home/zhf/Projects/emulator/FISCO-BCOS-EXAMPLE
+  p2p_start_port: 30300
+  rpc_start_port: 20200
 
 raspberrypi_config:
   node_ids:

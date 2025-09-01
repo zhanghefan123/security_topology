@@ -40,6 +40,7 @@ const (
 	RemoveDefaultRoutes         = "RemoveDefaultRoutes"
 	RemoveAllChainCodeImages    = "RemoveAllChainCodeImages"
 	RemoveSimulationFiles       = "RemoveSimulationFiles"
+	RemoveAllFiscoBcosFiles     = "RemoveAllFiscoBcosFiles"
 )
 
 // RemoveFunction 删除函数
@@ -54,15 +55,6 @@ type RemoveModule struct {
 // Remove 删除整个拓扑
 func (t *Topology) Remove() error {
 
-	removeChainMaker := configs.TopConfiguration.ChainMakerConfig.Enabled
-
-	var enabledFabric bool
-	if len(t.FabricOrdererNodes) > 0 {
-		enabledFabric = true
-	} else {
-		enabledFabric = false
-	}
-
 	removeSteps := []map[string]RemoveModule{
 		{DeleteWebShells: RemoveModule{true, t.DeleteWebShells}},
 		{RemoveInterfaceRateMonitors: RemoveModule{true, t.RemoveInterfaceRateMonitor}},
@@ -72,11 +64,12 @@ func (t *Topology) Remove() error {
 		{RemoveLinks: RemoveModule{true, t.RemoveLinks}},
 		{RemoveEtcdService: RemoveModule{true, t.RemoveEtcdService}},
 		{RemoveConfigurationFiles: RemoveModule{true, t.RemoveConfigurationFiles}},
-		{RemoveChainMakerFiles: RemoveModule{removeChainMaker, t.RemoveChainMakerFiles}},
-		{RemoveFabricFiles: RemoveModule{enabledFabric, t.RemoveFabricFiles}},
+		{RemoveChainMakerFiles: RemoveModule{t.ChainMakerEnabled, t.RemoveChainMakerFiles}},
+		{RemoveFabricFiles: RemoveModule{t.FabricEnabled, t.RemoveFabricFiles}},
 		{RemoveVolumes: RemoveModule{true, t.RemoveVolumes}},
-		{RemoveDefaultRoutes: RemoveModule{enabledFabric, t.RemoveDefaultRoutes}},
-		{RemoveAllChainCodeImages: RemoveModule{enabledFabric, t.RemoveAllChainCodeImages}},
+		{RemoveDefaultRoutes: RemoveModule{t.FabricEnabled, t.RemoveDefaultRoutes}},
+		{RemoveAllChainCodeImages: RemoveModule{t.FabricEnabled, t.RemoveAllChainCodeImages}},
+		{RemoveAllFiscoBcosFiles: RemoveModule{t.FiscoBcosEnabled, t.RemoveAllFiscoBcosFiles}},
 	}
 	err := t.removeSteps(removeSteps)
 	if err != nil {
@@ -465,5 +458,21 @@ func (t *Topology) RemoveAllChainCodeImages() error {
 
 	t.topologyStopSteps[RemoveAllChainCodeImages] = struct{}{}
 	topologyLogger.Infof("execute remove all chaincode images")
+	return nil
+}
+
+func (t *Topology) RemoveAllFiscoBcosFiles() error {
+	if _, ok := t.topologyStopSteps[RemoveAllFiscoBcosFiles]; ok {
+		topologyLogger.Infof("already remove all fisco bcos files")
+		return nil
+	}
+
+	dirToDelete := filepath.Join(configs.TopConfiguration.FiscoBcosConfig.ExamplePath, "nodes/")
+	err := os.RemoveAll(dirToDelete)
+	if err != nil {
+		return fmt.Errorf("failed to delete the fisco bcos generated files")
+	}
+
+	t.topologyStopSteps[RemoveAllFiscoBcosFiles] = struct{}{}
 	return nil
 }

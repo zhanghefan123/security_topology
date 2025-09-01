@@ -1,7 +1,6 @@
 package chainmaker
 
 type ChainMakerConfig struct {
-	Enabled         bool   `mapstructure:"enabled"`
 	P2pStartPort    int    `mapstructure:"p2p_start_port"`
 	RpcStartPort    int    `mapstructure:"rpc_start_port"`
 	LogLevel        string `mapstructure:"log_level"`

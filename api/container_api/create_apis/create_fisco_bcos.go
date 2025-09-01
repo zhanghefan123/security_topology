@@ -12,6 +12,71 @@ import (
 	"zhanghefan123/security_topology/modules/entities/types"
 )
 
+// 构建的 bash 脚本
+/*
+#!/bin/bash
+SHELL_FOLDER=$(cd $(dirname $0);pwd)
+
+LOG_ERROR() {
+    content=${1}
+    echo -e "\033[31m[ERROR] ${content}\033[0m"
+}
+
+LOG_INFO() {
+    content=${1}
+    echo -e "\033[32m[INFO] ${content}\033[0m"
+}
+
+fisco_bcos=${SHELL_FOLDER}/../fisco-bcos
+export RUST_LOG=bcos_wasm=error
+cd ${SHELL_FOLDER}
+node=$(basename ${SHELL_FOLDER})
+node_pid=$(docker ps |grep ${SHELL_FOLDER//\//} | grep -v grep|awk '{print $1}')
+ulimit -n 1024
+#start monitor
+dirs=($(ls -l ${SHELL_FOLDER} | awk '/^d/ {print $NF}'))
+for dir in ${dirs[*]}
+do
+    if [[ -f "${SHELL_FOLDER}/${dir}/node.mtail" && -f "${SHELL_FOLDER}/${dir}/start_mtail_monitor.sh" ]];then
+        echo "try to start ${dir}"
+        bash ${SHELL_FOLDER}/${dir}/start_mtail_monitor.sh &
+    fi
+done
+
+
+if [ ! -z ${node_pid} ];then
+    kill -USR1 ${node_pid}
+    sleep 0.2
+    kill -USR2 ${node_pid}
+    sleep 0.2
+    echo " ${node} is running, container id is $node_pid."
+    exit 0
+else
+*/
+// 最主要的命令
+// docker run -d --rm --name ${SHELL_FOLDER//\//} -v ${SHELL_FOLDER}:/data --network=host -w=/data fiscoorg/fiscobcos:v3.12.1 -c config.ini -g config.genesis
+/*
+    sleep 1.5
+fi
+try_times=4
+i=0
+while [ $i -lt ${try_times} ]
+do
+    node_pid=$(docker ps |grep ${SHELL_FOLDER//\//} | grep -v grep|awk '{print $1}')
+    success_flag=success
+    if [[ ! -z ${node_pid} && ! -z "${success_flag}" ]];then
+        echo -e "\033[32m ${node} start successfully pid=${node_pid}\033[0m"
+        exit 0
+    fi
+    sleep 0.5
+    ((i=i+1))
+done
+echo -e "\033[31m  Exceed waiting time. Please try again to start ${node} \033[0m"
+tail -n20 $(docker inspect --format='{{.LogPath}}' ${SHELL_FOLDER//\//})
+
+*/
+
+// CreateFiscoBcosNode 创建 FiscoBcosNode 容器的代码
 func CreateFiscoBcosNode(client *docker.Client, fiscoBcosNode *nodes.FiscoBcosNode, graphNodeId int) error {
 	if fiscoBcosNode.Status != types.NetworkNodeStatus_Logic {
 		return fmt.Errorf("fisco bcos node not in logic status cannot create")
@@ -42,12 +107,14 @@ func CreateFiscoBcosNode(client *docker.Client, fiscoBcosNode *nodes.FiscoBcosNo
 	}
 
 	// 3. 创建容器卷映射
-
+	examplePath := configs.TopConfiguration.FiscoBcosConfig.ExamplePath
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
-	nodeDir := filepath.Join(simulationDir, fiscoBcosNode.ContainerName)
+	selfDefinedNodeDir := filepath.Join(simulationDir, fiscoBcosNode.ContainerName)
+	originalNodePath := filepath.Join(examplePath, fmt.Sprintf("nodes/127.0.0.1/node%d/", fiscoBcosNode.Id-1))
 
 	volumes := []string{
-		fmt.Sprintf("%s:%s", nodeDir, fmt.Sprintf("/configuration/%s", fiscoBcosNode.ContainerName)),
+		fmt.Sprintf("%s:%s", selfDefinedNodeDir, fmt.Sprintf("/configuration/%s", fiscoBcosNode.ContainerName)),
+		fmt.Sprintf("%s:%s", originalNodePath, fmt.Sprintf("/data")),
 	}
 
 	// 4. 配置环境变量
@@ -60,7 +127,6 @@ func CreateFiscoBcosNode(client *docker.Client, fiscoBcosNode *nodes.FiscoBcosNo
 		fmt.Sprintf("%s=%d", "NODE_ID", fiscoBcosNode.Id),
 		fmt.Sprintf("%s=%s", "CONTAINER_NAME", fiscoBcosNode.ContainerName),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
-		fmt.Sprintf("%s=%s", "INTERFACE_NAME", fmt.Sprintf("%s%d_idx%d", types.GetPrefix(fiscoBcosNode.Type), fiscoBcosNode.Id, 1)),
 		fmt.Sprintf("%s=%d", "WEB_SERVER_LISTEN_PORT", webPort),
 	}
 
@@ -73,16 +139,36 @@ func CreateFiscoBcosNode(client *docker.Client, fiscoBcosNode *nodes.FiscoBcosNo
 	}
 
 	// 6. 端口映射 (现在暂时没有端口映射)
-	exposedPorts := nat.PortSet{}
+	rpcStartPort := configs.TopConfiguration.FiscoBcosConfig.RpcStartPort
+	fmt.Printf(fmt.Sprintf("%d/tcp\n", rpcStartPort+fiscoBcosNode.Id-1))
+	rpcPort := nat.Port(fmt.Sprintf("%d/tcp", rpcStartPort+fiscoBcosNode.Id-1))
 
-	portBindings := nat.PortMap{}
+	exposedPorts := nat.PortSet{
+		rpcPort: {},
+	}
+
+	portBindings := nat.PortMap{
+		rpcPort: []nat.PortBinding{
+			{
+				HostIP:   "0.0.0.0",
+				HostPort: string(rpcPort),
+			},
+		},
+	}
 
 	// 7. 创建容器配置
+	//错误的 path -> 认为是宿主机路径下的配置文件
+	/*
+		    pathToConfigIni := filepath.Join(examplePath, fmt.Sprintf("nodes/127.0.0.1/node%d/config.ini", fiscoBcosNode.Id-1))
+			pathToGenesis := filepath.Join(examplePath, fmt.Sprintf("nodes/127.0.0.1/node%d/config.genesis", fiscoBcosNode.Id-1))
+	*/
 	containerConfig := &container.Config{
 		Image:        configs.TopConfiguration.ImagesConfig.FiscoBcosImageName,
 		Tty:          true,
 		Env:          envs,
 		ExposedPorts: exposedPorts,
+		WorkingDir:   "/data",                                              // 对应于 -w=/data
+		Cmd:          []string{"-c", "config.ini", "-g", "config.genesis"}, // 这两个配置文件的路径都是容器内的
 	}
 
 	// 8. hostConfig
@@ -94,6 +180,7 @@ func CreateFiscoBcosNode(client *docker.Client, fiscoBcosNode *nodes.FiscoBcosNo
 		Sysctls:      sysctls,
 		PortBindings: portBindings,
 		Resources:    resourcesLimit,
+		//NetworkMode:  "host", // 对应于 --network=host
 	}
 
 	// 9. 进行容器的创建
@@ -109,7 +196,11 @@ func CreateFiscoBcosNode(client *docker.Client, fiscoBcosNode *nodes.FiscoBcosNo
 		return fmt.Errorf("create fisco bcos failed %v", err)
 	}
 
+	// 10. 设置创建后分配的 id
 	fiscoBcosNode.ContainerId = response.ID
+
+	// 11. 状态转换
+	fiscoBcosNode.Status = types.NetworkNodeStatus_Created
 
 	return nil
 }

@@ -1,7 +1,6 @@
 package fabric
 
 type FabricConfig struct {
-	Enabled                       bool   `mapstructure:"enabled"`
 	OrderGeneralListenStartPort   int    `mapstructure:"order_general_listen_start_port"`
 	OrderAdminListenStartPort     int    `mapstructure:"order_admin_listen_start_port"`
 	OrderOperationListenStartPort int    `mapstructure:"order_operation_listen_start_port"`

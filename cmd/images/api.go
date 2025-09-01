@@ -94,6 +94,12 @@ func buildImage(userSelectedImage string) error {
 			return fmt.Errorf("fail to build fabric peer")
 		}
 		return nil
+	} else if userSelectedImage == variables.ImageNameFiscoBcos {
+		err := buildImageForFiscoBcos()
+		if err != nil {
+			return fmt.Errorf("fail to build fisco bcos")
+		}
+		return nil
 	} else if userSelectedImage == variables.ImageNameFabricOrder {
 		err := buildImageForFabricOrder()
 		if err != nil {
@@ -127,6 +133,11 @@ func removeImage(imageName string) error {
 		err := removeImageForFabricOrder()
 		if err != nil {
 			return fmt.Errorf("fail to remove fabric order image: %v", err)
+		}
+	} else if variables.UserSelectedImage == variables.ImageNameFiscoBcos {
+		err := removeImageForFiscoBcos()
+		if err != nil {
+			return fmt.Errorf("fail to remove fisco bcos image: %v", err)
 		}
 	} else {
 		commandStr := fmt.Sprintf("rmi %s", imageName)

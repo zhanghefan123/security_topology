@@ -237,7 +237,6 @@ func startTopologyInner(topologyParams *params.TopologyParams) error {
 	// 2. 进行资源限制的加载
 	configs.TopConfiguration.ResourcesConfig.CpuLimit = topologyParams.ConsensusNodeCpu
 	configs.TopConfiguration.ResourcesConfig.MemoryLimit = topologyParams.ConsensusNodeMemory
-	fmt.Println("consensus node memory", configs.TopConfiguration.ResourcesConfig.MemoryLimit)
 	// 3. 初始化 dockerClient
 	dockerClient, err = client.NewDockerClient()
 	if err != nil {
