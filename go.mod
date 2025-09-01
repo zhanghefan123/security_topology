@@ -21,6 +21,7 @@ require (
 	github.com/kr/pretty v0.3.1
 	github.com/libp2p/go-libp2p v0.22.0
 	github.com/melbahja/goph v1.4.0
+	github.com/otiai10/copy v1.14.1
 	github.com/schollz/progressbar/v3 v3.15.0
 	github.com/shirou/gopsutil v2.19.10+incompatible
 	github.com/sirupsen/logrus v1.9.3
@@ -113,6 +114,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/opentracing/opentracing-go v1.1.0 // indirect
+	github.com/otiai10/mint v1.6.3 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/pingcap/errors v0.11.5-0.20190809092503-95897b64e011 // indirect
 	github.com/pingcap/log v0.0.0-20200511115504-543df19646ad // indirect
@@ -148,6 +150,7 @@ require (
 	golang.org/x/crypto v0.32.0 // indirect
 	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa // indirect
 	golang.org/x/net v0.34.0 // indirect
+	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/term v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect

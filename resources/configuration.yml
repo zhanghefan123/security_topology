@@ -151,6 +151,7 @@ fabric_config:
 fisco_bcos_config:
   project_path: /home/zhf/Projects/emulator/FISCO-BCOS
   example_path: /home/zhf/Projects/emulator/FISCO-BCOS-EXAMPLE
+  console_path: /home/zhf/Projects/emulator/FISCO-CONSOLE
   p2p_start_port: 30300
   rpc_start_port: 20200
 

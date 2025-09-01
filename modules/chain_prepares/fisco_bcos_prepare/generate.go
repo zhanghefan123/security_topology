@@ -2,6 +2,8 @@ package fisco_bcos_prepare
 
 import (
 	"fmt"
+	"github.com/otiai10/copy"
+	"os"
 	"path/filepath"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/utils/dir"
@@ -12,6 +14,7 @@ import (
 const (
 	ExecuteBuildChainSh = "ExecuteBuidlChainSh"
 	ModifyNodesJson     = "ModifyNodesJson"
+	ConsolePrepareWork  = "ConsolePrepareWork"
 )
 
 type GenerateFunction func() error
@@ -20,6 +23,7 @@ func (p *FiscoBcosPrepare) Generate() error {
 	generateSteps := []map[string]GenerateFunction{
 		{ExecuteBuildChainSh: p.ExecuteBuildChainSh},
 		{ModifyNodesJson: p.ModifyNodesJson},
+		{ConsolePrepareWork: p.ConsolePrepareWork},
 	}
 	err := p.generatePrepareSteps(generateSteps)
 	if err != nil {
@@ -116,6 +120,40 @@ func (p *FiscoBcosPrepare) ModifyNodesJson() error {
 	}
 
 	p.generateSteps[ModifyNodesJson] = struct{}{}
+	return nil
+}
+
+func (p *FiscoBcosPrepare) ConsolePrepareWork() error {
+	if _, ok := p.generateSteps[ConsolePrepareWork]; ok {
+		fiscoBcosPrepareWorkLogger.Infof("already prepare console")
+		return nil
+	}
+
+	examplePath := configs.TopConfiguration.FiscoBcosConfig.ExamplePath
+	consolePath := configs.TopConfiguration.FiscoBcosConfig.ConsolePath
+	configExampleFile := filepath.Join(consolePath, "conf/config-example.toml")
+	configDestinationFile := filepath.Join(consolePath, "conf/config.toml")
+	err := copy.Copy(configExampleFile, configDestinationFile)
+	if err != nil {
+		return fmt.Errorf("copy config-example.toml --> config.toml failed, due to err: %v", err)
+	}
+
+	sdkCertsPath := filepath.Join(examplePath, "nodes/127.0.0.1/sdk/")
+	sdkDestinationPath := filepath.Join(consolePath, "conf/")
+	entries, err := os.ReadDir(sdkCertsPath)
+	if err != nil {
+		return fmt.Errorf("could not read sdkCertsPath")
+	}
+	for _, entry := range entries {
+		fileSrcPath := filepath.Join(sdkCertsPath, entry.Name())
+		fileDestPath := filepath.Join(sdkDestinationPath, entry.Name())
+		err = copy.Copy(fileSrcPath, fileDestPath)
+		if err != nil {
+			return fmt.Errorf("copy sdkCertsPath --> console/conf failed, due to err: %v", err)
+		}
+	}
+
+	p.generateSteps[ConsolePrepareWork] = struct{}{}
 	return nil
 }
 

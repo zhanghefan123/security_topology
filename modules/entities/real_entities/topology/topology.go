@@ -5,7 +5,7 @@ import (
 	docker "github.com/docker/docker/client"
 	"go.etcd.io/etcd/client/v3"
 	"gonum.org/v1/gonum/graph/simple"
-	"zhanghefan123/security_topology/modules/chainmaker_prepare"
+	"zhanghefan123/security_topology/modules/chain_prepares/chainmaker_prepare"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/nodes"
