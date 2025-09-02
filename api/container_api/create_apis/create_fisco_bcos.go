@@ -120,6 +120,7 @@ func CreateFiscoBcosNode(client *docker.Client, fiscoBcosNode *nodes.FiscoBcosNo
 	// 4. 配置环境变量
 	enableFrr := configs.TopConfiguration.NetworkConfig.EnableFrr
 	webPort := configs.TopConfiguration.ServicesConfig.WebConfig.StartPort + graphNodeId
+	leaderPeriod := configs.TopConfiguration.FiscoBcosConfig.LeaderPeriod
 	envs := []string{
 		// zhf 添加的环境变量
 		fmt.Sprintf("%s=%s", "FIRST_INTERFACE_NAME", firstInterfaceName),
@@ -128,15 +129,16 @@ func CreateFiscoBcosNode(client *docker.Client, fiscoBcosNode *nodes.FiscoBcosNo
 		fmt.Sprintf("%s=%s", "CONTAINER_NAME", fiscoBcosNode.ContainerName),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
 		fmt.Sprintf("%s=%d", "WEB_SERVER_LISTEN_PORT", webPort),
+		fmt.Sprintf("%s=%d", "LEADER_PERIOD", leaderPeriod),
 	}
 
 	// 5. 资源限制
-	cpuLimit := configs.TopConfiguration.ResourcesConfig.CpuLimit
-	memoryLimit := configs.TopConfiguration.ResourcesConfig.MemoryLimit
-	resourcesLimit := container.Resources{
-		NanoCPUs: int64(cpuLimit * 1e9),
-		Memory:   int64(memoryLimit * 1024 * 1024),
-	}
+	//cpuLimit := configs.TopConfiguration.ResourcesConfig.CpuLimit
+	//memoryLimit := configs.TopConfiguration.ResourcesConfig.MemoryLimit
+	//resourcesLimit := container.Resources{
+	//	NanoCPUs: int64(cpuLimit * 1e9),
+	//	Memory:   int64(memoryLimit * 1024 * 1024),
+	//}
 
 	// 6. 端口映射 (现在暂时没有端口映射)
 	rpcStartPort := configs.TopConfiguration.FiscoBcosConfig.RpcStartPort
@@ -167,8 +169,8 @@ func CreateFiscoBcosNode(client *docker.Client, fiscoBcosNode *nodes.FiscoBcosNo
 		Tty:          true,
 		Env:          envs,
 		ExposedPorts: exposedPorts,
-		WorkingDir:   "/data",                                              // 对应于 -w=/data
-		Cmd:          []string{"-c", "config.ini", "-g", "config.genesis"}, // 这两个配置文件的路径都是容器内的
+		WorkingDir:   "/data",                                                                           // 对应于 -w=/data
+		Cmd:          []string{"/usr/local/bin/fisco-bcos", "-c", "config.ini", "-g", "config.genesis"}, // 这两个配置文件的路径都是容器内的
 	}
 
 	// 8. hostConfig
@@ -179,7 +181,7 @@ func CreateFiscoBcosNode(client *docker.Client, fiscoBcosNode *nodes.FiscoBcosNo
 		Privileged:   true,
 		Sysctls:      sysctls,
 		PortBindings: portBindings,
-		Resources:    resourcesLimit,
+		//Resources:    resourcesLimit,
 		//NetworkMode:  "host", // 对应于 --network=host
 	}
 

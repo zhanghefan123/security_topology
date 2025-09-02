@@ -16,6 +16,11 @@ type FabricPorts struct {
 	OrdererGeneralListenPort int
 }
 
+type FiscoBcosPorts struct {
+	p2pPort int
+	rpcPort int
+}
+
 // GetChainMakerNodeListenAddresses 获取长安链节点的监听地址
 func (t *Topology) GetChainMakerNodeListenAddresses() []string {
 	listeningAddresses := make([]string, 0)
@@ -71,8 +76,8 @@ func (t *Topology) GetContainerNameToGraphIdMapping() (map[string]int, error) {
 	return idMapping, nil
 }
 
-// GetContainerNameToChainPortMapping 获取所有共识节点从容器名到
-func (t *Topology) GetContainerNameToChainPortMapping() (map[string]*ChainmakerPorts, error) {
+// GetContainerNameToChainMakerPortMapping 获取所有共识节点从容器名到
+func (t *Topology) GetContainerNameToChainMakerPortMapping() (map[string]*ChainmakerPorts, error) {
 	portMapping := make(map[string]*ChainmakerPorts)
 	p2pStartPort := configs.TopConfiguration.ChainMakerConfig.P2pStartPort
 	rpcStartPort := configs.TopConfiguration.ChainMakerConfig.RpcStartPort
@@ -93,6 +98,18 @@ func (t *Topology) GetContainerNameToFabricPortMapping() (map[string]*FabricPort
 		fabricGeneralListenPort := configs.TopConfiguration.FabricConfig.OrderGeneralListenStartPort + fabricOrder.Id
 		portMapping[fabricOrder.ContainerName] = &FabricPorts{fabricAdminListenPort,
 			fabricGeneralListenPort}
+	}
+	return portMapping, nil
+}
+
+func (t *Topology) GetContainerNameToFiscoBcosPortMapping() (map[string]*FiscoBcosPorts, error) {
+	portMapping := make(map[string]*FiscoBcosPorts)
+	// 进行 fisco-bcos 的 portMapping 的添加
+	for _, fiscoBcosNode := range t.FiscoBcosNodes {
+		p2pPort := configs.TopConfiguration.FiscoBcosConfig.P2pStartPort + fiscoBcosNode.Id - 1
+		rpcPort := configs.TopConfiguration.FiscoBcosConfig.RpcStartPort + fiscoBcosNode.Id - 1
+		portMapping[fiscoBcosNode.ContainerName] = &FiscoBcosPorts{p2pPort,
+			rpcPort}
 	}
 	return portMapping, nil
 }

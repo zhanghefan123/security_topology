@@ -154,6 +154,7 @@ fisco_bcos_config:
   console_path: /home/zhf/Projects/emulator/FISCO-CONSOLE
   p2p_start_port: 30300
   rpc_start_port: 20200
+  leader_period: 100000
 
 raspberrypi_config:
   node_ids:

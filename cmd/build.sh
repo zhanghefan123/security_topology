@@ -12,4 +12,5 @@
 
 # 在新的版本之中, 都配置到了环境变量之中
 go mod tidy
-go build
+go build -ldflags="-r /usr/local/lib"
+# 加上  -ldflags="-r /usr/local/lib" 的目的是这个库在 fisco-bcos-go-api 调用的时候需要

@@ -621,7 +621,7 @@ func (t *Topology) GeneratePortMapping() error {
 		return nil
 	}
 
-	chainMakerPortMapping, err := t.GetContainerNameToChainPortMapping()
+	chainMakerPortMapping, err := t.GetContainerNameToChainMakerPortMapping()
 	if err != nil {
 		return fmt.Errorf("generate port mapping files failed: %w", err)
 	}
@@ -631,12 +631,20 @@ func (t *Topology) GeneratePortMapping() error {
 		return fmt.Errorf("generate fabric port mapping files failed: %w", err)
 	}
 
+	fiscoBcosPortMapping, err := t.GetContainerNameToFiscoBcosPortMapping()
+	if err != nil {
+		return fmt.Errorf("generate fisco bcos port mapping files failed: %w", err)
+	}
+
 	finalString := ""
 	for key, value := range chainMakerPortMapping {
 		finalString += fmt.Sprintf("%s->%d->%d\n", key, value.p2pPort, value.rpcPort)
 	}
 	for key, value := range fabricPortMapping {
 		finalString += fmt.Sprintf("%s->%d->%d\n", key, value.OrdererAdminListenPort, value.OrdererGeneralListenPort)
+	}
+	for key, value := range fiscoBcosPortMapping {
+		finalString += fmt.Sprintf("%s->%d->%d\n", key, value.p2pPort, value.rpcPort)
 	}
 
 	// 进行所有节点的遍历
