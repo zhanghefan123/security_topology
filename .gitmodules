@@ -11,3 +11,6 @@
 [submodule "images/realtime_position"]
 	path = images/realtime_position
 	url = https://github.com/zhanghefan123/realtime_position.git
+[submodule "api/fisco_bcos_api/go-sdk"]
+	path = api/fisco_bcos_api/go-sdk
+	url = https://github.com/zhanghefan123/realtime_position.git

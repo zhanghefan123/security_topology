@@ -80,6 +80,7 @@ github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20240726021820-a278b4749e34 h1:4YqD9AkbN
 github.com/FISCO-BCOS/bcos-c-sdk v0.0.0-20240726021820-a278b4749e34/go.mod h1:n2KxbYa73MW3xdLVu2vpPpoblZMms+CwPmvFkubO9xM=
 github.com/FISCO-BCOS/crypto v0.0.0-20200202032121-bd8ab0b5d4f1 h1:ThPht4qK10+cMZC5COIjHPq0INm5HAMVYqrez5zEgFI=
 github.com/FISCO-BCOS/crypto v0.0.0-20200202032121-bd8ab0b5d4f1/go.mod h1:UrLdwsFrjiaCsvdcPLcH6B7s/FUmym3qfM93u2ziR+4=
+github.com/FISCO-BCOS/go-sdk/v3 v3.0.2/go.mod h1:+I/+xu+rvrhUe0C1p9xh978ODtkYll5A9OV5HiFEnhg=
 github.com/Jeffail/gabs/v2 v2.5.1/go.mod h1:xCn81vdHKxFUuWWAaD5jCTQDNPBMh5pPs9IJ+NcziBI=
 github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible/go.mod h1:r7JcOSlj0wfOMncg0iLm8Leh48TZaKVeNIfJntJ2wa0=
 github.com/KyleBanks/depth v1.2.1/go.mod h1:jzSb9d0L43HxTQfT+oSA1EEp2q+ne2uh6XgeJcm8brE=

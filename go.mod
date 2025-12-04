@@ -187,7 +187,7 @@ require (
 )
 
 replace (
-	github.com/FISCO-BCOS/go-sdk/v3 v3.0.2 => ./api/chain_api/fisco_bcos_api/go-sdk/v3
+	//github.com/FISCO-BCOS/go-sdk/v3 v3.0.2 => ./api/chain_api/fisco_bcos_api/go-sdk/v3
 	github.com/coreos/bbolt => go.etcd.io/bbolt v1.3.6
 	github.com/hyperledger/fabric-gateway v1.7.1 => ./gateway
 )
