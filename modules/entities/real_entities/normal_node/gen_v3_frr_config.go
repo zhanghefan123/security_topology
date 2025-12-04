@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"zhanghefan123/security_topology/configs"
-	"zhanghefan123/security_topology/modules/utils/dir"
+	"zhanghefan123/security_topology/utils/dir"
 )
 
 const (

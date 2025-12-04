@@ -19,9 +19,9 @@ import (
 	"zhanghefan123/security_topology/modules/entities/real_entities/services/etcd"
 	"zhanghefan123/security_topology/modules/entities/real_entities/services/position"
 	"zhanghefan123/security_topology/modules/entities/types"
-	"zhanghefan123/security_topology/modules/utils/protobuf"
 	posPbLink "zhanghefan123/security_topology/services/update/protobuf/link"
 	posPbNode "zhanghefan123/security_topology/services/update/protobuf/node"
+	"zhanghefan123/security_topology/utils/protobuf"
 )
 
 const (

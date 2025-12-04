@@ -7,17 +7,27 @@ type ChainMakerConfig struct {
 	VmGoRuntimePort int    `mapstructure:"vm_go_runtime_port"`
 	VmGoEnginePort  int    `mapstructure:"vm_go_engine_port"`
 
-	EnableBroadcastDefence   bool `mapstructure:"enable_broadcast_defence"`
-	DirectRemoveAttackedNode bool `mapstructure:"direct_remove_attacked_node"`
-	SpeedCheck               bool `mapstructure:"speed_check"`
-	BlocksPerProposer        int  `mapstructure:"blocks_per_proposer"`
+	EnableDefence   bool `mapstructure:"enable_defence"`
+	CheckDdosPeriod int  `mapstructure:"check_ddos_period_ms"`
 
-	// etcd keys
-	StartDefenceKey string `mapstructure:"start_defence_key"`
+	BlocksPerProposer     int  `mapstructure:"blocks_per_proposer"`
+	TimeoutPropose        int  `mapstructure:"timeout_propose"`
+	TimeoutProposeOptimal int  `mapstructure:"timeout_propose_optimal"`
+	ProposeOptimal        bool `mapstructure:"propose_optimal"`
+	EnableBlackList       bool `mapstructure:"enable_blacklist"`
 
 	// 一些路径相关的配置
 	ChainMakerGoProjectPath string `mapstructure:"chainmaker_go_project_path"`
 	ChainMakerBuild         string `mapstructure:"chainmaker_build"`
 	TemplatesFilePath       string `mapstructure:"templates_file_path"`
-	CryptoGenProjectPath    string // $ChainMakerGoProjectPath/tools/chainmaker-cryptogen
+
+	ResendSync     bool `mapstructure:"resend_sync"`
+	TickIntervalMs int  `mapstructure:"tick_interval_ms"`
+
+	BatchSizeFromOneNode int `mapstructure:"batch_size_from_one_node"`
+
+	CryptoGenProjectPath string // $ChainMakerGoProjectPath/tools/chainmaker-cryptogen
+	BlockReqTimeout      int    `mapstructure:"block_req_timeout"`
+	BlockIntervalMs      int    `mapstructure:"block_interval_ms"`
+	BlockTxCapacity      int    `mapstructure:"block_tx_capacity"`
 }

@@ -18,11 +18,11 @@ import (
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/satellites"
 	"zhanghefan123/security_topology/modules/entities/types"
-	"zhanghefan123/security_topology/modules/utils/dir"
-	"zhanghefan123/security_topology/modules/utils/execute"
-	"zhanghefan123/security_topology/modules/utils/file"
-	"zhanghefan123/security_topology/modules/utils/network"
-	"zhanghefan123/security_topology/modules/utils/position"
+	"zhanghefan123/security_topology/utils/dir"
+	"zhanghefan123/security_topology/utils/execute"
+	"zhanghefan123/security_topology/utils/file"
+	"zhanghefan123/security_topology/utils/network"
+	"zhanghefan123/security_topology/utils/position"
 )
 
 const (

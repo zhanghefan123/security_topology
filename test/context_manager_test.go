@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
-	"zhanghefan123/security_topology/modules/utils/dir"
+	"zhanghefan123/security_topology/utils/dir"
 )
 
 func TestContextManager(t *testing.T) {

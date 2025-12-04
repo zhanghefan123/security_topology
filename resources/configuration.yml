@@ -41,20 +41,6 @@ constellation_config:
 #  )
 
 
-chain_maker_config:
-  p2p_start_port: 11301
-  rpc_start_port: 12301
-  log_level: ERROR
-  vm_go_runtime_port: 32351
-  vm_go_engine_port: 22351
-  enable_broadcast_defence: true
-  direct_remove_attacked_node: false
-  speed_check: false
-  blocks_per_proposer: 1
-  chainmaker_go_project_path: /home/zhf/Projects/emulator/chainmaker-go
-  chainmaker_build: ./build
-  templates_file_path: ../resources/templates
-  start_defence_key: "start_defence"
 
 
 images_config:
@@ -137,8 +123,9 @@ fabric_config:
   pprof_orderer_start_listen_port: 14300
   pprof_peer_start_listen_port: 15300
   enable_pprof: false
-  enable_routine: false
+  enable_routine: true # enable routine 一定要设置为 true, 不然可能会导致tps周期性降低为0, 并且安装完链码后要等待一段时间
   enable_advanced_message_handler: true
+  enable_leader_step_down: false
   consensus_type: 1
   log_level: WARN
   enable_broadcast_defence: false
@@ -147,6 +134,42 @@ fabric_config:
   fabric_project_path: /home/zhf/Projects/emulator/fabric
   fabric_samples_path: /home/zhf/Projects/emulator/fabric-samples
   fabric_network_path: /home/zhf/Projects/emulator/fabric-samples/test-network
+  forward_timeout: 5
+  complain_timeout: 5
+  block_interval_ms: 100
+  seal_wait_ms: 50
+  with_delay: true
+  request_batch_max_bytes: 100 # 这里是 MB 相当于 100 * 1024 * 1024
+  request_batch_max_count: 100
+
+chain_maker_config:
+  p2p_start_port: 11301
+  rpc_start_port: 12301
+  log_level: INFO
+  vm_go_runtime_port: 32351
+  vm_go_engine_port: 22351
+  enable_defence: false
+  check_ddos_period_ms: 500
+  blocks_per_proposer: 1
+  timeout_propose: 10 # 单位s
+  timeout_propose_optimal: 100 # 单位 ms
+  chainmaker_go_project_path: /home/zhf/Projects/emulator/chainmaker-go
+  chainmaker_build: ./build
+  templates_file_path: ../resources/templates
+  resend_sync: true
+  tick_interval_ms: 10
+  batch_size_from_one_node: 1
+  block_req_timeout: 1
+  block_interval_ms: 100 # 关键区块产生参数 (一开始将这个设置为了100)
+  block_tx_capacity: 100 # 关键区块产生参数
+  # ----------- good case ------------
+  #  propose_optimal: true
+  #  enable_blacklist: true
+  # ----------- good case ------------
+  # ----------- bad case ------------
+  propose_optimal: true
+  enable_blacklist: false
+  # ----------- bad case ------------
 
 fisco_bcos_config:
   project_path: /home/zhf/Projects/emulator/FISCO-BCOS
@@ -154,7 +177,48 @@ fisco_bcos_config:
   console_path: /home/zhf/Projects/emulator/FISCO-CONSOLE
   p2p_start_port: 30300
   rpc_start_port: 20200
-  leader_period: 100000
+  consensus_timeout: 5000
+  allowed_lagging_behind_blocks: 4
+  leader_period: 1
+  water_mark_limit: 50
+  log_level: error
+  sealer_wait_ms: 35 # m_signalled.wait_for(lock, boost::chrono::milliseconds(g_config_loader->sealer_wait_ms)); 这个值太小了会触发超时(是为什么呢？)
+  min_seal_time: 100  # bool canGenerate = (txsSize >= m_maxTxsPerBlock) || reachMinSealTimeCondition();
+  new_view_wait_ms: 50 #
+  block_tx_count_limit: 100 # 我最多只有20个线程, 所以最多同一时刻只有 20 个block, 所以起决定性因素的是另外的两个时间.
+  block_interval_ms: 0 # 每 100ms 检查一下是否提议
+  large_interval: false # 暂时没用
+  sync_idle_wait: 200
+  download_block_processor_thread_count: 1
+  send_block_processor_thread_count: 1
+  max_shard_per_peer: 2 # 每次每个 peer 只能请求2次
+  max_blocks_per_request: 8 # 每次最多请求 8 个区块
+  request_peer_limit: 4
+  enable_blacklist: true # 是否允许启用黑名单机制
+
+  # 1. (无黑名单情况:) 每次需要视图切换来跳过节点 (额外的开销) + 少了一个节点 (只有健康的三节点可以提案)
+  # 2. (有黑名单情况:) 每次只需要直接跳过恶意节点 (无额外开销) + 少了一个节点 (只有健康的三节点可以提案)
+
+#(TPS 不变，三个节点提议的区块变多了, 那么需要进行的操作是将)
+#(Chainmaker 的性能并没有下降, )
+  # ------------- 全错参数 -------------
+#  fast_trigger: true
+#  recursive_trigger: true
+#  use_modified_request_blocks: false
+#  enable_pending: false
+  # ------------- 全错参数 -------------
+  # ------------- 正常参数 -------------
+  fast_trigger: false
+  recursive_trigger: false
+  use_modified_request_blocks: true
+  enable_pending: true
+  # ------------- 正常参数 -------------
+  expected_ttl: 75
+  sync_sleep_ms: 0
+
+
+# 200 200 -> 1500 左右
+# 100 100 ->
 
 raspberrypi_config:
   node_ids:

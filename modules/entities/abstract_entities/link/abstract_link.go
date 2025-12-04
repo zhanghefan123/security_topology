@@ -15,8 +15,8 @@ import (
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/entities/types"
-	"zhanghefan123/security_topology/modules/utils/protobuf"
 	"zhanghefan123/security_topology/services/update/protobuf/link"
+	"zhanghefan123/security_topology/utils/protobuf"
 )
 
 type AbstractLink struct {
@@ -316,17 +316,16 @@ func (absLink *AbstractLink) StoreToEtcd(etcdClient *clientv3.Client) error {
 
 // SetLinkParams 设置链路属性
 func (absLink *AbstractLink) SetLinkParams() error {
+	var sourceNode, targetNode *normal_node.NormalNode
+	sourceNode, err := absLink.SourceNode.GetNormalNodeFromAbstractNode()
+	if err != nil {
+		return fmt.Errorf("failed to get source normal node: %w", err)
+	}
+	targetNode, err = absLink.TargetNode.GetNormalNodeFromAbstractNode()
+	if err != nil {
+		return fmt.Errorf("failed to get target normal node: %w", err)
+	}
 	if absLink.BandWidth != linux_tc_api.LargeBandwidth {
-		var err error
-		var sourceNode, targetNode *normal_node.NormalNode
-		sourceNode, err = absLink.SourceNode.GetNormalNodeFromAbstractNode()
-		if err != nil {
-			return fmt.Errorf("failed to get source normal node: %w", err)
-		}
-		targetNode, err = absLink.TargetNode.GetNormalNodeFromAbstractNode()
-		if err != nil {
-			return fmt.Errorf("failed to get target normal node: %w", err)
-		}
 		// 只有 access link 才需要进行带宽的设置
 		if absLink.Type == types.NetworkLinkType_AccessLink {
 			err = linux_tc_api.SetInterfaceBandwidth(absLink.SourceInterface, sourceNode.Pid, absLink.BandWidth)
@@ -337,8 +336,23 @@ func (absLink *AbstractLink) SetLinkParams() error {
 			if err != nil {
 				return fmt.Errorf("failed to set link params: %w", err)
 			}
+			fmt.Println("hello1")
 		}
-		fmt.Println("set link bandwidth")
+		fmt.Println("set link params")
 	}
+	//else {
+	//	if absLink.Type == types.NetworkLinkType_BackboneLink {
+	//		fmt.Printf("set delay\n")
+	//		delayInMs := 20
+	//		err = linux_tc_api.SetInterfaceDelay(absLink.SourceInterface, sourceNode.Pid, delayInMs)
+	//		if err != nil {
+	//			return fmt.Errorf("failed to set backbone link params: %v", err)
+	//		}
+	//		err = linux_tc_api.SetInterfaceDelay(absLink.TargetInterface, targetNode.Pid, delayInMs)
+	//		if err != nil {
+	//			return fmt.Errorf("failed to set backbone link params: %v", err)
+	//		}
+	//	}
+	//}
 	return nil
 }

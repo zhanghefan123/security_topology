@@ -7,7 +7,7 @@ import (
 	"zhanghefan123/security_topology/cmd/tools"
 	"zhanghefan123/security_topology/cmd/variables"
 	"zhanghefan123/security_topology/modules/logger"
-	"zhanghefan123/security_topology/modules/utils/execute"
+	"zhanghefan123/security_topology/utils/execute"
 )
 
 var (

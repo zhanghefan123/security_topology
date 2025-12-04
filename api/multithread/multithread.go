@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"zhanghefan123/security_topology/modules/utils/progress_bar"
+	"zhanghefan123/security_topology/utils/progress_bar"
 )
 
 // TaskFunc 由于不确定 satellite 的类型

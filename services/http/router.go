@@ -6,9 +6,9 @@ import (
 )
 
 var postRoutes = map[string]gin.HandlerFunc{
-	"/createContract":  apis.CreateContract,         // contract 相关
 	"/startTxRateTest": apis.StartTxRateTestRequest, // contract 相关
 	"/stopTxRateTest":  apis.StopTxRateTestRequest,  // contract 相关
+	"/getTxRateTest":   apis.GetTxRateTestRequest,   // contract 相关
 
 	"/installChannelAndChaincode": apis.InstallChannelAndChaincode, // fabric 相关
 

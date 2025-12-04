@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+option go_package = "../types";
+
+enum ChainType {
+  NonChain = 0;
+  ChainMaker = 1;
+  HyperledgerFabric = 2;
+  FiscoBcos = 3;
+}

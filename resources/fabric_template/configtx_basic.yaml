@@ -100,8 +100,8 @@ Profiles:
         IncomingMessageBufferSize: 200
         RequestPoolSize: 100000
         LeaderHeartbeatCount: 10
-#        leaderRotation: 2  # leader 进行轮转
-#        decisionsPerLeader: 100 # 每个 leader 所能够执行的提案数
+        leaderRotation: 2  # leader 进行轮转
+        decisionsPerLeader: 1 # 每个 leader 所能够执行的提案数
       ConsenterMapping:
       need_to_fill_3
     Application:

@@ -9,7 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"zhanghefan123/security_topology/configs"
-	"zhanghefan123/security_topology/modules/utils/file"
+	"zhanghefan123/security_topology/utils/file"
 )
 
 const (
@@ -98,6 +98,7 @@ func (p *ChainMakerPrepare) InitializePathMapping() error {
 	p.pathMapping[FrontPartOfBCFile] = filepath.Join(resources, "bc_template_part/front_part_of_bc_file.txt")
 	p.pathMapping[BackPartOfBCFile] = filepath.Join(resources, "bc_template_part/back_part_of_bc_file.txt")
 	p.pathMapping[CmdTestData] = filepath.Join("../cmd", "testdata/")
+	//p.pathMapping[CmcTestData] = filepath.Join(chainMakerGoProjectPath, "tools/cmc/testdata")
 
 	chainmakerPrepareWorkLogger.Infof("successfully initialize path mapping")
 
@@ -165,8 +166,8 @@ func (p *ChainMakerPrepare) GenerateCertsFiles() error {
 	chainmakerPrepareWorkLogger.Infof("Certificates generated successfully.")
 
 	// 将创建完成的 crypto-config 放入
-	mvCommand := exec.Command("cp", "-r", "./crypto-config", "./build/crypto-config")
-	err = mvCommand.Run()
+	copyCommand := exec.Command("cp", "-r", "./crypto-config", "./build/crypto-config")
+	err = copyCommand.Run()
 	if err != nil {
 		fmt.Printf("failed to copoy crypto-config: %v \n", err)
 		return fmt.Errorf("failed to copy crypto-config: %w", err)
@@ -355,6 +356,9 @@ func (p *ChainMakerPrepare) GenerateBcYml() error {
 
 	for i := 1; i <= p.nodeCount; i++ {
 		nodeChainConfigDir := fmt.Sprintf("%s/node%d/chainconfig", p.pathMapping[BuildConfig], i)
+		// 打印一下完整路径
+		// absNodeChainConfigDir, _ := filepath.Abs(nodeChainConfigDir)
+		// fmt.Printf("NodeChainConfigDir: %s\n", absNodeChainConfigDir)
 		err := os.MkdirAll(nodeChainConfigDir, os.ModePerm)
 		if err != nil {
 			chainmakerPrepareWorkLogger.Error("cannot generate dir")
@@ -382,9 +386,11 @@ func (p *ChainMakerPrepare) ModifyBcYml() error {
 	}
 
 	replaceMap := map[string]string{
-		"{chain_id}":       "chain1",
-		"{version}":        "\"2030200\"",
-		"{consensus_type}": fmt.Sprintf("%d", p.selectedConsensusType),
+		"{chain_id}":          "chain1",
+		"{version}":           "\"2030200\"",
+		"{consensus_type}":    fmt.Sprintf("%d", p.selectedConsensusType),
+		"{block_interval}":    fmt.Sprintf("%d", configs.TopConfiguration.ChainMakerConfig.BlockIntervalMs),
+		"{block_tx_capacity}": fmt.Sprintf("%d", configs.TopConfiguration.ChainMakerConfig.BlockTxCapacity),
 	}
 
 	for i := 1; i <= p.nodeCount; i++ {
@@ -399,7 +405,7 @@ func (p *ChainMakerPrepare) ModifyBcYml() error {
 
 		err := file.CopyAndReplaceTemplate(bcFilePath, bcFilePath, replaceMap)
 		if err != nil {
-			chainmakerPrepareWorkLogger.Errorf("cannot copy and replace file")
+			chainmakerPrepareWorkLogger.Errorf("cannot copy and replace file due to: %v", err)
 			os.Exit(1)
 		}
 	}
@@ -483,17 +489,31 @@ func (p *ChainMakerPrepare) CopyPrepareFiles() error {
 		return nil
 	}
 
-	copyMap := map[string]string{
-		p.pathMapping[BuildCryptoConfig]: p.pathMapping[TestData],
-		p.pathMapping[BuildCryptoConfig]: p.pathMapping[CmdTestData],
-		p.pathMapping[BuildConfig]:       p.pathMapping[MultiNode],
+	type SourceAndTarget struct {
+		Source string
+		Target string
 	}
 
-	for source, target := range copyMap {
-		cmd := exec.Command("cp", "-r", source, target)
-		err := cmd.Run()
+	copyList := []SourceAndTarget{{
+		Source: p.pathMapping[BuildCryptoConfig],
+		Target: p.pathMapping[TestData],
+	}, {
+		Source: p.pathMapping[BuildCryptoConfig],
+		Target: p.pathMapping[CmdTestData],
+	}, {
+		Source: p.pathMapping[BuildConfig],
+		Target: p.pathMapping[MultiNode],
+	}}
+
+	for _, sourceAndTarget := range copyList {
+		err := os.MkdirAll(sourceAndTarget.Target, os.ModePerm)
 		if err != nil {
-			return fmt.Errorf("cp -r %s %s failed", source, target)
+			fmt.Printf("error make dir")
+		}
+		cmd := exec.Command("cp", "-r", sourceAndTarget.Source, sourceAndTarget.Target)
+		err = cmd.Run()
+		if err != nil {
+			return fmt.Errorf("cp -r %s %s failed", sourceAndTarget.Source, sourceAndTarget.Target)
 		}
 	}
 

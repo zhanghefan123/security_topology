@@ -14,6 +14,7 @@ require (
 	github.com/c-robinson/iplib/v2 v2.0.5
 	github.com/docker/docker v24.0.7+incompatible
 	github.com/docker/go-connections v0.5.0
+	github.com/ethereum/go-ethereum v1.13.10
 	github.com/gin-gonic/gin v1.10.0
 	github.com/golang/protobuf v1.5.4
 	github.com/hokaccha/go-prettyjson v0.0.0-20201222001619-a42f9ac2ec8e
@@ -73,7 +74,6 @@ require (
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/ethereum/c-kzg-4844 v0.4.0 // indirect
-	github.com/ethereum/go-ethereum v1.13.10 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.6 // indirect
@@ -187,7 +187,7 @@ require (
 )
 
 replace (
+	github.com/FISCO-BCOS/go-sdk/v3 v3.0.2 => ./api/chain_api/fisco_bcos_api/go-sdk/v3
 	github.com/coreos/bbolt => go.etcd.io/bbolt v1.3.6
 	github.com/hyperledger/fabric-gateway v1.7.1 => ./gateway
-	github.com/FISCO-BCOS/go-sdk/v3 v3.0.2 => ./api/chain_api/fisco_bcos_api/go-sdk/v3
 )

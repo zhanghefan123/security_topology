@@ -1,5 +1,7 @@
 package params
 
+import "zhanghefan123/security_topology/modules/entities/types"
+
 type NodeParam struct {
 	Index int     `json:"index"`
 	Type  string  `json:"type"`
@@ -16,18 +18,31 @@ type LinkParam struct {
 }
 
 type TopologyParams struct {
-	NetworkEnv           string      `json:"network_env"`
-	BlockChainType       string      `json:"blockchain_type"`
-	ConsensusType        string      `json:"consensus_type"`
-	AccessLinkBandwidth  int         `json:"access_link_bandwidth"`
-	ConsensusNodeCpu     float64     `json:"consensus_node_cpu"`    // 单位为个
-	ConsensusNodeMemory  float64     `json:"consensus_node_memory"` // 单位为 MB
-	ConsensusThreadCount int         `json:"consensus_thread_count"`
-	Nodes                []NodeParam `json:"nodes"`         // 所有的节点
-	Links                []LinkParam `json:"links"`         // 所有的链路
-	StartDefence         bool        `json:"start_defence"` // 是否开启防御
+	NetworkEnv           string          `json:"network_env"`
+	BlockChainTypeString string          `json:"blockchain_type"`
+	BlockChainType       types.ChainType // 根据 BlockChainTypeString 计算出来的
+	ConsensusType        string          `json:"consensus_type"`
+	AccessLinkBandwidth  int             `json:"access_link_bandwidth"`
+	ConsensusNodeCpu     float64         `json:"consensus_node_cpu"`    // 单位为个
+	ConsensusNodeMemory  float64         `json:"consensus_node_memory"` // 单位为 MB
+	ConsensusThreadCount int             `json:"consensus_thread_count"`
+	Nodes                []NodeParam     `json:"nodes"`         // 所有的节点
+	Links                []LinkParam     `json:"links"`         // 所有的链路
+	StartDefence         bool            `json:"start_defence"` // 是否开启防御
 }
 
 type StartDefenceParameter struct {
 	StartDefence bool `json:"start_defence"`
+}
+
+func ResolveBlockChainType(blockChainTypeString string) types.ChainType {
+	if blockChainTypeString == "长安链" {
+		return types.ChainType_ChainMaker
+	} else if blockChainTypeString == "fabric" {
+		return types.ChainType_HyperledgerFabric
+	} else if blockChainTypeString == "fisco-bcos" {
+		return types.ChainType_FiscoBcos
+	} else {
+		return types.ChainType_NonChain
+	}
 }

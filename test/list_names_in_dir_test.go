@@ -3,7 +3,7 @@ package test
 import (
 	"fmt"
 	"testing"
-	"zhanghefan123/security_topology/modules/utils/dir"
+	"zhanghefan123/security_topology/utils/dir"
 )
 
 func TestListNamesInDir(t *testing.T) {

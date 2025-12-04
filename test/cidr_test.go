@@ -3,15 +3,40 @@ package test
 import (
 	"fmt"
 	"math/rand"
-	"net"
 	"strconv"
+	"sync"
 	"testing"
+	"time"
 )
 
 func TestCidr(t *testing.T) {
-	ip, network, _ := net.ParseCIDR("192.168.1.0/24")
-	fmt.Println(ip.String())
-	fmt.Println(network.String())
+	var wg sync.WaitGroup
+
+	// 创建共享的计时器
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	// 吞吐量计算协程
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for _ = range ticker.C {
+			fmt.Println("test1")
+		}
+	}()
+
+	// 接口收包速率计算协程
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for _ = range ticker.C {
+			fmt.Println("test2")
+		}
+	}()
+
+	// 运行一段时间后停止
+	time.Sleep(10 * time.Second)
+	wg.Wait()
 }
 
 func TestExample(t *testing.T) {

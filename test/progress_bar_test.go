@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 	"time"
-	"zhanghefan123/security_topology/modules/utils/progress_bar"
+	"zhanghefan123/security_topology/utils/progress_bar"
 )
 
 func TestProgressBar(t *testing.T) {

@@ -2,25 +2,30 @@ package fisco_bcos_prepare
 
 import (
 	"fmt"
+	"github.com/docker/docker/pkg/fileutils"
 	"github.com/otiai10/copy"
 	"os"
 	"path/filepath"
 	"zhanghefan123/security_topology/configs"
-	"zhanghefan123/security_topology/modules/utils/dir"
-	"zhanghefan123/security_topology/modules/utils/execute"
-	"zhanghefan123/security_topology/modules/utils/file"
+	"zhanghefan123/security_topology/utils/dir"
+	"zhanghefan123/security_topology/utils/execute"
+	"zhanghefan123/security_topology/utils/file"
 )
 
 const (
-	ExecuteBuildChainSh = "ExecuteBuidlChainSh"
-	ModifyNodesJson     = "ModifyNodesJson"
-	ConsolePrepareWork  = "ConsolePrepareWork"
+	CopyBuildChainShTemplate = "CopyBuildChainShTemplate"
+	ModifyBuildChainSh       = "ModifyBuildChainSh"
+	ExecuteBuildChainSh      = "ExecuteBuidlChainSh"
+	ModifyNodesJson          = "ModifyNodesJson"
+	ConsolePrepareWork       = "ConsolePrepareWork"
 )
 
 type GenerateFunction func() error
 
 func (p *FiscoBcosPrepare) Generate() error {
 	generateSteps := []map[string]GenerateFunction{
+		{CopyBuildChainShTemplate: p.CopyBuildChainShTemplate},
+		{ModifyBuildChainSh: p.ModifyBuildChainSh},
 		{ExecuteBuildChainSh: p.ExecuteBuildChainSh},
 		{ModifyNodesJson: p.ModifyNodesJson},
 		{ConsolePrepareWork: p.ConsolePrepareWork},
@@ -48,6 +53,94 @@ func (p *FiscoBcosPrepare) generatePrepareSteps(generateSteps []map[string]Gener
 	fmt.Println()
 	return
 }
+
+func (p *FiscoBcosPrepare) CopyBuildChainShTemplate() error {
+	if _, ok := p.generateSteps[CopyBuildChainShTemplate]; ok {
+		fiscoBcosPrepareWorkLogger.Infof("already copy build chain sh template")
+		return nil
+	}
+
+	sourceFile := filepath.Join(configs.TopConfiguration.PathConfig.ResourcesPath, "FISCO_BCOS_EXAMPLE/build_chain.sh")
+	targetFile := filepath.Join(configs.TopConfiguration.FiscoBcosConfig.ExamplePath, "build_chain.sh")
+	_, err := fileutils.CopyFile(sourceFile, targetFile)
+	if err != nil {
+		return fmt.Errorf("error copy build chain sh template file: %v", err)
+	}
+
+	p.generateSteps[CopyBuildChainShTemplate] = struct{}{}
+	return nil
+}
+
+func (p *FiscoBcosPrepare) ModifyBuildChainSh() error {
+	if _, ok := p.generateSteps[ModifyBuildChainSh]; ok {
+		fiscoBcosPrepareWorkLogger.Infof("already execute modify build chain sh")
+		return nil
+	}
+
+	replaceMap := map[string]string{
+		"{log_level}":            configs.TopConfiguration.FiscoBcosConfig.LogLevel,
+		"{block_tx_count_limit}": fmt.Sprintf("%d", configs.TopConfiguration.FiscoBcosConfig.BlockTxCountLimit),
+	}
+
+	fmt.Printf("block_tx_count_limit == %d\n", configs.TopConfiguration.FiscoBcosConfig.BlockTxCountLimit)
+
+	sourceFile := filepath.Join(configs.TopConfiguration.FiscoBcosConfig.ExamplePath, "build_chain.sh")
+	targetFile := sourceFile
+	err := file.CopyAndReplaceTemplate(sourceFile, targetFile, replaceMap)
+	if err != nil {
+		return fmt.Errorf("cannot copy and replace file due to: %v", err)
+	}
+
+	p.generateSteps[ModifyBuildChainSh] = struct{}{}
+	return nil
+}
+
+// 被 ModifyBuildChainSh 替代了
+// ------------------------------------------------------------------------------------------------------
+/*
+func (p *FiscoBcosPrepare) ChangeLogLevel() error {
+	if _, ok := p.generateSteps[ChangeLogLevel]; ok {
+		fiscoBcosPrepareWorkLogger.Infof("already execute change log level")
+		return nil
+	}
+
+	// buildSh 文件
+	buildShFile := filepath.Join(configs.TopConfiguration.FiscoBcosConfig.ExamplePath, "build_chain.sh")
+
+	var finalString = ""
+	// 获取文件句柄
+	{
+		var findFirstLogLevel = false
+		fileHandle, err := os.Open(buildShFile)
+		if err != nil {
+			return fmt.Errorf("error read buildShFile due to %v", err)
+		}
+		// 循环进行文件读取
+		scanner := bufio.NewScanner(fileHandle)
+		for scanner.Scan() {
+			line := scanner.Text()
+			if !findFirstLogLevel && strings.Contains(line, "log_level=") {
+				line = fmt.Sprintf(`log_level="%s"`, configs.TopConfiguration.FiscoBcosConfig.LogLevel)
+				findFirstLogLevel = true
+			}
+			finalString += fmt.Sprintf("%s\n", line)
+		}
+		err = fileHandle.Close()
+		if err != nil {
+			return fmt.Errorf("close file handle error %v", err)
+		}
+	}
+
+	err := file.WriteStringIntoFile(buildShFile, finalString)
+	if err != nil {
+		return fmt.Errorf("write string into file error: %v", err)
+	}
+
+	p.generateSteps[ChangeLogLevel] = struct{}{}
+	return nil
+}
+*/
+// ------------------------------------------------------------------------------------------------------
 
 func (p *FiscoBcosPrepare) ExecuteBuildChainSh() error {
 	if _, ok := p.generateSteps[ExecuteBuildChainSh]; ok {

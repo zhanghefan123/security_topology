@@ -101,6 +101,63 @@ func SetInterfacesDelay(containerPid int, interfaces []string, delays []float64)
 	return nil
 }
 
+// SetInterfaceDelay 设置接口的延迟
+func SetInterfaceDelay(containerInterface *intf.NetworkInterface, containerPid int, delayMs int) error {
+	// 1. 获取环境的 namespace
+	hostNetNs, err := netns.Get()
+	if err != nil {
+		return fmt.Errorf("get host ns error: %v", err)
+	}
+	// 2. 最后进行 ns 的释放
+	defer func(ns netns.NsHandle) {
+		nsSetErr := netns.Set(ns)
+		if err == nil {
+			err = nsSetErr
+		}
+	}(hostNetNs)
+
+	// 3. 获取容器的 ns
+	netNs, err := netns.GetFromPid(containerPid)
+	defer func(netNs *netns.NsHandle) {
+		err = netNs.Close()
+		if err != nil {
+			err = fmt.Errorf("netns.Get() failed: %w", err)
+		}
+	}(&netNs)
+
+	// 4. 进行运行时的加锁, 以及最后的释放锁
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
+	// 5. 切换到容器的网络命名空间
+	if err = netns.Set(netNs); err != nil {
+		return fmt.Errorf("netns.Set() failed: %w", err)
+	}
+
+	// 6. 进行接口的获取
+	var vethInterface netlink.Link
+	vethInterface, err = netlink.LinkByName(containerInterface.IfName)
+	if err != nil {
+		return fmt.Errorf("netlink.LinkByName(%s) failed: %w", containerInterface.IfName, err)
+	}
+	// 7. 进行延迟的设置
+	netemInfo := netlink.NewNetem(
+		NetQdiscTemplate.QdiscAttrs,
+		netlink.NetemQdiscAttrs{
+			Latency: uint32(delayMs * 1000), // 默认的单位是微秒
+			Limit:   4294967295,             // 如果不进行这个选项的设置的时候就会丢包 (因为默认给到的 Limit 的值就只有1000), 并且还需要进行 udp 接受缓冲区的设置
+		}, // 这里没有设置延迟
+		// sysctl -w net.core.rmem_max=16777216  # 16MB
+		// sysctl -w net.core.rmem_default=16777216
+	)
+	netemInfo.LinkIndex = vethInterface.Attrs().Index
+	err = netlink.QdiscReplace(netemInfo)
+	if err != nil {
+		return fmt.Errorf("netlink.QdiscReplace() failed: %w", err)
+	}
+	return nil
+}
+
 // SetInterfaceBandwidth 设置带宽
 func SetInterfaceBandwidth(containerInterface *intf.NetworkInterface, containerPid int, bandWidth int) error {
 	// 1. 获取环境的 namespace

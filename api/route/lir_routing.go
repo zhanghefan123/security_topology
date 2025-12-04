@@ -12,7 +12,7 @@ import (
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/entities/types"
-	"zhanghefan123/security_topology/modules/utils/dir"
+	"zhanghefan123/security_topology/utils/dir"
 )
 
 // GenerateLiRRoutingString 为 path_validation 到某个地点生成路由

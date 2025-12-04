@@ -5,6 +5,7 @@ package http_service
 import (
 	"fmt"
 	"github.com/spf13/cobra"
+	"zhanghefan123/security_topology/cmd/tools"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/logger"
 	"zhanghefan123/security_topology/services/http"
@@ -25,6 +26,7 @@ func CreateHttpServiceCmd() *cobra.Command {
 			core()
 		},
 	}
+	tools.AttachFlags(httpServiceCmd, []string{tools.FlagNameOfExperimentNumber})
 	return httpServiceCmd
 }
 

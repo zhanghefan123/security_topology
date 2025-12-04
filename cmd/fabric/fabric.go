@@ -6,8 +6,8 @@ import (
 	"os"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/logger"
-	"zhanghefan123/security_topology/modules/utils/dir"
-	"zhanghefan123/security_topology/modules/utils/execute"
+	"zhanghefan123/security_topology/utils/dir"
+	"zhanghefan123/security_topology/utils/execute"
 )
 
 var (

@@ -22,6 +22,11 @@ func InitFlagSet() *pflag.FlagSet {
 		fmt.Sprintf("available operations: %s %s %s",
 			variables.OperationBuild, variables.OperationRebuild,
 			variables.OperationRemove))
+	flags.IntVarP(&variables.UserSelectedExperimentNumber,
+		FlagNameOfExperimentNumber,
+		FlagNameShortHandOfExperimentNUmber,
+		variables.UserSelectedExperimentNumber,
+		fmt.Sprintf("input an integer"))
 	return flags
 }
 

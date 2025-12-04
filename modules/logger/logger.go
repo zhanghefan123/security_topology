@@ -15,6 +15,7 @@ const (
 	ModuleConfig                   = "CONFIG"
 	ModuleConstellation            = "CONSTELLATION"
 	ModuleTopology                 = "TOPOLOGY"
+	ModuleMonitorManager           = "MONITOR_MANAGER"
 	ModuleChainmakerPrepare        = "CHAINMAKER_PREPARE"
 	ModuleFabricPrepare            = "FABRIC_PREPARE"
 	ModuleRaspberrypiConfigure     = "RASPBERRYPI_CONFIGURE"

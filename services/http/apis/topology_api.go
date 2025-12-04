@@ -11,15 +11,16 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 	"zhanghefan123/security_topology/api/etcd_api"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/docker/client"
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
+	"zhanghefan123/security_topology/modules/entities/real_entities/performance_monitor"
 	"zhanghefan123/security_topology/modules/entities/real_entities/topology"
-	"zhanghefan123/security_topology/modules/performance_monitor"
-	"zhanghefan123/security_topology/modules/utils/dir"
-	"zhanghefan123/security_topology/modules/utils/file"
 	"zhanghefan123/security_topology/services/http/params"
+	"zhanghefan123/security_topology/utils/dir"
+	"zhanghefan123/security_topology/utils/file"
 )
 
 // GetAllTopologyNames 获取所有拓扑的名称
@@ -42,7 +43,8 @@ func GetAllTopologyNames() ([]string, error) {
 
 // ChangeStartDefence 改变是否进行攻击
 func ChangeStartDefence(c *gin.Context) {
-	if topology.TopologyInstance == nil {
+	startTime := time.Now()
+	if topology.Instance == nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "topology not started",
 		})
@@ -60,24 +62,30 @@ func ChangeStartDefence(c *gin.Context) {
 	}
 
 	// 进行参数的设置
-	topology.TopologyInstance.TopologyParams.StartDefence = startDefenceParams.StartDefence
+	topology.Instance.TopologyParams.StartDefence = startDefenceParams.StartDefence
 
 	// 设置到 etcd 之中
-	startDefenceKey := configs.TopConfiguration.ChainMakerConfig.StartDefenceKey
+	startDefenceKey := "start_defence"
 	if startDefenceParams.StartDefence {
-		_, err = topology.TopologyInstance.EtcdClient.Put(context.Background(), startDefenceKey, "true")
+		_, err = topology.Instance.EtcdClient.Put(context.Background(), startDefenceKey, "true")
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"message": fmt.Sprintf("etcd put err: %v", err),
 			})
 		}
 	} else {
-		_, err = topology.TopologyInstance.EtcdClient.Put(context.Background(), startDefenceKey, "false")
+		_, err = topology.Instance.EtcdClient.Put(context.Background(), startDefenceKey, "false")
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"message": fmt.Sprintf("etcd put err: %v", err),
 			})
 		}
+	}
+	timeDuration := time.Since(startTime)
+	if startDefenceParams.StartDefence {
+		fmt.Printf("装配时间为: %vms\n", timeDuration.Milliseconds())
+	} else {
+		fmt.Printf("卸载时间为: %vms\n", timeDuration.Milliseconds())
 	}
 
 	// 进行结果的返回
@@ -88,7 +96,7 @@ func ChangeStartDefence(c *gin.Context) {
 
 // GetTopologyDescription 获取拓扑描述
 func GetTopologyDescription(c *gin.Context) {
-	topologyParams := &topology.TopologyParameters{}
+	topologyParams := &topology.Parameters{}
 	err := c.ShouldBindJSON(topologyParams)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -114,7 +122,7 @@ func GetTopologyDescription(c *gin.Context) {
 
 // SaveTopology 进行拓扑的存储
 func SaveTopology(c *gin.Context) {
-	topologyParams := &topology.TopologyParameters{}
+	topologyParams := &topology.Parameters{}
 	err := c.ShouldBindJSON(topologyParams)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -163,7 +171,7 @@ func GetTopologyState(c *gin.Context) {
 	}
 
 	// 如果当前拓扑为空的话, 就直接返回
-	if topology.TopologyInstance == nil {
+	if topology.Instance == nil {
 		c.JSON(http.StatusOK, gin.H{
 			"state":              "down",
 			"all_topology_names": AllTopologyNames,
@@ -173,7 +181,7 @@ func GetTopologyState(c *gin.Context) {
 
 	containerNameToPortMapping := make(map[string]int)
 
-	for _, abstractNode := range topology.TopologyInstance.AllAbstractNodes {
+	for _, abstractNode := range topology.Instance.AllAbstractNodes {
 		var normalNode *normal_node.NormalNode
 		normalNode, _ = abstractNode.GetNormalNodeFromAbstractNode()
 		containerNameToPortMapping[normalNode.ContainerName] = configs.TopConfiguration.ServicesConfig.WebConfig.StartPort + int(abstractNode.Node.ID()) + 1
@@ -181,8 +189,8 @@ func GetTopologyState(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"state":                          "up",
-		"topology_params":                topology.TopologyInstance.TopologyParams, // 如果已经创建完成了, 还需要进行创建的参数的返回
-		"links":                          topology.TopologyInstance.AllLinksMap,    // 直接返回一个 map
+		"topology_params":                topology.Instance.TopologyParams, // 如果已经创建完成了, 还需要进行创建的参数的返回
+		"links":                          topology.Instance.AllLinksMap,    // 直接返回一个 map
 		"all_topology_names":             AllTopologyNames,
 		"container_name_to_port_mapping": containerNameToPortMapping,
 	})
@@ -191,7 +199,7 @@ func GetTopologyState(c *gin.Context) {
 // StartTopology 进行拓扑的启动
 func StartTopology(c *gin.Context) {
 	// 1. 如果拓扑还没有启动, 那么直接返回
-	if topology.TopologyInstance != nil {
+	if topology.Instance != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "topology already created",
 		})
@@ -200,6 +208,7 @@ func StartTopology(c *gin.Context) {
 
 	// 2. 进行拓扑参数的绑定
 	topologyParams := &params.TopologyParams{}
+	fmt.Println("topology params:", topologyParams)
 	err := c.BindJSON(topologyParams)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -207,7 +216,8 @@ func StartTopology(c *gin.Context) {
 		})
 		return
 	}
-	fmt.Println(topologyParams) // 打印拓扑
+	topologyParams.BlockChainType = params.ResolveBlockChainType(topologyParams.BlockChainTypeString) // 解析
+	fmt.Println(topologyParams)                                                                       // 打印拓扑
 
 	// 3. 核心处理逻辑
 	err = startTopologyInner(topologyParams)
@@ -247,16 +257,25 @@ func startTopologyInner(topologyParams *params.TopologyParams) error {
 	listenPort := configs.TopConfiguration.ServicesConfig.EtcdConfig.ClientPort
 	etcdClient, err := etcd_api.NewEtcdClient(listenAddr, listenPort)
 	// 5. 创建拓扑实例
-	topology.TopologyInstance = topology.NewTopology(dockerClient, etcdClient, topologyParams)
+	topology.Instance = topology.NewTopology(dockerClient, etcdClient, topologyParams)
+	performance_monitor.Instance = performance_monitor.NewMonitorManager(etcdClient)
 	// 6. 进行 init
-	err = topology.TopologyInstance.Init()
+	err = topology.Instance.Init()
 	if err != nil {
 		return fmt.Errorf("init topology err: %w", err)
 	}
+	err = performance_monitor.Instance.Init()
+	if err != nil {
+		return fmt.Errorf("init performance monitor err: %w", err)
+	}
 	// 7. 进行start
-	err = topology.TopologyInstance.Start()
+	err = topology.Instance.Start()
 	if err != nil {
 		return fmt.Errorf("start topology err: %w", err)
+	}
+	err = performance_monitor.Instance.Start()
+	if err != nil {
+		return fmt.Errorf("start perforamnce monitor err: %w", err)
 	}
 	// 8. 打印拓扑参数信息
 	_, err = pretty.Println(*topologyParams)
@@ -268,7 +287,7 @@ func startTopologyInner(topologyParams *params.TopologyParams) error {
 
 // StopTopology 进行拓扑的删除
 func StopTopology(c *gin.Context) {
-	if topology.TopologyInstance == nil {
+	if topology.Instance == nil {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "down",
 			"message": "images already stopped",
@@ -293,9 +312,10 @@ func StopTopology(c *gin.Context) {
 
 // stopTopologyInner 实际的拓扑销毁逻辑
 func stopTopologyInner() error {
-	err := topology.TopologyInstance.Remove()
+	err := performance_monitor.Instance.Remove()
+	err = topology.Instance.Remove()
 	defer func() {
-		topology.TopologyInstance = nil
+		topology.Instance = nil
 		performance_monitor.PerformanceMonitorMapping = make(map[string]*performance_monitor.PerformanceMonitor)
 	}()
 	if err != nil {

@@ -2,135 +2,66 @@ package chainmaker_api
 
 import (
 	"chainmaker.org/chainmaker/pb-go/v2/common"
+	chainmaker_sdk_go "chainmaker.org/chainmaker/sdk-go/v2"
 	"fmt"
-	"sync"
-	"sync/atomic"
-	"time"
-	"zhanghefan123/security_topology/modules/utils/file"
+	"zhanghefan123/security_topology/api/chain_api/chainmaker_api/implementations"
+	"zhanghefan123/security_topology/api/chain_api/rate_recorder"
 )
 
 var (
-	currentContractId                      = 0
-	TxRateRecorderInstance *TxRateRecorder = nil
+	currentContractId = 0
 )
 
-type TxRateRecorder struct {
-	TimeList    []int
-	RateList    []float64
-	TimeListAll []int
-	RateListAll []float64
-	fixedLength int
-	stopQueue   chan struct{}
-	waitGroup   *sync.WaitGroup
-}
-
-// NewTxRateRecorder 创建新的 TxRateRecorder
-func NewTxRateRecorder() *TxRateRecorder {
-	return &TxRateRecorder{
-		TimeList:    make([]int, 0),
-		RateList:    make([]float64, 0),
-		TimeListAll: make([]int, 0),
-		RateListAll: make([]float64, 0),
-		fixedLength: 10,
-		stopQueue:   make(chan struct{}),
-		waitGroup:   &sync.WaitGroup{},
-	}
-}
-
-// StartTxRateTest 进行 tx 速率的测试
-func (trr *TxRateRecorder) StartTxRateTest(threadCount int) error {
+func CreateClientAndContract() (string, *chainmaker_sdk_go.ChainClient, error) {
 	// 合约的名称
 	contractName := fmt.Sprintf("fact%d", currentContractId)
 	// 创建配置
-	clientConfiguration := NewClientConfiguration(contractName)
+	clientConfiguration := implementations.NewClientConfiguration(contractName)
 	// 创建长安链的客户端
-	chainMakerClient, err := CreateChainMakerClient(clientConfiguration)
+	chainMakerClient, err := implementations.CreateChainMakerClient(clientConfiguration)
 	if err != nil {
 		fmt.Printf("create chainmaker client failed, err:%v\n", err)
-		return fmt.Errorf("cannot create chainmaker client: %w", err)
+		return contractName, nil, fmt.Errorf("cannot create chainmaker client: %w", err)
 	}
 	// 进行合约的创建
-	err = CreateUpgradeUserContract(chainMakerClient, clientConfiguration, CreateContractOp)
+	err = implementations.CreateUpgradeUserContract(chainMakerClient, clientConfiguration, implementations.CreateContractOp)
 	if err != nil {
-		TxRateRecorderInstance = nil
 		fmt.Printf("create upgrade user contract failed, err:%v\n", err)
-		return fmt.Errorf("cannot create user contract: %w", err)
+		return "", nil, fmt.Errorf("cannot create user contract: %w", err)
 	} else {
 		currentContractId = currentContractId + 1
 	}
-	// 进行合约的调用
-	count := 1                            // 序号
-	var txCount int64                     // 当前的合约执行次数
-	var calcTpsDuration = time.Second * 1 // 计算的时间间隔
-	var resp *common.TxResponse           // 合约执行的响应结果
-	for i := 0; i < threadCount; i++ {    // 线程数量
-		trr.waitGroup.Add(1) // 正在执行的任务数 + 1
-		go func(stopQueue chan struct{}) {
-			defer trr.waitGroup.Done()
+	return contractName, chainMakerClient, nil
+}
+
+// StartTxRateTestCore 进行 tx 速率的测试
+func StartTxRateTestCore(threadCount int) error {
+	contractName, chainMakerClient, err := CreateClientAndContract()
+	if err != nil {
+		return fmt.Errorf("start tx rate test core error: %v", err)
+	}
+
+	var resp *common.TxResponse        // 合约执行的响应结果
+	for i := 0; i < threadCount; i++ { // 线程数量
+		rate_recorder.TxRateRecorderInstance.WaitGroup.Add(1) // 正在执行的任务数 + 1
+		go func() {
+			defer rate_recorder.TxRateRecorderInstance.WaitGroup.Done()
 		forLoop:
 			for {
 				select {
-				case <-stopQueue:
+				case <-rate_recorder.TxRateRecorderInstance.StopQueue:
 					break forLoop
 				default:
-					resp, err = invokeContract(contractName, chainMakerClient, "save", true)
+					resp, err = implementations.InvokeContract(contractName, chainMakerClient, "save", true)
 					if err != nil {
 						fmt.Printf("%s\ninvoke contract resp: %+v\n", err, resp)
 					} else {
-						atomic.AddInt64(&txCount, 1)
+						rate_recorder.TxRateRecorderInstance.TxCount.Add(1)
 					}
 				}
 			}
-		}(trr.stopQueue)
+		}()
 	}
-	go func(stopQueue chan struct{}) {
-	forLoop:
-		for {
-			select {
-			case <-stopQueue:
-				break forLoop
-			default:
-				txNum := atomic.SwapInt64(&txCount, 0)
-				tpsRate := float64(txNum) / calcTpsDuration.Seconds()
-				if len(trr.RateList) == trr.fixedLength {
-					trr.RateList = trr.RateList[1:]
-					trr.RateList = append(trr.RateList, tpsRate)
-					trr.TimeList = trr.TimeList[1:]
-					trr.TimeList = append(trr.TimeList, count)
-				} else {
-					trr.RateList = append(trr.RateList, tpsRate)
-					trr.TimeList = append(trr.TimeList, count)
-				}
-				trr.RateListAll = append(trr.RateListAll, tpsRate)
-				trr.TimeListAll = append(trr.TimeListAll, count)
-				count += 1
-				time.Sleep(calcTpsDuration)
-			}
-		}
-	}(trr.stopQueue)
 
 	return nil
-}
-
-func (trr *TxRateRecorder) WriteResultIntoFile() error {
-	finalString := ""
-	for index := 0; index < len(trr.RateListAll); index++ {
-		if index == len(trr.RateListAll)-1 {
-			finalString += fmt.Sprintf("%f", trr.RateListAll[index])
-		} else {
-			finalString += fmt.Sprintf("%f", trr.RateListAll[index]) + ","
-		}
-	}
-	// 将所有的序列放到一个文件之中
-	err := file.WriteStringIntoFile("./chainmaker_result.txt", finalString)
-	if err != nil {
-		return fmt.Errorf("write result into file failed: %v", err)
-	}
-	return nil
-}
-
-// StopTxRateTest 停止 tx rate 速率的测试
-func (trr *TxRateRecorder) StopTxRateTest() {
-	close(trr.stopQueue)
-	trr.waitGroup.Wait()
 }

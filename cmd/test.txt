@@ -1,0 +1,166 @@
+294575588ec0e100117f3589b881c02181795842d747fc90eecf929277066f8e failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 169.72214ms
+*** Transaction committed successfully
+create asset success in 169.736102ms
+submitTransaction finished elapsed 169.784615ms
+submitTransaction finished elapsed 169.639381ms
+create asset error: failed to submit transaction: transaction cb4ab416f39f1738faa4c0ca5d13328416ed0ac1796e46e7f4d1499cdac1b5a8 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 169.828041ms
+*** Transaction committed successfully
+create asset success in 169.841871ms
+submitTransaction finished elapsed 169.703779ms
+create asset error: failed to submit transaction: transaction fe7b730d06343d895d44055d38310e3486cecc8f16b39e1c13b4dccb2659a335 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+create asset error: failed to submit transaction: transaction 2bc77ed80618075534b370518192878e1321f295bc1cde61f72ddb8dff6d2515 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 169.7862ms
+create asset error: failed to submit transaction: transaction 79be34c67953ccd4f1a5c84991e1df058eaa0fea53a6771c09791e9062565ae4 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 169.724976ms
+create asset error: failed to submit transaction: transaction cc2d9cd72eca670677c6742de174970f37619a77cfc98d296c45cef81774b9a4 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 169.604944ms
+create asset error: failed to submit transaction: transaction e5210cb94cd3a9660c41cb50f1818d97662a363da5a8dd153c6541b8d51e1556 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 172.61776ms
+*** Transaction committed successfully
+create asset success in 172.638627ms
+submitTransaction finished elapsed 172.648582ms
+create asset error: failed to submit transaction: transaction 6d7edc901365e736c8bd2817e72346a3f454ed62c70bab371f8a60bde9c742c2 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 172.736857ms
+create asset error: failed to submit transaction: transaction 9af71880d1da9891577ab8ee73a1cddc285672d5318279203b3bec007c877b02 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 172.863297ms
+submitTransaction finished elapsed 172.882852ms
+*** Transaction committed successfully
+create asset success in 172.884631ms
+submitTransaction finished elapsed 172.793335ms
+create asset error: failed to submit transaction: transaction 5caa53d11bb58367ac1e60d6de7d131b82c6680ac3a879186c173192bf0018d9 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+create asset error: failed to submit transaction: transaction 4597756e1bec82a87899543fe448b7e38de0e61613118741377f07abc03aa05e failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 172.807858ms
+create asset error: failed to submit transaction: transaction a15222b04fa46af05e5a74baf0b315c6c109480605dacd45e186a6e26c174515 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 172.793258ms
+create asset error: failed to submit transaction: transaction ebc21f601efea3320649d9f4d10a4fc89991a95dde3c0b83319588ebf1426065 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 172.811429ms
+create asset error: failed to submit transaction: transaction 393536fbf76753ab5275d258e9d686c0e686c69ac5d38d1e2cd20689afc9df4e failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 172.775887ms
+create asset error: failed to submit transaction: transaction 61ec92e6a071be784f9d6adcaa530f0ba088b6d59d47e28b75fe6011c61e15e9 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 170.41076ms
+create asset error: failed to submit transaction: transaction cd2960c9942bc52d2027dd3056002e8ea0591912b913c1c943580fa4a350e3df failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 170.212513ms
+create asset error: failed to submit transaction: transaction ae6a6332ab2b61a5c59c54812d073af49b44be99bec1c7f0dd7935c13d4a6922 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 170.310346ms
+create asset error: failed to submit transaction: transaction de64f8448952d0ffc905b4489591af9603c9ada43a88d3cf8d1c1b7f5e35701b failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 170.351396ms
+*** Transaction committed successfully
+create asset success in 170.379913ms
+submitTransaction finished elapsed 170.363192ms
+create asset error: failed to submit transaction: transaction 39c32af9e93b6c8a49a95a638cf9342755dcc50e577c82baf9bbf22954aab30f failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 170.491098ms
+create asset error: failed to submit transaction: transaction 612e2dba3c02db39a4f7270409a2ca786cc394ad5b210b5fde647de943acdc9b failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 170.459711ms
+submitTransaction finished elapsed 170.535155ms
+create asset error: failed to submit transaction: transaction 4a1f54901cc0d60d3d9fc0130a5ee7b48e52fc0b7087930e2bfa24c1b509c918 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 170.534257ms
+create asset error: failed to submit transaction: transaction ca4ada25672e0b0c0763999b553936e0cf1515441406cfdee7413afdc9e5c9de failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 170.423938ms
+create asset error: failed to submit transaction: transaction 45d30dd721163cd64ba696baeb7803c0ca7baf18f4b61dde9ceb713f5a273b81 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+create asset error: failed to submit transaction: transaction 67a9ae1e228a3d874bfb9d648806502cc31281203ce7f1b2a9374caf2eb268b7 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 175.457972ms
+create asset error: failed to submit transaction: transaction 4ec2c930b05b60423e56700885354219462d30426786ab8aee7ec1f65475db89 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 175.435078ms
+*** Transaction committed successfully
+create asset success in 175.458516ms
+submitTransaction finished elapsed 175.307893ms
+create asset error: failed to submit transaction: transaction 49d81ee0aa843af745b0d174963c4c7e0894ef871ff8d9c78a53145eac7f9aa9 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 175.425397ms
+create asset error: failed to submit transaction: transaction 2e32d104fffaec68161573413cc4a07395f0ee6bf0c6def3aadf5cecd0bd578f failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 175.533525ms
+*** Transaction committed successfully
+submitTransaction finished elapsed 175.321299ms
+create asset error: failed to submit transaction: transaction f58255091f23524fdf1b21e77ad7f7f13c5bdbf8af13c6036bbc93b1e1fec82e failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+create asset success in 175.587118ms
+submitTransaction finished elapsed 175.367495ms
+create asset error: failed to submit transaction: transaction b42ee4b9133ced7ae509837f764f464cc34f5da6119c9a53c34ffd62bef50907 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 175.254407ms
+create asset error: failed to submit transaction: transaction ccdc198867daba99285776a64d04bc3f4940d0d8ff68c113dfe84c0e642bc4d3 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 175.477882ms
+submitTransaction finished elapsed 175.393623ms
+create asset error: failed to submit transaction: transaction 7dedeef70d191de79b584e6694ca9ab06a4b842d630386f12fc20156df865431 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+create asset error: failed to submit transaction: transaction 5c00144da3d78a30d5c51dbb8ca6e65755c0e5b32c08e1f8543cce326e47f812 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 165.854418ms
+create asset error: failed to submit transaction: transaction db2bad90927cc402dabde0b7bd8d6abdc96cc2496cabc64fb0585ad9a780c876 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 165.791233ms
+create asset error: failed to submit transaction: transaction 7fe1082e564de4b51cf0405dcce996c241308cfff09b8a4673361ea44001b422 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 171.305256ms
+*** Transaction committed successfully
+create asset success in 171.314491ms
+submitTransaction finished elapsed 165.981985ms
+submitTransaction finished elapsed 165.786673ms
+create asset error: failed to submit transaction: transaction a7b4471654c72060cc09a92075027d0a9b96c50d65b1dcb705f6a2dfc42481cd failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 165.9832ms
+create asset error: failed to submit transaction: transaction 88080bc67ec2882acb277d57953f9f591cbcc4f8230f0c2410dde48abe1ebf3a failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 165.852129ms
+create asset error: failed to submit transaction: transaction f930604d502f8d182a07946cc78e505b2c7acb831c73ca69c1701cb58cda3f86 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 165.932576ms
+create asset error: failed to submit transaction: transaction 553666dfd32099f58e6980d3354d4a7cd68f88664ae6d0509219e6c0c3ec7402 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 165.80088ms
+submitTransaction finished elapsed 165.887115ms
+create asset error: failed to submit transaction: transaction 2693f5ff491b822f6c937238ae4b6050a2ef65cbcc15d8b09af231dacc4219b7 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+*** Transaction committed successfully
+create asset error: failed to submit transaction: transaction 64a34ee9d840a1b919ea6d608fa8342acffc2d92a6756e379931b1e01b5aa90d failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+create asset success in 166.113013ms
+submitTransaction finished elapsed 171.558688ms
+create asset error: failed to submit transaction: transaction 94b5264370061812fa72399b6a4fb1e3e752f6ca4c7749524da6fb866f2b3b93 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 171.409062ms
+*** Transaction committed successfully
+create asset success in 171.419676ms
+submitTransaction finished elapsed 171.459123ms
+create asset error: failed to submit transaction: transaction 78b7180e9994b6c488247481d03e0f8119906937d1aed3501aa401882c538758 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 171.609389ms
+*** Transaction committed successfully
+create asset success in 171.621998ms
+submitTransaction finished elapsed 171.513677ms
+create asset error: failed to submit transaction: transaction e56816f43e099b3153e69f291a3708a97cb463342102aa7e1564843a24f59869 failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 171.45195ms
+submitTransaction finished elapsed 171.49796ms
+create asset error: failed to submit transaction: transaction 1df620a5142fead69b462e885fd6e672e4dcdac065bb0d6fb7c421f1a5d9b82d failed to commit with status code 11 (MVCC_READ_CONFLICT)
+
+submitTransaction finished elapsed 171.464571ms

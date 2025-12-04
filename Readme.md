@@ -41,8 +41,8 @@
       - [1] constellation 星座
       - [2] nodes 各种节点
       - [3] normal_node 各种节点的基础版
-      - [4] position_info 卫星位置信息
-      - [5] satellites 卫星
+      - [4] position_info 位置信息
+      - [5] satellites 
       - [6] services 服务
       - [7] topology 拓扑
   -  [4] interface_rate 监控接口速率
@@ -53,7 +53,7 @@
 - [7] scripts 脚本文件存放目录，现在仅有删除所有容器和链路的 delete.sh
 - [8] services
   - [1] http 代表 http 服务
-  - [2] position 代表卫星位置服务
+  - [2] position 代表位置服务
 - [9] test 测试目录
 
 # 4. 构建镜像的详细步骤
@@ -66,7 +66,7 @@
 - [5 (较慢)] ./cmd images -i python_env -o build
 - [6] ./cmd images -i go_env -o build
 - [7] ./cmd images -i etcd_service -o build
-- [8] 将 resources/configuration.yml 之中的 real_time_position_dir 设置为实际的卫星网络项目文件夹的路径
+- [8] 将 resources/configuration.yml 之中的 real_time_position_dir 设置为实际的网络项目文件夹的路径
 - [9] ./cmd images -i position_service -o build
 - [10] ./cmd images -i normal_satellite -o build
 - [11] ./cmd images -i router -o build
@@ -152,3 +152,54 @@ DNSStubListenerExtra=0.0.0.0
 ```shell
 sudo systemctl restart systemd-resolved
 ```
+
+
+2025/09/22 20:02:03 [Recovery] 2025/09/22 - 20:02:03 panic recovered:
+POST /startCaptureInterfaceRate HTTP/1.1
+Host: [240a:a814:0:1::3]:8080
+Accept: application/json, text/plain, */*
+Accept-Encoding: gzip, deflate
+Accept-Language: zh-CN,zh;q=0.9
+Connection: keep-alive
+Content-Length: 37
+Content-Type: application/json
+Origin: http://[240a:a814:0:1::3]:3000
+Referer: http://[240a:a814:0:1::3]:3000/
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+
+
+runtime error: invalid memory address or nil pointer dereference
+/root/Downloads/go/src/runtime/panic.go:262 (0xd2b018)
+panicmem: panic(memoryError)
+/root/Downloads/go/src/runtime/signal_unix.go:900 (0xd2afe8)
+sigpanic: panicmem()
+/root/Projects/emulator/backend/modules/entities/abstract_entities/node/abstract_node.go:50 (0x18d83b2)
+(*AbstractNode).GetNormalNodeFromAbstractNode: switch abstractNode.Type {
+/root/Projects/emulator/backend/modules/performance_monitor/performance_monitor.go:46 (0x1e7be64)
+NewInstancePerformanceMonitor: normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
+/root/Projects/emulator/backend/services/http/apis/performance_api.go:68 (0x1e8fdf4)
+StartCaptureInstancePerformance: performanceMonitor, err = performance_monitor.NewInstancePerformanceMonitor(abstractNode,
+/root/go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/context.go:185 (0x13d31aa)
+(*Context).Next: c.handlers[c.index](c)
+/root/Projects/emulator/backend/services/http/router.go:48 (0x1e943b2)
+InitRouter.CORSMiddleware.func1: c.Next()
+/root/go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/context.go:185 (0x13e160e)
+(*Context).Next: c.handlers[c.index](c)
+/root/go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/recovery.go:102 (0x13e15fb)
+CustomRecoveryWithWriter.func1: c.Next()
+/root/go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/context.go:185 (0x13e0744)
+(*Context).Next: c.handlers[c.index](c)
+/root/go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/logger.go:249 (0x13e072b)
+LoggerWithConfig.func1: c.Next()
+/root/go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/context.go:185 (0x13df931)
+(*Context).Next: c.handlers[c.index](c)
+/root/go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/gin.go:633 (0x13df3a0)
+(*Engine).handleHTTPRequest: c.Next()
+/root/go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/gin.go:589 (0x13deed1)
+(*Engine).ServeHTTP: engine.handleHTTPRequest(c)
+/root/Downloads/go/src/net/http/server.go:3210 (0x10ce50d)
+serverHandler.ServeHTTP: handler.ServeHTTP(rw, req)
+/root/Downloads/go/src/net/http/server.go:2092 (0x10acc8f)
+(*conn).serve: serverHandler{c.server}.ServeHTTP(w, w.req)
+/root/Downloads/go/src/runtime/asm_amd64.s:1700 (0xd31020)
+goexit: BYTE    $0x90   // NOP

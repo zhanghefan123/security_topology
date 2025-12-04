@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/real_entities/topology"
-	"zhanghefan123/security_topology/modules/utils/network"
 	"zhanghefan123/security_topology/modules/webshell"
+	"zhanghefan123/security_topology/utils/network"
 )
 
 type StartWebShellRequest struct {
@@ -20,7 +20,7 @@ type StopWebShellRequest struct {
 
 func StartWebShell(c *gin.Context) {
 	// 如果已经不存在实例了则返回错误
-	if topology.TopologyInstance == nil {
+	if topology.Instance == nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "instance not created",
 		})
@@ -73,7 +73,7 @@ func StartWebShell(c *gin.Context) {
 
 func StopWebShell(c *gin.Context) {
 	// 如果已经不存在实例了
-	if topology.TopologyInstance == nil {
+	if topology.Instance == nil {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "instance not created",
 		})

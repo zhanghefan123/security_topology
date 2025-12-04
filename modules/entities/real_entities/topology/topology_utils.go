@@ -48,6 +48,14 @@ func (t *Topology) GetFabricNodeContainerNames() []string {
 	return fabricNodeNames
 }
 
+func (t *Topology) GetFiscoBcosContainerNames() []string {
+	fiscoBcosNames := make([]string, 0)
+	for _, node := range t.FiscoBcosNodes {
+		fiscoBcosNames = append(fiscoBcosNames, node.ContainerName)
+	}
+	return fiscoBcosNames
+}
+
 // GetContainerNameToAddressMapping 获取所有节点的从容器名称到地址的一个映射 (修改成了从容器名称到 ipv4 和 ipv6 地址的映射)
 func (t *Topology) GetContainerNameToAddressMapping() (map[string][]string, error) {
 	addressMapping := make(map[string][]string)

@@ -6,4 +6,7 @@ const (
 
 	FlagNameOfOperationType          = "operation-type"
 	FlagNameShortHandOfOperationType = "o"
+
+	FlagNameOfExperimentNumber          = "experiment-number"
+	FlagNameShortHandOfExperimentNUmber = "e"
 )

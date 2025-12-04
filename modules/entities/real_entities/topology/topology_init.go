@@ -18,10 +18,11 @@ import (
 	"zhanghefan123/security_topology/modules/entities/real_entities/nodes"
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/entities/types"
-	"zhanghefan123/security_topology/modules/utils/dir"
-	"zhanghefan123/security_topology/modules/utils/file"
-	"zhanghefan123/security_topology/modules/utils/network"
 	"zhanghefan123/security_topology/services/http/params"
+	"zhanghefan123/security_topology/utils/dir"
+	"zhanghefan123/security_topology/utils/file"
+	"zhanghefan123/security_topology/utils/judge"
+	"zhanghefan123/security_topology/utils/network"
 )
 
 type InitFunction func() error
@@ -46,7 +47,6 @@ const (
 	GenerateIfnameToLinkIdentifierMapping = "GenerateIfnameToLinkIdentifierMapping" // 生成从接口名称到 link identifier 的映射文件
 	GenerateFabricNodeIDtoAddressMapping  = "GenerateFabricNodeIDtoAddressMapping"  // 生成从 fabric 节点 id 到对应的 ip 地址的映射文件
 	GenerateChainMakerIDtoNameMapping     = "GenerateChainMakerIDtoNameMapping"     // 生成从 id 到 name 的映射
-
 )
 
 // Init 进行初始化
@@ -121,6 +121,7 @@ func (t *Topology) GenerateNodes() error {
 
 	// 进行所有的节点的遍历
 	for _, nodeParam := range t.TopologyParams.Nodes {
+		var abstractNode *node.AbstractNode
 		nodeType, err := types.ResolveNodeType(nodeParam.Type)
 		if err != nil {
 			return fmt.Errorf("resolve node type failed, %s", err)
@@ -130,70 +131,73 @@ func (t *Topology) GenerateNodes() error {
 			routerTmp := nodes.NewRouter(nodeParam.Index, nodeParam.X, nodeParam.Y)
 			t.Routers = append(t.Routers, routerTmp)
 			// 注意只能唯一创建一次
-			abstractRouter := node.NewAbstractNode(types.NetworkNodeType_Router, routerTmp, TopologyInstance.TopologyGraph)
-			t.RouterAbstractNodes = append(t.RouterAbstractNodes, abstractRouter)
-			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractRouter)
-			t.AbstractNodesMap[routerTmp.ContainerName] = abstractRouter
+			abstractNode = node.NewAbstractNode(types.NetworkNodeType_Router, routerTmp, Instance.TopologyGraph)
+			t.RouterAbstractNodes = append(t.RouterAbstractNodes, abstractNode)
+			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractNode)
+			t.AbstractNodesMap[routerTmp.ContainerName] = abstractNode
 		case types.NetworkNodeType_ChainMakerNode:
 			chainmakerTmp := nodes.NewChainmakerNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
 			t.ChainmakerNodes = append(t.ChainmakerNodes, chainmakerTmp)
 			// 注意只能唯一创建一次
-			abstractChainmaker := node.NewAbstractNode(types.NetworkNodeType_ChainMakerNode, chainmakerTmp, TopologyInstance.TopologyGraph)
-			t.ChainMakerAbstractNodes = append(t.ChainMakerAbstractNodes, abstractChainmaker)
-			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractChainmaker)
-			t.AbstractNodesMap[chainmakerTmp.ContainerName] = abstractChainmaker
+			abstractNode = node.NewAbstractNode(types.NetworkNodeType_ChainMakerNode, chainmakerTmp, Instance.TopologyGraph)
+			t.ChainMakerAbstractNodes = append(t.ChainMakerAbstractNodes, abstractNode)
+			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractNode)
+			t.AbstractNodesMap[chainmakerTmp.ContainerName] = abstractNode
 		case types.NetworkNodeType_LirNode:
 			lirNodeTmp := nodes.NewLiRNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
 			t.LirNodes = append(t.LirNodes, lirNodeTmp)
 			// 注意只能唯一创建一次
-			abstractLirNode := node.NewAbstractNode(types.NetworkNodeType_LirNode, lirNodeTmp, TopologyInstance.TopologyGraph)
-			t.LirAbstractNodes = append(t.LirAbstractNodes, abstractLirNode)
-			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractLirNode)
-			t.AbstractNodesMap[lirNodeTmp.ContainerName] = abstractLirNode
+			abstractNode = node.NewAbstractNode(types.NetworkNodeType_LirNode, lirNodeTmp, Instance.TopologyGraph)
+			t.LirAbstractNodes = append(t.LirAbstractNodes, abstractNode)
+			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractNode)
+			t.AbstractNodesMap[lirNodeTmp.ContainerName] = abstractNode
 		case types.NetworkNodeType_Entrance:
 			entranceTmp := nodes.NewEntrance(nodeParam.Index, nodeParam.X, nodeParam.Y)
 			t.Entrances = append(t.Entrances, entranceTmp)
 			// 注意只能通过实际节点创建抽象节点一次
-			abstractEntrance := node.NewAbstractNode(types.NetworkNodeType_Entrance, entranceTmp, TopologyInstance.TopologyGraph)
-			t.EntranceAbstractNodes = append(t.EntranceAbstractNodes, abstractEntrance)
-			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractEntrance)
-			t.AbstractNodesMap[entranceTmp.ContainerName] = abstractEntrance
+			abstractNode = node.NewAbstractNode(types.NetworkNodeType_Entrance, entranceTmp, Instance.TopologyGraph)
+			t.EntranceAbstractNodes = append(t.EntranceAbstractNodes, abstractNode)
+			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractNode)
+			t.AbstractNodesMap[entranceTmp.ContainerName] = abstractNode
 		case types.NetworkNodeType_FabricPeerNode:
 			fmt.Println("create fabric peer node")
 			fabricPeerTmp := nodes.NewFabricPeerNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
 			t.FabricPeerNodes = append(t.FabricPeerNodes, fabricPeerTmp)
 			// 注意只能进行一次抽象节点的创建
-			abstractFabricPeer := node.NewAbstractNode(types.NetworkNodeType_FabricPeerNode, fabricPeerTmp, TopologyInstance.TopologyGraph)
-			t.FabricPeerAbstractNodes = append(t.FabricPeerAbstractNodes, abstractFabricPeer)
-			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractFabricPeer)
-			t.AbstractNodesMap[fabricPeerTmp.ContainerName] = abstractFabricPeer
+			abstractNode = node.NewAbstractNode(types.NetworkNodeType_FabricPeerNode, fabricPeerTmp, Instance.TopologyGraph)
+			t.FabricPeerAbstractNodes = append(t.FabricPeerAbstractNodes, abstractNode)
+			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractNode)
+			t.AbstractNodesMap[fabricPeerTmp.ContainerName] = abstractNode
 		case types.NetworkNodeType_FabricOrderNode:
 			fmt.Println("create fabric order node")
 			fabricOrderTmp := nodes.NewFabricOrderNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
 			t.FabricOrdererNodes = append(t.FabricOrdererNodes, fabricOrderTmp)
 			// 注意只能进行一次抽象节点的创建
-			abstractFabricOrder := node.NewAbstractNode(types.NetworkNodeType_FabricOrderNode, fabricOrderTmp, TopologyInstance.TopologyGraph)
-			t.FabricOrderAbstractNodes = append(t.FabricOrderAbstractNodes, abstractFabricOrder)
-			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractFabricOrder)
-			t.AbstractNodesMap[fabricOrderTmp.ContainerName] = abstractFabricOrder
+			abstractNode = node.NewAbstractNode(types.NetworkNodeType_FabricOrderNode, fabricOrderTmp, Instance.TopologyGraph)
+			t.FabricOrderAbstractNodes = append(t.FabricOrderAbstractNodes, abstractNode)
+			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractNode)
+			t.AbstractNodesMap[fabricOrderTmp.ContainerName] = abstractNode
 		case types.NetworkNodeType_MaliciousNode:
 			fmt.Println("create malicious node")
 			maliciousTmp := nodes.NewMaliciousNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
 			t.MaliciousNodes = append(t.MaliciousNodes, maliciousTmp)
 			// 注意只能进行一次抽象节点的创建
-			abstractMalicious := node.NewAbstractNode(types.NetworkNodeType_MaliciousNode, maliciousTmp, TopologyInstance.TopologyGraph)
-			t.MaliciousAbstractNodes = append(t.MaliciousAbstractNodes, abstractMalicious)
-			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractMalicious)
-			t.AbstractNodesMap[maliciousTmp.ContainerName] = abstractMalicious
+			abstractNode = node.NewAbstractNode(types.NetworkNodeType_MaliciousNode, maliciousTmp, Instance.TopologyGraph)
+			t.MaliciousAbstractNodes = append(t.MaliciousAbstractNodes, abstractNode)
+			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractNode)
+			t.AbstractNodesMap[maliciousTmp.ContainerName] = abstractNode
 		case types.NetworkNodeType_FiscoBcosNode:
 			fmt.Println("create fisco bcos node")
 			fiscoBcosNodeTmp := nodes.NewFiscoBcosNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
 			t.FiscoBcosNodes = append(t.FiscoBcosNodes, fiscoBcosNodeTmp)
 			// 注意只能进行一次抽象节点的创建
-			abstractFiscoBcosNode := node.NewAbstractNode(types.NetworkNodeType_FiscoBcosNode, fiscoBcosNodeTmp, TopologyInstance.TopologyGraph)
-			t.FiscoBcosAbstractNodes = append(t.FiscoBcosAbstractNodes, abstractFiscoBcosNode)
-			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractFiscoBcosNode)
-			t.AbstractNodesMap[fiscoBcosNodeTmp.ContainerName] = abstractFiscoBcosNode
+			abstractNode = node.NewAbstractNode(types.NetworkNodeType_FiscoBcosNode, fiscoBcosNodeTmp, Instance.TopologyGraph)
+			t.FiscoBcosAbstractNodes = append(t.FiscoBcosAbstractNodes, abstractNode)
+			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractNode)
+			t.AbstractNodesMap[fiscoBcosNodeTmp.ContainerName] = abstractNode
+		}
+		if judge.IsBlockChainType(*nodeType) {
+			t.AllChainAbstractNodes = append(t.AllChainAbstractNodes, abstractNode)
 		}
 	}
 
@@ -273,7 +277,7 @@ func (t *Topology) GenerateLinks() error {
 			////bandWidth = t.TopologyParams.AccessLinkBandwidth * 1e6
 			//bandWidth = 50 * 1e6
 			linkType = types.NetworkLinkType_AccessLink
-			bandWidth = 10 * 1e6 // 没有限制
+			bandWidth = 20 * 1e6 // 没有限制
 		} else {
 			linkType = types.NetworkLinkType_BackboneLink
 			bandWidth = linux_tc_api.LargeBandwidth // 没有限制
@@ -304,7 +308,7 @@ func (t *Topology) GenerateLinks() error {
 			sourceIntf, targetIntf,
 			sourceAbstractNode, targetAbstractNode,
 			bandWidth,
-			TopologyInstance.TopologyGraph,
+			Instance.TopologyGraph,
 			ipv4SubNet,
 			ipv6SubNet)
 		sourceNormalNode.Ifidx++
@@ -685,7 +689,7 @@ func (t *Topology) CalculateAndWriteSegmentRoutes() error {
 	}
 
 	for _, abstractNode := range t.AllAbstractNodes {
-		err := route.CalculateAndWriteSegmentRoute(abstractNode, &(t.AllLinksMap), TopologyInstance.TopologyGraph)
+		err := route.CalculateAndWriteSegmentRoute(abstractNode, &(t.AllLinksMap), Instance.TopologyGraph)
 		if err != nil {
 			return fmt.Errorf("calculate route failed: %w", err)
 		}
@@ -712,7 +716,7 @@ func (t *Topology) CalculateAndWriteLiRRoutes() error {
 	// 遍历所有节点生成路由文件
 	for _, abstractNode := range t.AllAbstractNodes {
 		// 获取单个节点的路由条目集合
-		lirRoute, err := route.GenerateLiRRoute(abstractNode, &(t.AllLinksMap), TopologyInstance.TopologyGraph)
+		lirRoute, err := route.GenerateLiRRoute(abstractNode, &(t.AllLinksMap), Instance.TopologyGraph)
 		if err != nil {
 			return fmt.Errorf("generate path_validation route failed: %w", err)
 		}

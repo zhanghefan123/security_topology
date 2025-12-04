@@ -5,8 +5,8 @@ import (
 	"os"
 	"strings"
 	"zhanghefan123/security_topology/configs"
-	"zhanghefan123/security_topology/modules/utils/dir"
-	"zhanghefan123/security_topology/modules/utils/execute"
+	"zhanghefan123/security_topology/utils/dir"
+	"zhanghefan123/security_topology/utils/execute"
 )
 
 // buildImageForFabricPeer 为 fabric peer 进行镜像的构建

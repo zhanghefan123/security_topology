@@ -121,6 +121,16 @@ func CreateFiscoBcosNode(client *docker.Client, fiscoBcosNode *nodes.FiscoBcosNo
 	enableFrr := configs.TopConfiguration.NetworkConfig.EnableFrr
 	webPort := configs.TopConfiguration.ServicesConfig.WebConfig.StartPort + graphNodeId
 	leaderPeriod := configs.TopConfiguration.FiscoBcosConfig.LeaderPeriod
+	consensusTimeoutMs := configs.TopConfiguration.FiscoBcosConfig.ConsensusTimeout
+	sealerWaitMs := configs.TopConfiguration.FiscoBcosConfig.SealWatiMs
+	allowedLaggingBehindBlocks := configs.TopConfiguration.FiscoBcosConfig.AllowedLaggingBehindBlocks
+	waterMarkLimit := configs.TopConfiguration.FiscoBcosConfig.WaterMarkLimit
+	minSealTime := configs.TopConfiguration.FiscoBcosConfig.MinSealTime
+	recursiveTrigger := configs.TopConfiguration.FiscoBcosConfig.RecursiveTrigger
+	fastTrigger := configs.TopConfiguration.FiscoBcosConfig.FastTrigger
+	largeInterval := configs.TopConfiguration.FiscoBcosConfig.LargeInterval
+	useModifiedRequestBlocks := configs.TopConfiguration.FiscoBcosConfig.UseModifiedRequestBlocks
+	enablePending := configs.TopConfiguration.FiscoBcosConfig.EnablePending
 	envs := []string{
 		// zhf 添加的环境变量
 		fmt.Sprintf("%s=%s", "FIRST_INTERFACE_NAME", firstInterfaceName),
@@ -130,11 +140,34 @@ func CreateFiscoBcosNode(client *docker.Client, fiscoBcosNode *nodes.FiscoBcosNo
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
 		fmt.Sprintf("%s=%d", "WEB_SERVER_LISTEN_PORT", webPort),
 		fmt.Sprintf("%s=%d", "LEADER_PERIOD", leaderPeriod),
+		fmt.Sprintf("%s=%d", "CONSENSUS_TIMEOUT", consensusTimeoutMs),
+		fmt.Sprintf("%s=%d", "SEALER_WAIT_MS", sealerWaitMs),
+		fmt.Sprintf("%s=%d", "MIN_SEAL_TIME", minSealTime),
+		fmt.Sprintf("%s=%d", "ALLOWED_LAGGING_BEHIND_BLOCKS", allowedLaggingBehindBlocks),
+		fmt.Sprintf("%s=%d", "WATER_MARK_LIMIT", waterMarkLimit),
+		fmt.Sprintf("%s=%t", "RECURSIVE_TRIGGER", recursiveTrigger),
+		fmt.Sprintf("%s=%t", "FAST_TRIGGER", fastTrigger),
+		fmt.Sprintf("%s=%t", "LARGE_INTERVAL", largeInterval),
+		fmt.Sprintf("%s=%t", "USE_MODIFIED_REQUEST_BLOCKS", useModifiedRequestBlocks),
+		fmt.Sprintf("%s=%t", "ENABLE_PENDING", enablePending),
+		fmt.Sprintf("%s=%s", "ETCD_LISTEN_ADDR", configs.TopConfiguration.NetworkConfig.LocalNetworkAddress),
+		fmt.Sprintf("%s=%d", "ETCD_LISTEN_PORT", configs.TopConfiguration.ServicesConfig.EtcdConfig.ClientPort),
+		fmt.Sprintf("%s=%d", "SYNC_IDLE_WAIT", configs.TopConfiguration.FiscoBcosConfig.SyncIdleWait),
+		fmt.Sprintf("%s=%d", "DOWNLOAD_BLOCK_PROCESSOR_THREAD_COUNT", configs.TopConfiguration.FiscoBcosConfig.DownloadBlockProcessorThreadCount),
+		fmt.Sprintf("%s=%d", "SEND_BLOCK_PROCESSOR_THREAD_COUNT", configs.TopConfiguration.FiscoBcosConfig.SendBlockProcessorThreadCount),
+		fmt.Sprintf("%s=%d", "MAX_SHARD_PER_PEER", configs.TopConfiguration.FiscoBcosConfig.MaxShardPerPeer),
+		fmt.Sprintf("%s=%d", "MAX_BLOCKS_PER_REQUEST", configs.TopConfiguration.FiscoBcosConfig.MaxBlocksPerRequest),
+		fmt.Sprintf("%s=%d", "REQUEST_PEER_LIMIT", configs.TopConfiguration.FiscoBcosConfig.RequestPeerLimit),
+		fmt.Sprintf("%s=%d", "EXPECTED_TTL", configs.TopConfiguration.FiscoBcosConfig.ExpectedTTL),
+		fmt.Sprintf("%s=%d", "SYNC_SLEEP_MS", configs.TopConfiguration.FiscoBcosConfig.SyncSleepMs),
+		fmt.Sprintf("%s=%t", "ENABLE_BLACK_LIST", configs.TopConfiguration.FiscoBcosConfig.EnableBlackList),
+		fmt.Sprintf("%s=%d", "BLOCK_INTERVAL_MS", configs.TopConfiguration.FiscoBcosConfig.BlockIntervalMs),
+		fmt.Sprintf("%s=%d", "NEW_VIEW_WAIT_MS", configs.TopConfiguration.FiscoBcosConfig.NewViewWaitMs),
 	}
 
 	// 5. 资源限制
-	//cpuLimit := configs.TopConfiguration.ResourcesConfig.CpuLimit
-	//memoryLimit := configs.TopConfiguration.ResourcesConfig.MemoryLimit
+	//cpuLimit := 5
+	//memoryLimit := 2 * 1024
 	//resourcesLimit := container.Resources{
 	//	NanoCPUs: int64(cpuLimit * 1e9),
 	//	Memory:   int64(memoryLimit * 1024 * 1024),
@@ -174,16 +207,17 @@ func CreateFiscoBcosNode(client *docker.Client, fiscoBcosNode *nodes.FiscoBcosNo
 	}
 
 	// 8. hostConfig
-	hostConfig := &container.HostConfig{
+	var hostConfig *container.HostConfig
+	hostConfig = &container.HostConfig{
 		// 容器数据卷映射
 		Binds:        volumes,
 		CapAdd:       []string{"NET_ADMIN"},
 		Privileged:   true,
 		Sysctls:      sysctls,
 		PortBindings: portBindings,
-		//Resources:    resourcesLimit,
 		//NetworkMode:  "host", // 对应于 --network=host
 	}
+	fmt.Println("no resource limit")
 
 	// 9. 进行容器的创建
 	response, err := client.ContainerCreate(

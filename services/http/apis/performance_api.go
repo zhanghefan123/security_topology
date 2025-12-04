@@ -2,12 +2,14 @@ package apis
 
 import (
 	"encoding/json"
-	"github.com/gin-gonic/gin"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"zhanghefan123/security_topology/modules/entities/real_entities/performance_monitor"
 	"zhanghefan123/security_topology/modules/entities/real_entities/topology"
-	"zhanghefan123/security_topology/modules/performance_monitor"
-	"zhanghefan123/security_topology/modules/utils/judge"
+	"zhanghefan123/security_topology/utils/judge"
+
+	"github.com/gin-gonic/gin"
 )
 
 type CapturePerformanceRequest struct {
@@ -16,7 +18,7 @@ type CapturePerformanceRequest struct {
 
 // StartCaptureInstancePerformance 开启接口速率监听
 func StartCaptureInstancePerformance(c *gin.Context) {
-	if topology.TopologyInstance == nil {
+	if topology.Instance == nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "already shutdown",
 		})
@@ -33,6 +35,8 @@ func StartCaptureInstancePerformance(c *gin.Context) {
 		})
 		return
 	}
+
+	fmt.Printf("capture %v\n", captureRateRequest.ContainerName)
 
 	// 2. 判断是否已经存在了相应的监听实例, 如果已经存在就进行数据的返回
 	if performanceMonitor, ok = performance_monitor.PerformanceMonitorMapping[captureRateRequest.ContainerName]; ok {
@@ -61,35 +65,36 @@ func StartCaptureInstancePerformance(c *gin.Context) {
 			})
 		}
 		return
-	} else {
-		// 2.2 如果不存在，则创建新的并返回空的数据
-		abstractNode := topology.TopologyInstance.AbstractNodesMap[captureRateRequest.ContainerName]
-		// 获取所有的 chainMakerContainer 的 name
-		performanceMonitor, err = performance_monitor.NewInstancePerformanceMonitor(abstractNode,
-			topology.TopologyInstance.GetChainMakerNodeContainerNames(),
-			topology.TopologyInstance.GetFabricNodeContainerNames())
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"message": "could not create performance_monitor monitor",
-			})
-			return
-		}
-		performanceMonitor.KeepGettingPerformance()
-		c.JSON(http.StatusOK, gin.H{
-			"message":             "successfully captured instance performance",
-			"time_list":           make([]int, 0),
-			"interface_rate_list": make([]float64, 0),
-			"cpu_ratio_list":      make([]float64, 0),
-		})
-		return
 	}
+	// 已经不用 else 的条件了, 因为默认所有的都已经创建好了
+	//} else {
+	//	fmt.Println("empty")
+	//	// 2.2 如果不存在，则创建新的并返回空的数据
+	//	abstractNode := topology.Instance.AbstractNodesMap[captureRateRequest.ContainerName]
+	//	// 获取所有的 chainMakerContainer 的 name
+	//	performanceMonitor, err = monitor.NewInstancePerformanceMonitor(abstractNode)
+	//	if err != nil {
+	//		c.JSON(http.StatusInternalServerError, gin.H{
+	//			"message": "could not create performance_monitor monitor",
+	//		})
+	//		return
+	//	}
+	//	performance_monitor.KeepGettingPerformance(performanceMonitor)
+	//	c.JSON(http.StatusOK, gin.H{
+	//		"message":             "successfully captured instance performance",
+	//		"time_list":           make([]int, 0),
+	//		"interface_rate_list": make([]float64, 0),
+	//		"cpu_ratio_list":      make([]float64, 0),
+	//	})
+	//	return
+	//}
 
 }
 
 // StopCaptureInstancePerformance 停止接口速率监听
 func StopCaptureInstancePerformance(c *gin.Context) {
 	// 1. 如果已经不存在了就返回错误
-	if topology.TopologyInstance == nil {
+	if topology.Instance == nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"state": "down",
 		})
@@ -106,8 +111,31 @@ func StopCaptureInstancePerformance(c *gin.Context) {
 		})
 		return
 	}
+
+	// 2. 进行写入
+	abstractNode := topology.Instance.AbstractNodesMap[captureRateRequest.ContainerName]
+	performanceMonitor, err := performance_monitor.GetPerformanceMonitor(abstractNode)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "get performance monitor failed",
+		})
+		return
+	}
+	if performanceMonitor == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "performance monitor not found",
+		})
+		return
+	}
+	err = performance_monitor.WriteResultIntoFile(performanceMonitor)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "write result into file error",
+		})
+		return
+	}
+
 	// 3. 拿到对应的抽象节点并调用 Remove 逻辑
-	abstractNode := topology.TopologyInstance.AbstractNodesMap[captureRateRequest.ContainerName]
 	err = performance_monitor.RemovePerformanceMonitor(abstractNode)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

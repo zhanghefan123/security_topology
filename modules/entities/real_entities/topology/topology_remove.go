@@ -19,28 +19,26 @@ import (
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
-	"zhanghefan123/security_topology/modules/performance_monitor"
-	"zhanghefan123/security_topology/modules/utils/dir"
-	"zhanghefan123/security_topology/modules/utils/execute"
 	"zhanghefan123/security_topology/modules/webshell"
+	"zhanghefan123/security_topology/utils/dir"
+	"zhanghefan123/security_topology/utils/execute"
 )
 
 const (
-	DeleteWebShells             = "DeleteWebShells"
-	RemoveInterfaceRateMonitors = "RemoveInterfaceRateMonitors"
-	StopNodeContainers          = "StopNodeContainers"
-	RemoveNodeContainers        = "RemoveNodeContainers"
-	RemoveLinks                 = "RemoveLinks"
-	RemoveChainCodeContainers   = "RemoveChainCodeContainers"
-	RemoveEtcdService           = "RemoveEtcdService"
-	RemoveConfigurationFiles    = "RemoveConfigurationFiles"
-	RemoveChainMakerFiles       = "RemoveChainMakerFiles"
-	RemoveFabricFiles           = "RemoveFabricFiles"
-	RemoveVolumes               = "RemoveVolumes"
-	RemoveDefaultRoutes         = "RemoveDefaultRoutes"
-	RemoveAllChainCodeImages    = "RemoveAllChainCodeImages"
-	RemoveSimulationFiles       = "RemoveSimulationFiles"
-	RemoveAllFiscoBcosFiles     = "RemoveAllFiscoBcosFiles"
+	DeleteWebShells           = "DeleteWebShells"
+	StopNodeContainers        = "StopNodeContainers"
+	RemoveNodeContainers      = "RemoveNodeContainers"
+	RemoveLinks               = "RemoveLinks"
+	RemoveChainCodeContainers = "RemoveChainCodeContainers"
+	RemoveEtcdService         = "RemoveEtcdService"
+	RemoveChainMakerFiles     = "RemoveChainMakerFiles"
+	RemoveFabricFiles         = "RemoveFabricFiles"
+	RemoveVolumes             = "RemoveVolumes"
+	RemoveDefaultRoutes       = "RemoveDefaultRoutes"
+	RemoveAllChainCodeImages  = "RemoveAllChainCodeImages"
+	RemoveAllFiscoBcosFiles   = "RemoveAllFiscoBcosFiles"
+	RemoveAllSimulationDirs   = "RemoveAllSimulationDirs"
+	StopLocalServices         = "StopLocalServices"
 )
 
 // RemoveFunction 删除函数
@@ -57,19 +55,18 @@ func (t *Topology) Remove() error {
 
 	removeSteps := []map[string]RemoveModule{
 		{DeleteWebShells: RemoveModule{true, t.DeleteWebShells}},
-		{RemoveInterfaceRateMonitors: RemoveModule{true, t.RemoveInterfaceRateMonitor}},
 		{RemoveChainCodeContainers: RemoveModule{true, t.RemoveChaincodeContainers}},
 		{StopNodeContainers: RemoveModule{true, t.StopNodeContainers}},
 		{RemoveNodeContainers: RemoveModule{true, t.RemoveNodeContainers}},
 		{RemoveLinks: RemoveModule{true, t.RemoveLinks}},
 		{RemoveEtcdService: RemoveModule{true, t.RemoveEtcdService}},
-		{RemoveConfigurationFiles: RemoveModule{true, t.RemoveConfigurationFiles}},
 		{RemoveChainMakerFiles: RemoveModule{t.ChainMakerEnabled, t.RemoveChainMakerFiles}},
 		{RemoveFabricFiles: RemoveModule{t.FabricEnabled, t.RemoveFabricFiles}},
 		{RemoveVolumes: RemoveModule{true, t.RemoveVolumes}},
 		{RemoveDefaultRoutes: RemoveModule{t.FabricEnabled, t.RemoveDefaultRoutes}},
 		{RemoveAllChainCodeImages: RemoveModule{t.FabricEnabled, t.RemoveAllChainCodeImages}},
 		{RemoveAllFiscoBcosFiles: RemoveModule{t.FiscoBcosEnabled, t.RemoveAllFiscoBcosFiles}},
+		{RemoveAllSimulationDirs: RemoveModule{true, t.RemoveAllSimulationDirs}},
 	}
 	err := t.removeSteps(removeSteps)
 	if err != nil {
@@ -126,24 +123,6 @@ func (t *Topology) DeleteWebShells() error {
 
 	t.topologyStopSteps[DeleteWebShells] = struct{}{}
 	topologyLogger.Infof("delete web shells")
-	return nil
-}
-
-// RemoveInterfaceRateMonitor 进行所有的容器速率监听器的删除
-func (t *Topology) RemoveInterfaceRateMonitor() error {
-	if _, ok := t.topologyStopSteps[RemoveInterfaceRateMonitors]; ok {
-		topologyLogger.Infof("already remove interface rate monitors")
-		return nil
-	}
-
-	// 向所有的 interfaceRateMonitor 发送信号
-	for _, interfaceRateMonitor := range performance_monitor.PerformanceMonitorMapping {
-		interfaceRateMonitor.StopChannel <- struct{}{}
-	}
-	performance_monitor.PerformanceMonitorMapping = make(map[string]*performance_monitor.PerformanceMonitor)
-
-	t.topologyStopSteps[RemoveInterfaceRateMonitors] = struct{}{}
-	topologyLogger.Infof("remove interface rate monitors")
 	return nil
 }
 
@@ -240,6 +219,7 @@ func (t *Topology) RemoveLinks() error {
 	return multithread.RunInMultiThread(description, taskFunc, t.Links)
 }
 
+// RemoveChaincodeContainers 删除 fabric 链码对应的容器
 func (t *Topology) RemoveChaincodeContainers() error {
 	if _, ok := t.topologyStopSteps[RemoveChainCodeContainers]; ok {
 		topologyLogger.Infof("already execute remove chaincode containers")
@@ -276,33 +256,8 @@ func (t *Topology) RemoveChaincodeContainers() error {
 		}
 	}
 
-	t.topologyStopSteps[RemoveConfigurationFiles] = struct{}{}
+	t.topologyStopSteps[RemoveChainCodeContainers] = struct{}{}
 	topologyLogger.Infof("execute remove chaincode containers")
-
-	return nil
-}
-
-// RemoveConfigurationFiles 进行配置文件的删除
-func (t *Topology) RemoveConfigurationFiles() error {
-
-	if _, ok := t.topologyStopSteps[RemoveConfigurationFiles]; ok {
-		topologyLogger.Infof("already execute remove configuration files")
-		return nil
-	}
-
-	ConfigGeneratePath := configs.TopConfiguration.PathConfig.ConfigGeneratePath
-	if !(filepath.IsAbs(ConfigGeneratePath)) {
-		configs.TopConfiguration.PathConfig.ConfigGeneratePath, _ = filepath.Abs(ConfigGeneratePath)
-	}
-
-	// 不要通过命令行 rm -rf 的方法进行删除
-	err := os.RemoveAll(ConfigGeneratePath)
-	if err != nil {
-		return fmt.Errorf("execute remove configuration files failed")
-	}
-
-	t.topologyStopSteps[RemoveConfigurationFiles] = struct{}{}
-	topologyLogger.Infof("execute remove configuration files")
 
 	return nil
 }
@@ -367,6 +322,7 @@ func (t *Topology) RemoveFabricFiles() error {
 	return nil
 }
 
+// RemoveVolumes 删除所有的容器卷映射
 func (t *Topology) RemoveVolumes() error {
 	if _, ok := t.topologyStopSteps[RemoveVolumes]; ok {
 		topologyLogger.Infof("already execute remove volumes")
@@ -389,6 +345,7 @@ func (t *Topology) RemoveVolumes() error {
 	return nil
 }
 
+// RemoveDefaultRoutes 删除 fabric 的默认路由
 func (t *Topology) RemoveDefaultRoutes() error {
 	if _, ok := t.topologyStopSteps[RemoveDefaultRoutes]; ok {
 		topologyLogger.Infof("already execute remove default routes")
@@ -411,25 +368,12 @@ func (t *Topology) RemoveDefaultRoutes() error {
 		}
 	}
 
-	//normalNode, err := t.FabricOrderAbstractNodes[0].GetNormalNodeFromAbstractNode()
-	//if err != nil {
-	//	return err
-	//}
-	//fmt.Printf("add route to %s \n", normalNode.ContainerName)
-	//firstInterface := normalNode.Interfaces[0]
-	//deleteRouteCommand := fmt.Sprintf("del -host %s gw %s", firstInterface.SourceIpv4Addr[:len(firstInterface.SourceIpv4Addr)-3], normalNode.DockerZeroNetworkAddress)
-	//fmt.Println(deleteRouteCommand)
-	//err = execute.Command("route", strings.Split(deleteRouteCommand, " "))
-	//if err != nil {
-	//	return fmt.Errorf("del default route failed: %w", err)
-	//}
-	// -----------------------------------------------------------------
-
 	t.topologyStopSteps[RemoveDefaultRoutes] = struct{}{}
 	topologyLogger.Infof("execute remove default routes")
 	return nil
 }
 
+// RemoveAllChainCodeImages 删除 chaincode 镜像
 func (t *Topology) RemoveAllChainCodeImages() error {
 	if _, ok := t.topologyStopSteps[RemoveAllChainCodeImages]; ok {
 		topologyLogger.Infof("already execute remove all chaincode images")
@@ -461,6 +405,7 @@ func (t *Topology) RemoveAllChainCodeImages() error {
 	return nil
 }
 
+// RemoveAllFiscoBcosFiles 删除 fisco bcos example 下的文件
 func (t *Topology) RemoveAllFiscoBcosFiles() error {
 	if _, ok := t.topologyStopSteps[RemoveAllFiscoBcosFiles]; ok {
 		topologyLogger.Infof("already remove all fisco bcos files")
@@ -474,5 +419,23 @@ func (t *Topology) RemoveAllFiscoBcosFiles() error {
 	}
 
 	t.topologyStopSteps[RemoveAllFiscoBcosFiles] = struct{}{}
+	return nil
+}
+
+// RemoveAllSimulationDirs 删除所有的 simulations 文件夹下的内容
+func (t *Topology) RemoveAllSimulationDirs() error {
+	if _, ok := t.topologyStopSteps[RemoveAllSimulationDirs]; ok {
+		topologyLogger.Infof("remove all simulation dirs called")
+		return nil
+	}
+
+	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
+
+	err := dir.ClearDir(simulationDir)
+	if err != nil {
+		return fmt.Errorf("clear dir failed due to: %v\n", err)
+	}
+
+	t.topologyStopSteps[RemoveAllSimulationDirs] = struct{}{}
 	return nil
 }

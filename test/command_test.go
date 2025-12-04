@@ -2,7 +2,7 @@ package test
 
 import (
 	"testing"
-	"zhanghefan123/security_topology/modules/utils/execute"
+	"zhanghefan123/security_topology/utils/execute"
 )
 
 func TestExecuteCommand(t *testing.T) {

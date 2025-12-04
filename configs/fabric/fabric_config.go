@@ -13,6 +13,7 @@ type FabricConfig struct {
 	EnablePprof                   bool   `mapstructure:"enable_pprof"`
 	EnableRoutine                 bool   `mapstructure:"enable_routine"`
 	EnableAdvancedMessageHandler  bool   `mapstructure:"enable_advanced_message_handler"`
+	EnableLeaderStepDown          bool   `mapstructure:"enable_leader_step_down"`
 	ConsensusType                 int    `mapstructure:"consensus_type"`
 	LogLevel                      string `mapstructure:"log_level"`
 	EnableBroadcastDefence        bool   `mapstructure:"enable_broadcast_defence"`
@@ -21,4 +22,11 @@ type FabricConfig struct {
 	FabricProjectPath             string `mapstructure:"fabric_project_path"`
 	FabricSamplesPath             string `mapstructure:"fabric_samples_path"`
 	FabricNetworkPath             string `mapstructure:"fabric_network_path"`
+	ForwardTimeout                int    `mapstructure:"forward_timeout"`
+	ComplainTimeout               int    `mapstructure:"complain_timeout"`
+	BlockIntervalMs               int    `mapstructure:"block_interval_ms"`
+	SealWaitMs                    int    `mapstructure:"seal_wait_ms"`
+	WithDelay                     bool   `mapstructure:"with_delay"`
+	RequestBatchMaxCount          int    `mapstructure:"request_batch_max_count"`
+	RequestBatchMaxBytes          int    `mapstructure:"request_batch_max_bytes"`
 }

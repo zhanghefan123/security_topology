@@ -35,9 +35,10 @@ const (
 )
 
 var (
-	UserSelectedImage     = ImageNameEtcd
-	UserSelectedOperation = OperationBuild
-	ImagesInBuildOrder    = []string{
+	UserSelectedImage            = ImageNameEtcd
+	UserSelectedOperation        = OperationBuild
+	UserSelectedExperimentNumber = 1
+	ImagesInBuildOrder           = []string{
 		ImageNameEtcd,
 		ImageNameUbuntuWithSoftware,
 		ImageNameFabricOrder, ImageNameFabricPeer,

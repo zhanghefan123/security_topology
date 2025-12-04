@@ -12,8 +12,8 @@ import (
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/services/etcd"
 	"zhanghefan123/security_topology/modules/entities/types"
-	"zhanghefan123/security_topology/modules/utils/execute"
-	"zhanghefan123/security_topology/modules/utils/file"
+	"zhanghefan123/security_topology/utils/execute"
+	"zhanghefan123/security_topology/utils/file"
 )
 
 const (
@@ -273,7 +273,7 @@ func (t *Topology) StoreToEtcd() error {
 		return nil
 	}
 
-	startDefenceKey := configs.TopConfiguration.ChainMakerConfig.StartDefenceKey
+	startDefenceKey := "start_defence"
 	if t.TopologyParams.StartDefence {
 		_, err := t.EtcdClient.Put(context.Background(), startDefenceKey, "true")
 		if err != nil {
@@ -312,19 +312,6 @@ func (t *Topology) AddDefaultRouteToFirstInterface() error {
 			return fmt.Errorf("add default route failed: %w", err)
 		}
 	}
-
-	//normalNode, err := t.FabricOrderAbstractNodes[0].GetNormalNodeFromAbstractNode()
-	//if err != nil {
-	//	return err
-	//}
-	//fmt.Printf("remove route to %s \n", normalNode.ContainerName)
-	//firstInterface := normalNode.Interfaces[0]
-	//addRouteCommand := fmt.Sprintf("add -host %s gw %s", firstInterface.SourceIpv4Addr[:len(firstInterface.SourceIpv4Addr)-3], normalNode.DockerZeroNetworkAddress)
-	//fmt.Println(addRouteCommand)
-	//err = execute.Command("route", strings.Split(addRouteCommand, " "))
-	//if err != nil {
-	//	return fmt.Errorf("add default route failed: %w", err)
-	//}
 	// ----------------------------------------------------------------
 
 	t.topologyStartSteps[AddDefaultRouteToFirstInterface] = struct{}{}

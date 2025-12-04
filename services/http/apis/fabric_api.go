@@ -6,13 +6,14 @@ import (
 	"net/http"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/real_entities/topology"
-	"zhanghefan123/security_topology/modules/utils/dir"
-	"zhanghefan123/security_topology/modules/utils/execute"
+	"zhanghefan123/security_topology/modules/entities/types"
+	"zhanghefan123/security_topology/utils/dir"
+	"zhanghefan123/security_topology/utils/execute"
 )
 
 func InstallChannelAndChaincode(c *gin.Context) {
 	// 1. 判断拓扑是否已经启动
-	if topology.TopologyInstance == nil {
+	if topology.Instance == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
 			"message": "topology instance is nil",
 		})
@@ -20,7 +21,7 @@ func InstallChannelAndChaincode(c *gin.Context) {
 	}
 
 	// 2. 判断是否是 fabric
-	if topology.TopologyInstance.TopologyParams.BlockChainType != "fabric" {
+	if topology.Instance.TopologyParams.BlockChainType != types.ChainType_HyperledgerFabric {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "blockchain type is not fabric",
 		})
@@ -28,7 +29,7 @@ func InstallChannelAndChaincode(c *gin.Context) {
 	}
 
 	// 3. 判断是否进行了链码的安装
-	if topology.TopologyInstance.ChannelAndChainCodeInstalled {
+	if topology.Instance.ChannelAndChainCodeInstalled {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "chaincode already installed",
 		})
@@ -38,12 +39,12 @@ func InstallChannelAndChaincode(c *gin.Context) {
 	// 4. 进行链码的安装
 	testNetworkPath := configs.TopConfiguration.FabricConfig.FabricNetworkPath
 	err := dir.WithContextManager(testNetworkPath, func() error {
-		installChannelSh := fmt.Sprintf("./startInstallChannel.sh %d %d", len(topology.TopologyInstance.FabricOrdererNodes), len(topology.TopologyInstance.FabricPeerNodes))
+		installChannelSh := fmt.Sprintf("./startInstallChannel.sh %d %d", len(topology.Instance.FabricOrdererNodes), len(topology.Instance.FabricPeerNodes))
 		err := execute.Command("bash", []string{"-l", "-c", installChannelSh})
 		if err != nil {
 			return fmt.Errorf("start install channel failed: %w", err)
 		}
-		installChainCodeSh := fmt.Sprintf("./startInstallChaincode.sh %d %d", len(topology.TopologyInstance.FabricOrdererNodes), len(topology.TopologyInstance.FabricPeerNodes))
+		installChainCodeSh := fmt.Sprintf("./startInstallChaincode.sh %d %d", len(topology.Instance.FabricOrdererNodes), len(topology.Instance.FabricPeerNodes))
 		err = execute.Command("bash", []string{"-l", "-c", installChainCodeSh})
 		if err != nil {
 			return fmt.Errorf("start install chaincode failed: %w", err)

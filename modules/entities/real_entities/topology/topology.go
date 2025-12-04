@@ -16,24 +16,23 @@ import (
 )
 
 var (
-	TopologyInstance *Topology
-	topologyLogger   = logger.GetLogger(logger.ModuleTopology)
+	Instance       *Topology
+	topologyLogger = logger.GetLogger(logger.ModuleTopology)
 )
 
-type TopologyParameters struct {
+type Parameters struct {
 	TopologyName        string `json:"topology_name"`
 	TopologyDescription string `json:"topology_description"`
 }
 
 type Topology struct {
 	chainMakerPrepare *chainmaker_prepare.ChainMakerPrepare
-
-	client         *docker.Client
-	EtcdClient     *clientv3.Client
-	TopologyParams *params.TopologyParams
-	Ipv4SubNets    []iplib.Net4
-	Ipv6SubNets    []iplib.Net6
-	TopologyGraph  *simple.DirectedGraph
+	client            *docker.Client
+	EtcdClient        *clientv3.Client
+	TopologyParams    *params.TopologyParams
+	Ipv4SubNets       []iplib.Net4
+	Ipv6SubNets       []iplib.Net6
+	TopologyGraph     *simple.DirectedGraph
 
 	Routers            []*nodes.Router
 	NormalNodes        []*normal_node.NormalNode
@@ -59,6 +58,7 @@ type Topology struct {
 	EntranceAbstractNodes    []*node.AbstractNode
 	FabricPeerAbstractNodes  []*node.AbstractNode
 	FabricOrderAbstractNodes []*node.AbstractNode
+	AllChainAbstractNodes    []*node.AbstractNode
 
 	AllAbstractNodes []*node.AbstractNode
 	AbstractNodesMap map[string]*node.AbstractNode
@@ -96,14 +96,17 @@ func NewTopology(client *docker.Client, etcdClient *clientv3.Client, params *par
 		LirNodes:        make([]*nodes.LiRNode, 0),
 		Entrances:       make([]*nodes.Entrance, 0),
 
-		RouterAbstractNodes:     make([]*node.AbstractNode, 0),
-		NormalAbstractNodes:     make([]*node.AbstractNode, 0),
-		ConsensusAbstractNodes:  make([]*node.AbstractNode, 0),
-		ChainMakerAbstractNodes: make([]*node.AbstractNode, 0),
-		MaliciousAbstractNodes:  make([]*node.AbstractNode, 0),
-		FiscoBcosAbstractNodes:  make([]*node.AbstractNode, 0),
-		LirAbstractNodes:        make([]*node.AbstractNode, 0),
-		EntranceAbstractNodes:   make([]*node.AbstractNode, 0),
+		RouterAbstractNodes:      make([]*node.AbstractNode, 0),
+		NormalAbstractNodes:      make([]*node.AbstractNode, 0),
+		ConsensusAbstractNodes:   make([]*node.AbstractNode, 0),
+		ChainMakerAbstractNodes:  make([]*node.AbstractNode, 0),
+		MaliciousAbstractNodes:   make([]*node.AbstractNode, 0),
+		FiscoBcosAbstractNodes:   make([]*node.AbstractNode, 0),
+		LirAbstractNodes:         make([]*node.AbstractNode, 0),
+		EntranceAbstractNodes:    make([]*node.AbstractNode, 0),
+		FabricPeerAbstractNodes:  make([]*node.AbstractNode, 0),
+		FabricOrderAbstractNodes: make([]*node.AbstractNode, 0),
+		AllChainAbstractNodes:    make([]*node.AbstractNode, 0),
 
 		AllAbstractNodes: make([]*node.AbstractNode, 0),
 		AbstractNodesMap: make(map[string]*node.AbstractNode),

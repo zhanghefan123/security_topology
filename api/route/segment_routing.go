@@ -13,7 +13,7 @@ import (
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/entities/types"
-	"zhanghefan123/security_topology/modules/utils/dir"
+	"zhanghefan123/security_topology/utils/dir"
 )
 
 // GenerateSegmentRoutingString 到单个节点的静态路由的生成

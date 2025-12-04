@@ -21,7 +21,7 @@ import (
 	"zhanghefan123/security_topology/configs/resources"
 	"zhanghefan123/security_topology/configs/services"
 	"zhanghefan123/security_topology/modules/logger"
-	networkUtils "zhanghefan123/security_topology/modules/utils/network"
+	networkUtils "zhanghefan123/security_topology/utils/network"
 )
 
 var (

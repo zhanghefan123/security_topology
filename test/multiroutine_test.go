@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 	"testing"
-	"zhanghefan123/security_topology/modules/utils/progress_bar"
+	"zhanghefan123/security_topology/utils/progress_bar"
 )
 
 type Satellite struct {

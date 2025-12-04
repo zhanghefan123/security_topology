@@ -12,7 +12,7 @@ import (
 	"zhanghefan123/security_topology/cmd/root"
 	"zhanghefan123/security_topology/cmd/test"
 	"zhanghefan123/security_topology/configs"
-	"zhanghefan123/security_topology/modules/utils/permission"
+	"zhanghefan123/security_topology/utils/permission"
 )
 
 func main() {
