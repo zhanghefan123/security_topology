@@ -2,34 +2,47 @@ package graph
 
 import (
 	"fmt"
+
 	"gonum.org/v1/gonum/graph/simple"
-	"os"
-	"strings"
 )
 
 type Path struct {
-	NodeList []*MultipathGraphNode
+	NodeList []*Node
+	Weight   float64
 }
 
 // CreateNewGraphFromRealPaths 通过真正的节点路径创建新的 Graph
-func CreateNewGraphFromRealPaths(paths []*Path) (*simple.DirectedGraph, map[string]*MultipathGraphNode, *SourceAndDest) {
+func CreateNewGraphFromRealPaths(paths []*Path) (*simple.DirectedGraph, map[string]*Node, *SourceAndDest) {
 	createdGraph := simple.NewDirectedGraph()
-	multipathNodeMapping := map[string]*MultipathGraphNode{}
+	multipathNodeMapping := map[string]*Node{}
 	// 遍历所有的路径来进行节点的添加
 	// ----------------------------------------------------------------------------------------------------------------------
 	for _, singlePath := range paths {
 		// 遍历路径之中的每一个节点
 		for _, multipathNode := range singlePath.NodeList {
 			if _, ok := multipathNodeMapping[multipathNode.NodeName]; !ok {
-				multipathNodeMapping[multipathNode.NodeName] = CreateMultipathGraphNode(multipathNode.NodeName)
+				multipathNodeMapping[multipathNode.NodeName] = multipathNode
 				newNode := createdGraph.NewNode()
 				multipathNode.Node = newNode
-				createdGraph.AddNode(newNode)
+				createdGraph.AddNode(multipathNode)
 			}
 		}
 	}
 	// ----------------------------------------------------------------------------------------------------------------------
 	// 通过第一条路径取出 source and dest
+	//fmt.Println("------------------------------------------------------")
+	for _, singlePath := range paths {
+		finalPathStr := ""
+		for index, node := range singlePath.NodeList {
+			if index != len(singlePath.NodeList)-1 {
+				finalPathStr = finalPathStr + node.NodeName + "->"
+			} else {
+				finalPathStr = finalPathStr + node.NodeName
+			}
+		}
+		//fmt.Printf("path-%d: %v\n", pathIndex, finalPathStr)
+	}
+	//fmt.Println("------------------------------------------------------")
 	source := paths[0].NodeList[0]
 	destination := paths[0].NodeList[len(paths[0].NodeList)-1]
 	sourceAndDestination := CreateSourceAndDest(source, destination)
@@ -53,47 +66,32 @@ func CreateNewGraphFromRealPaths(paths []*Path) (*simple.DirectedGraph, map[stri
 	// ----------------------------------------------------------------------------------------------------------------------
 	return createdGraph, multipathNodeMapping, sourceAndDestination
 }
-
-func CreatePathsFromStrPaths(strPaths [][]string) []*Path {
-	var paths []*Path
-	multipathNodeMapping := map[string]*MultipathGraphNode{}
-	// 遍历所有的路径来进行节点的获取
-	// ----------------------------------------------------------------------------------------------------------------------
-	for _, nodeStrList := range strPaths {
-		// 遍历路径之中的每一个节点
-		for _, nodeStr := range nodeStrList {
-			if _, ok := multipathNodeMapping[nodeStr]; !ok {
-				multipathNodeMapping[nodeStr] = CreateMultipathGraphNode(nodeStr)
-			}
+func PathToString(path *Path) string {
+	finalString := ""
+	for index, singleNode := range path.NodeList {
+		if index != (len(path.NodeList) - 1) {
+			finalString = finalString + singleNode.NodeName + "->"
+		} else {
+			finalString = finalString + singleNode.NodeName
 		}
 	}
-	// ----------------------------------------------------------------------------------------------------------------------
-	// 构建路径
-	// ----------------------------------------------------------------------------------------------------------------------
-	for _, nodeStrList := range strPaths {
-		singlePath := &Path{}
-		// 遍历路径之中的每一个节点
-		for _, nodeStr := range nodeStrList {
-			// 构建路径
-			singlePath.NodeList = append(singlePath.NodeList, multipathNodeMapping[nodeStr])
-		}
-		paths = append(paths, singlePath)
-	}
-	// ----------------------------------------------------------------------------------------------------------------------
-	return paths
+	return finalString
 }
 
-// ResolveMultiPathFile 解析多路径文件以得到字符串形式的路径
-func ResolveMultiPathFile(multiplePathFile string) ([][]string, error) {
-	var pathListInStr [][]string
-	data, err := os.ReadFile(multiplePathFile)
-	if err != nil {
-		return pathListInStr, fmt.Errorf("read multiple path file failed, %s", err.Error())
+func PrintPath(path *Path, pathIndex int) {
+	finalString := ""
+	for index, singleNode := range path.NodeList {
+		if index != (len(path.NodeList) - 1) {
+			finalString = finalString + singleNode.NodeName + "->"
+		} else {
+			finalString = finalString + singleNode.NodeName
+		}
 	}
-	pathsInString := strings.Split(string(data), "\n")
-	for index, singlePathInString := range pathsInString {
-		nodeListInString := strings.Split(singlePathInString, ",")
-		pathListInStr[index] = nodeListInString
+	fmt.Printf("path-%d: %v\n", pathIndex, finalString)
+}
+
+func PrintPaths(paths []*Path) {
+	for index, singlePath := range paths {
+		PrintPath(singlePath, index)
 	}
-	return pathListInStr, nil
 }

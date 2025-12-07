@@ -1,6 +1,9 @@
 package params
 
-import "zhanghefan123/security_topology/modules/entities/types"
+import (
+	"fmt"
+	"zhanghefan123/security_topology/modules/entities/types"
+)
 
 type NodeParam struct {
 	Index int     `json:"index"`
@@ -33,6 +36,15 @@ type TopologyParams struct {
 
 type StartDefenceParameter struct {
 	StartDefence bool `json:"start_defence"`
+}
+
+func ResolveNodeNameWithNodeParam(nodeParam *NodeParam) (string, error) {
+	nodeType, err := types.ResolveNodeType(nodeParam.Type)
+	if err != nil {
+		return "", fmt.Errorf("resolve node type failed, %s", err.Error())
+	}
+	nodeName := fmt.Sprintf("%s-%d", nodeType.String(), nodeParam.Index)
+	return nodeName, nil
 }
 
 func ResolveBlockChainType(blockChainTypeString string) types.ChainType {

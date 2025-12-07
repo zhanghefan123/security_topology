@@ -4,18 +4,17 @@ import (
 	"gonum.org/v1/gonum/graph"
 )
 
-var (
-	MultipathGraphNodeMapping = map[string]*MultipathGraphNode{}
-)
-
-type MultipathGraphNode struct {
+type Node struct {
 	graph.Node
 	NodeName    string
-	ExcessValue int // 存储节点的入度信息
+	ExcessValue int     // 存储节点的入度信息
+	Distance    float64 // 从源节点到这个节点的举例
+	Indegree    int     // 节点的入度
+	Outdegree   int     // 节点的出度
 }
 
-func CreateMultipathGraphNode(nodeName string) *MultipathGraphNode {
-	return &MultipathGraphNode{
+func CreateGraphNode(nodeName string) *Node {
+	return &Node{
 		Node:        nil,
 		NodeName:    nodeName,
 		ExcessValue: 0,

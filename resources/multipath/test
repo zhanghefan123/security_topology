@@ -1,0 +1,71 @@
+path-0: LirNode-1->LirNode-2->LirNode-3->LirNode-11->LirNode-13->LirNode-14->LirNode-20->LirNode-26
+path-1: LirNode-1->LirNode-2->LirNode-4->LirNode-9->LirNode-12->LirNode-13->LirNode-14->LirNode-20->LirNode-26
+path-2: LirNode-1->LirNode-2->LirNode-3->LirNode-9->LirNode-12->LirNode-13->LirNode-14->LirNode-20->LirNode-26
+path-3: LirNode-1->LirNode-2->LirNode-3->LirNode-11->LirNode-12->LirNode-13->LirNode-14->LirNode-20->LirNode-26
+path-4: LirNode-1->LirNode-2->LirNode-3->LirNode-11->LirNode-13->LirNode-14->LirNode-16->LirNode-25->LirNode-26
+path-5: LirNode-1->LirNode-2->LirNode-3->LirNode-11->LirNode-13->LirNode-14->LirNode-20->LirNode-25->LirNode-26
+path-6: LirNode-1->LirNode-2->LirNode-4->LirNode-3->LirNode-11->LirNode-13->LirNode-14->LirNode-20->LirNode-26
+path-7: LirNode-1->LirNode-2->LirNode-3->LirNode-5->LirNode-11->LirNode-13->LirNode-14->LirNode-20->LirNode-26
+path-8: LirNode-1->LirNode-2->LirNode-3->LirNode-11->LirNode-13->LirNode-14->LirNode-20->LirNode-21->LirNode-26
+path-9: LirNode-1->LirNode-2->LirNode-4->LirNode-8->LirNode-12->LirNode-13->LirNode-14->LirNode-20->LirNode-26
+
+
+segment-:0 | depth: 0 | ->LirNode-1->LirNode-2->LirNode-13->LirNode-14->LirNode-26->
+segment-:1 | depth: 1 | ->LirNode-2->LirNode-9->LirNode-12->LirNode-13->
+segment-:2 | depth: 2 | ->LirNode-2->LirNode-4->LirNode-9->
+segment-:3 | depth: 2 | ->LirNode-2->LirNode-3->LirNode-9->
+
+
+// 选中的是12
+segment-:4 | depth: 1 | ->LirNode-2->LirNode-12->LirNode-13->
+segment-:5 | depth: 2 | ->LirNode-2->LirNode-3->LirNode-11->LirNode-12->
+segment-:6 | depth: 2 | ->LirNode-2->LirNode-4->LirNode-8->LirNode-12->
+segment-:7 | depth: 1 | ->LirNode-2->LirNode-3->LirNode-11->LirNode-13->
+segment-:8 | depth: 2 | ->LirNode-2->LirNode-3->
+segment-:9 | depth: 2 | ->LirNode-2->LirNode-4->LirNode-3->
+segment-:10 | depth: 2 | ->LirNode-3->LirNode-11->
+segment-:11 | depth: 2 | ->LirNode-3->LirNode-5->LirNode-11->
+segment-:12 | depth: 1 | ->LirNode-14->LirNode-25->LirNode-26->
+segment-:13 | depth: 2 | ->LirNode-14->LirNode-16->LirNode-25->
+segment-:14 | depth: 2 | ->LirNode-14->LirNode-20->LirNode-25->
+segment-:15 | depth: 1 | ->LirNode-14->LirNode-20->LirNode-26->
+segment-:16 | depth: 1 | ->LirNode-14->LirNode-20->LirNode-21->LirNode-26->
+
+56
+
+
+
+55
+
+path-0: LirNode-1->LirNode-2->LirNode-3->LirNode-11->LirNode-13->LirNode-14->LirNode-20->LirNode-26
+path-1: LirNode-1->LirNode-2->LirNode-4->LirNode-9->LirNode-12->LirNode-13->LirNode-14->LirNode-20->LirNode-26
+path-2: LirNode-1->LirNode-2->LirNode-3->LirNode-5->LirNode-11->LirNode-13->LirNode-14->LirNode-20->LirNode-26
+path-3: LirNode-1->LirNode-2->LirNode-3->LirNode-11->LirNode-12->LirNode-13->LirNode-14->LirNode-20->LirNode-26
+path-4: LirNode-1->LirNode-2->LirNode-3->LirNode-11->LirNode-13->LirNode-14->LirNode-16->LirNode-25->LirNode-26
+path-5: LirNode-1->LirNode-2->LirNode-3->LirNode-11->LirNode-13->LirNode-14->LirNode-20->LirNode-21->LirNode-26
+path-6: LirNode-1->LirNode-2->LirNode-4->LirNode-8->LirNode-12->LirNode-13->LirNode-14->LirNode-20->LirNode-26
+path-7: LirNode-1->LirNode-2->LirNode-3->LirNode-9->LirNode-12->LirNode-13->LirNode-14->LirNode-20->LirNode-26
+path-8: LirNode-1->LirNode-2->LirNode-3->LirNode-11->LirNode-13->LirNode-14->LirNode-20->LirNode-25->LirNode-26
+path-9: LirNode-1->LirNode-2->LirNode-4->LirNode-3->LirNode-11->LirNode-13->LirNode-14->LirNode-20->LirNode-26
+path-10: LirNode-1->LirNode-2->LirNode-4->LirNode-9->LirNode-12->LirNode-13->LirNode-14->LirNode-20->LirNode-25->LirNode-2
+
+
+segment-:0 | depth: 0 | ->LirNode-1->LirNode-2->LirNode-13->LirNode-14->LirNode-26->
+segment-:1 | depth: 1 | ->LirNode-2->LirNode-9->LirNode-12->LirNode-13->
+segment-:2 | depth: 2 | ->LirNode-2->LirNode-4->LirNode-9->
+segment-:3 | depth: 2 | ->LirNode-2->LirNode-3->LirNode-9->
+
+// 选中的是 11
+segment-:4 | depth: 1 | ->LirNode-2->LirNode-3->LirNode-11->LirNode-13->
+segment-:5 | depth: 2 | ->LirNode-2->LirNode-3->
+segment-:6 | depth: 2 | ->LirNode-2->LirNode-4->LirNode-3->
+segment-:7 | depth: 2 | ->LirNode-3->LirNode-11->
+segment-:8 | depth: 2 | ->LirNode-3->LirNode-5->LirNode-11->
+segment-:9 | depth: 2 | ->LirNode-11->LirNode-13->
+segment-:10 | depth: 2 | ->LirNode-11->LirNode-12->LirNode-13->
+segment-:11 | depth: 1 | ->LirNode-2->LirNode-4->LirNode-8->LirNode-12->LirNode-13->
+segment-:12 | depth: 1 | ->LirNode-14->LirNode-25->LirNode-26->
+segment-:13 | depth: 2 | ->LirNode-14->LirNode-16->LirNode-25->
+segment-:14 | depth: 2 | ->LirNode-14->LirNode-20->LirNode-25->
+segment-:15 | depth: 1 | ->LirNode-14->LirNode-20->LirNode-26->
+segment-:16 | depth: 1 | ->LirNode-14->LirNode-20->LirNode-21->LirNode-26->

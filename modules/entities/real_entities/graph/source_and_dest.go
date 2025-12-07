@@ -1,11 +1,11 @@
 package graph
 
 type SourceAndDest struct {
-	Source      *MultipathGraphNode
-	Destination *MultipathGraphNode
+	Source      *Node
+	Destination *Node
 }
 
-func CreateSourceAndDest(source, destination *MultipathGraphNode) *SourceAndDest {
+func CreateSourceAndDest(source, destination *Node) *SourceAndDest {
 	return &SourceAndDest{
 		Source:      source,
 		Destination: destination,

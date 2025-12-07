@@ -2,7 +2,6 @@ package test
 
 import (
 	"fmt"
-	"math/rand"
 	"strconv"
 	"sync"
 	"testing"
@@ -40,8 +39,8 @@ func TestCidr(t *testing.T) {
 }
 
 func TestExample(t *testing.T) {
-	for _, index := range rand.Perm(5) {
-		fmt.Println(index)
+	for index := range 20 {
+		fmt.Println("index", index)
 	}
 }
 
