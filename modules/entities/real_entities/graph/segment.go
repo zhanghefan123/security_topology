@@ -1,12 +1,17 @@
 package graph
 
-import "strconv"
+import (
+	"fmt"
+	"strconv"
+)
 
 type Segment struct {
+	Id          int
 	Source      *Node   // 段起点
 	Destination *Node   // 段终点
 	Depth       int     // 段的深度
 	Path        []*Node // 部分的路径
+	PathStr     string
 }
 
 func CreateSegment(source *Node, destination *Node, depth int,
@@ -19,8 +24,8 @@ func CreateSegment(source *Node, destination *Node, depth int,
 	}
 }
 
-func PrintSegment(segment *Segment) {
-	finalString := "depth: " + strconv.Itoa(segment.Depth) + " path:"
+func SegmentToString(segment *Segment) string {
+	finalString := "id:" + strconv.Itoa(segment.Id) + " depth: " + strconv.Itoa(segment.Depth) + " path:"
 	for index, node := range segment.Path {
 		if index != (len(segment.Path) - 1) {
 			finalString = finalString + node.NodeName + "->"
@@ -28,6 +33,11 @@ func PrintSegment(segment *Segment) {
 			finalString = finalString + node.NodeName
 		}
 	}
+	return finalString
+}
+
+func PrintSegment(segment *Segment) {
+	fmt.Println(SegmentToString(segment))
 }
 
 func PrintSegments(segments []*Segment) {

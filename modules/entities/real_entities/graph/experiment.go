@@ -23,7 +23,7 @@ func ExperimentWithDifferentPaths() {
 
 	hcu := &HeaderCalculationUnit{}
 	mcu := &MacsCalculationUnit{}
-	
+
 	fpr := 0.00001
 	// 现在要求后续的 path 只能在之前的 path 之上进行递增(前面的path必须保留)
 	for numberOfPaths := range 20 {
@@ -152,5 +152,6 @@ func ListToStringSimple[T any](list []T) string {
 }
 
 func Start() {
-	ExperimentWithDifferentPaths()
+	//ExperimentWithDifferentPaths()
+	GeneratePaths(3)
 }

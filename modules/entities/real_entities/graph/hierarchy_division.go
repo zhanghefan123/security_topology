@@ -1,7 +1,6 @@
 package graph
 
 import (
-	"fmt"
 	"math"
 	"sort"
 	"strconv"
@@ -20,43 +19,43 @@ func HierarchyDivision(paths []*Path, depth int) {
 	createdGraph, multipathNodeMapping, sourceAndDest := CreateNewGraphFromRealPaths(paths)
 	// step 6-7 traverse each node in graph and calculate their excess value
 	CalculateExcessValue(paths, multipathNodeMapping)
-	fmt.Println("------------------------------------------------------")
-	for _, node := range multipathNodeMapping {
-		fmt.Printf("multipath node: %s excess value: %v\n", node.NodeName, node.ExcessValue)
-	}
-	fmt.Println("------------------------------------------------------")
+	//fmt.Println("------------------------------------------------------")
+	//for _, node := range multipathNodeMapping {
+	//	fmt.Printf("multipath node: %s excess value: %v\n", node.NodeName, node.ExcessValue)
+	//}
+	//fmt.Println("------------------------------------------------------")
 	// step 8-9 进行 segment 的创建
 	segment := CreateSegment(sourceAndDest.Source, sourceAndDest.Destination, depth, nil)
 	// step 10-12 找到和源具有相同 excess value 的节点并入到其中
 	nodeListWithSameExcessValue := FindNodesWithExcessValueSameAsSource(paths, sourceAndDest.Source)
-	fmt.Println("------------------------------------------------------")
-	for _, node := range nodeListWithSameExcessValue {
-		fmt.Printf("node with same excess value: %v\n", node.NodeName)
-	}
-	fmt.Println("------------------------------------------------------")
+	//fmt.Println("------------------------------------------------------")
+	//for _, node := range nodeListWithSameExcessValue {
+	//	fmt.Printf("node with same excess value: %v\n", node.NodeName)
+	//}
+	//fmt.Println("------------------------------------------------------")
 	// 将 nodeList 按照到目的节点的距离进行排序
 	sortedHighLevelNodes := SortNodeListBasedOnDistanceToDestination(nodeListWithSameExcessValue, createdGraph, sourceAndDest.Source)
-	fmt.Println("------------------------------------------------------")
-	finalString := ""
-	for index, node := range sortedHighLevelNodes {
-		if index != len(sortedHighLevelNodes)-1 {
-			finalString += node.NodeName + "->"
-		} else {
-			finalString += node.NodeName
-		}
-	}
-	fmt.Printf("high-level path: %v\n", finalString)
-	fmt.Println("------------------------------------------------------")
+	//fmt.Println("------------------------------------------------------")
+	//finalString := ""
+	//for index, node := range sortedHighLevelNodes {
+	//	if index != len(sortedHighLevelNodes)-1 {
+	//		finalString += node.NodeName + "->"
+	//	} else {
+	//		finalString += node.NodeName
+	//	}
+	//}
+	//fmt.Printf("high-level path: %v\n", finalString)
+	//fmt.Println("------------------------------------------------------")
 	segment.Path = sortedHighLevelNodes
 	// step 13 将 segment 并入到 finalSegments 之中
 	finalSegments = append(finalSegments, segment)
 	// step 14 进行所有在 segment 之中的但是不在 graph 之中的边的遍历
 	virtualEdges := FindVirtualEdgesInHighLevelPath(segment, createdGraph)
-	fmt.Println("------------------------------------------------------")
-	for _, edge := range virtualEdges {
-		fmt.Printf("virtual edge: %s <-> %s\n", edge.From.NodeName, edge.To.NodeName)
-	}
-	fmt.Println("------------------------------------------------------")
+	//fmt.Println("------------------------------------------------------")
+	//for _, edge := range virtualEdges {
+	//	fmt.Printf("virtual edge: %s <-> %s\n", edge.From.NodeName, edge.To.NodeName)
+	//}
+	//fmt.Println("------------------------------------------------------")
 	for _, virtualEdge := range virtualEdges {
 		// step 15 找到 virtual edge 的连接的子路径
 		subpaths := FindPathsInVirtualEdge(virtualEdge, paths)
@@ -71,14 +70,14 @@ func HierarchyDivision(paths []*Path, depth int) {
 			finallyFuck = true
 			fuckResult = subpaths
 		}
-		fmt.Println()
-		fmt.Println("------------------------------------------------------")
-		fmt.Printf("virtual edge: %s <-> %s\n", virtualEdge.From.NodeName, virtualEdge.To.NodeName)
-		PrintPaths(subpaths)
-		for _, node := range convergencePoints {
-			fmt.Printf("convergence point: %s\n", node.NodeName)
-		}
-		fmt.Println("------------------------------------------------------")
+		//fmt.Println()
+		//fmt.Println("------------------------------------------------------")
+		//fmt.Printf("virtual edge: %s <-> %s\n", virtualEdge.From.NodeName, virtualEdge.To.NodeName)
+		//PrintPaths(subpaths)
+		//for _, node := range convergencePoints {
+		//	fmt.Printf("convergence point: %s\n", node.NodeName)
+		//}
+		//fmt.Println("------------------------------------------------------")
 		// step 19 判断是否是空集
 		for {
 			if len(convergencePoints) == 0 {
@@ -102,16 +101,16 @@ func HierarchyDivision(paths []*Path, depth int) {
 				}
 				break
 			}
-			fmt.Println("------------------------------------------------------")
-			fmt.Println("first convergence point:", firstConvergencePoint.NodeName)
-			fmt.Println("------------------------------------------------------")
+			//fmt.Println("------------------------------------------------------")
+			//fmt.Println("first convergence point:", firstConvergencePoint.NodeName)
+			//fmt.Println("------------------------------------------------------")
 			// step 27 可能前面的节点把后面的节点的所在的 path 给选完了，造成一个空path集合, 但是可能还存在点没被选到，我们要一直选择到所有的节点都选择完为止
 			selectedPaths, ignoredPaths := FindSubsetPathIncludingTheConvergencePoint(subpaths, firstConvergencePoint) // 找到包含某个聚合点的所有路径
 			if len(selectedPaths) == 0 {
-				fmt.Println("No selected paths, ignored paths:", ignoredPaths)
-				for _, singlePath := range subpaths {
-					fmt.Printf("singleSubPath: %v\n", singlePath)
-				}
+				//fmt.Println("No selected paths, ignored paths:", ignoredPaths)
+				//for _, singlePath := range subpaths {
+				//	fmt.Printf("singleSubPath: %v\n", singlePath)
+				//}
 				continue // 可能有节点还没选完
 			}
 			// step 28 进行递归调用
@@ -315,7 +314,7 @@ func FindConvergencePointsUsingIndegree(directedGraph *simple.DirectedGraph, gra
 	for _, point := range convergencePoints {
 		finalString = finalString + strconv.Itoa(point.ExcessValue) + "->"
 	}
-	fmt.Printf("ConvergencePoints: %s\n", finalString)
+	// fmt.Printf("ConvergencePoints: %s\n", finalString)
 
 	return convergencePoints
 }
@@ -334,10 +333,6 @@ func CalculateIndegree(directedGraph *simple.DirectedGraph, graphNodeMapping map
 	}
 }
 
-func CalculateOutdegree(directedGraph *simple.DirectedGraph, graphNodeMapping map[string]*Node) {
-
-}
-
 // FindSubsetPathIncludingTheConvergencePoint 在一个大的路径集合之中找到包含某个节点的路径子集，以及被排除的路径的集合
 func FindSubsetPathIncludingTheConvergencePoint(paths []*Path, node *Node) ([]*Path, []*Path) {
 	// 选择的路径
@@ -345,19 +340,19 @@ func FindSubsetPathIncludingTheConvergencePoint(paths []*Path, node *Node) ([]*P
 	// 忽略的路径
 	var ignoredPaths []*Path
 	// 进行所有的路径遍历
-	for _, path := range paths {
+	for _, singlePath := range paths {
 		// 一开始判断是不包含的
 		selectPath := false
-		for _, tmpNode := range path.NodeList {
+		for _, tmpNode := range singlePath.NodeList {
 			if tmpNode.NodeName == node.NodeName {
 				selectPath = true
 				break
 			}
 		}
 		if selectPath { // 如果判定包含则加入 selectedPaths 之中
-			selectedPaths = append(selectedPaths, path)
+			selectedPaths = append(selectedPaths, singlePath)
 		} else { // 如果判定不包含则加入 ignoredPaths 之中
-			ignoredPaths = append(ignoredPaths, path)
+			ignoredPaths = append(ignoredPaths, singlePath)
 		}
 	}
 	return selectedPaths, ignoredPaths
@@ -373,101 +368,3 @@ func RemoveVirtualEdgeDestinationFromConvergencePoints(convergencePoints []*Node
 	}
 	return result
 }
-
-//func StartAtlasSimpleTopology() {
-//	atlasSimpleTopologyFilePath := "C:\\Users\\zhf\\Desktop\\zhf_projects\\security_topology\\resources\\multipath\\atlas_simple_topology.json"
-//	atlasSimpleGraph := CreateGraph(atlasSimpleTopologyFilePath)
-//	err := atlasSimpleGraph.Init()
-//	if err != nil {
-//		fmt.Printf("create atlas simple graph failed: %v\n", err)
-//	}
-//	// 将路径打印出来
-//	for pathIndex, singlePath := range atlasSimpleGraph.KShortestPaths {
-//		finalPathStr := ""
-//		for index, node := range singlePath.NodeList {
-//			if index != len(singlePath.NodeList)-1 {
-//				finalPathStr = finalPathStr + node.NodeName + "->"
-//			} else {
-//				finalPathStr = finalPathStr + node.NodeName
-//			}
-//		}
-//		fmt.Printf("path-%d: %v\n", pathIndex, finalPathStr)
-//	}
-//	// 进行 segments 的计算
-//	HierarchyDivision(atlasSimpleGraph.KShortestPaths, 0)
-//	// 将所有的 segments 拿出来
-//	for _, segment := range finalSegments {
-//		finalString := "depth: " + strconv.Itoa(segment.Depth) + " path:"
-//		for index, node := range segment.Path {
-//			if index != (len(segment.Path) - 1) {
-//				finalString = finalString + node.NodeName + "->"
-//			} else {
-//				finalString = finalString + node.NodeName
-//			}
-//		}
-//		fmt.Println(finalString)
-//	}
-//	hfa := &HeaderForAtlas{}
-//	headerSize := hfa.CalculateHeaderSizeBasedOnSegments(finalSegments)
-//	opvs := hfa.CalculateOpvs(finalSegments)
-//	fmt.Printf("header-size: %v\n", headerSize)
-//	fmt.Printf("opvs: %v\n", opvs)
-//}
-//
-//func StartAtlasComplexTopology() {
-//	atlasComplexTopologyFilePath := "C:\\Users\\zhf\\Desktop\\zhf_projects\\security_topology\\resources\\multipath\\atlas_complex_topology.json"
-//	atlasComplexGraph := CreateGraph(atlasComplexTopologyFilePath)
-//	err := atlasComplexGraph.Init()
-//	if err != nil {
-//		fmt.Printf("create atlas simple graph failed: %v\n", err)
-//	}
-//	// 将计算出来的多路径打印出来
-//	PrintPaths(atlasComplexGraph.KShortestPaths)
-//	// 进行 segments 的计算
-//	HierarchyDivision(atlasComplexGraph.KShortestPaths, 0)
-//	// 将所有的 segments 拿出来
-//	PrintSegments(finalSegments)
-//
-//	// 1. 计算 Atlas 首部信息
-//	// -----------------------------------------------------------
-//	hfa := &HeaderForAtlas{}
-//	// 基于 segments 计算头部
-//	headerSize := hfa.CalculateHeaderSizeBasedOnSegments(finalSegments)
-//	// 计算 opvs 的数量
-//	opvs := hfa.CalculateOpvs(finalSegments)
-//	// 打印计算的头部大小
-//	fmt.Printf("header-size: %v\n", headerSize)
-//	// 打印计算的 opvs 的数量
-//	fmt.Printf("opvs: %v\n", opvs)
-//	// -----------------------------------------------------------
-//
-//	// 2. 计算的计算 atlas MAC 次数的打印
-//	// -----------------------------------------------------------
-//	createdGraph, multipathNodeMapping, _ := CreateNewGraphFromRealPaths(atlasComplexGraph.KShortestPaths)
-//	CalculateIndegree(createdGraph, multipathNodeMapping)
-//	macsForAtlas := &MacsForAtlas{}
-//	sourceMacs := macsForAtlas.CalculateNumberOfSourceMacs(finalSegments)
-//	averageOnPathRouterMacs := macsForAtlas.CalculateNumberOfOnPathRouterMacs(multipathNodeMapping,
-//		atlasComplexGraph.GraphParams.Source,
-//		atlasComplexGraph.GraphParams.Destination)
-//	destinationMacs := macsForAtlas.CalculateNumberOfDestinationMacs(finalSegments[0])
-//	fmt.Printf("sourceMacs: %v\n", sourceMacs)
-//	fmt.Printf("averageOnPathRouterMacs: %v\n", averageOnPathRouterMacs)
-//	fmt.Printf("destinationMacs: %v\n", destinationMacs)
-//	// -----------------------------------------------------------
-//
-//	// 3. lip 计算首部长度
-//	// -----------------------------------------------------------
-//	hlp := &HeaderForLip{}
-//	fpr := 0.00001
-//	lipHeaderSize := hlp.CalculateHeaderSize(atlasComplexGraph.KShortestPaths, fpr)
-//	fmt.Printf("lip header size: %v\n", lipHeaderSize)
-//	// -----------------------------------------------------------
-//
-//	// 4. lip 计算各个节点的 mac 次数
-//	// -----------------------------------------------------------
-//	macsForLip := &MacsForLiP{}
-//	lipSourceMacs := macsForLip.CalculateNumberOfSourceMacs(atlasComplexGraph.KShortestPaths)
-//	fmt.Printf("LiPSourceMacs: %v\n", lipSourceMacs)
-//	// -----------------------------------------------------------
-//}
