@@ -1,0 +1,4 @@
+2 paths --> 13 insertion --> 407 bit
+4 paths --> 27 insertion --> 845 bit
+6 paths --> 41 insertion --> 1284 bit
+8 paths --> 55 insertion --> 1722 bit

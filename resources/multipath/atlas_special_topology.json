@@ -1,0 +1,137 @@
+{
+  "source": "LirNode-1",
+  "source_index": 1,
+  "destination": "LirNode-6",
+  "destination_index": 6,
+  "limit_of_cost": 50,
+  "nodes": [
+    {
+      "index": 1,
+      "type": "LirNode",
+      "x": 38,
+      "y": 343
+    },
+    {
+      "index": 2,
+      "type": "LirNode",
+      "x": 187,
+      "y": 345
+    },
+    {
+      "index": 3,
+      "type": "LirNode",
+      "x": 247,
+      "y": 167
+    },
+    {
+      "index": 4,
+      "type": "LirNode",
+      "x": 325,
+      "y": 346
+    },
+    {
+      "index": 5,
+      "type": "LirNode",
+      "x": 474,
+      "y": 346
+    },
+    {
+      "index": 6,
+      "type": "LirNode",
+      "x": 604,
+      "y": 344
+    }
+  ],
+  "links": [
+    {
+      "source_node": {
+        "index": 1,
+        "type": "LirNode",
+        "x": 38,
+        "y": 343
+      },
+      "target_node": {
+        "index": 2,
+        "type": "LirNode",
+        "x": 187,
+        "y": 345
+      },
+      "link_type": "backbone"
+    },
+    {
+      "source_node": {
+        "index": 2,
+        "type": "LirNode",
+        "x": 187,
+        "y": 345
+      },
+      "target_node": {
+        "index": 3,
+        "type": "LirNode",
+        "x": 247,
+        "y": 167
+      },
+      "link_type": "backbone"
+    },
+    {
+      "source_node": {
+        "index": 3,
+        "type": "LirNode",
+        "x": 247,
+        "y": 167
+      },
+      "target_node": {
+        "index": 4,
+        "type": "LirNode",
+        "x": 325,
+        "y": 346
+      },
+      "link_type": "backbone"
+    },
+    {
+      "source_node": {
+        "index": 2,
+        "type": "LirNode",
+        "x": 187,
+        "y": 345
+      },
+      "target_node": {
+        "index": 4,
+        "type": "LirNode",
+        "x": 325,
+        "y": 346
+      },
+      "link_type": "backbone"
+    },
+    {
+      "source_node": {
+        "index": 4,
+        "type": "LirNode",
+        "x": 325,
+        "y": 346
+      },
+      "target_node": {
+        "index": 5,
+        "type": "LirNode",
+        "x": 474,
+        "y": 346
+      },
+      "link_type": "backbone"
+    },
+    {
+      "source_node": {
+        "index": 5,
+        "type": "LirNode",
+        "x": 474,
+        "y": 346
+      },
+      "target_node": {
+        "index": 6,
+        "type": "LirNode",
+        "x": 604,
+        "y": 344
+      },
+      "link_type": "backbone"
+    }
+  ]
+}

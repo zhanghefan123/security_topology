@@ -158,6 +158,98 @@ func (NetworkNodeType) EnumDescriptor() ([]byte, []int) {
 	return file_entities_proto_rawDescGZIP(), []int{1}
 }
 
+type SimNetworkNodeType int32
+
+const (
+	SimNetworkNodeType_NormalRouter         SimNetworkNodeType = 0
+	SimNetworkNodeType_PathValidationRouter SimNetworkNodeType = 1
+)
+
+// Enum value maps for SimNetworkNodeType.
+var (
+	SimNetworkNodeType_name = map[int32]string{
+		0: "NormalRouter",
+		1: "PathValidationRouter",
+	}
+	SimNetworkNodeType_value = map[string]int32{
+		"NormalRouter":         0,
+		"PathValidationRouter": 1,
+	}
+)
+
+func (x SimNetworkNodeType) Enum() *SimNetworkNodeType {
+	p := new(SimNetworkNodeType)
+	*p = x
+	return p
+}
+
+func (x SimNetworkNodeType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SimNetworkNodeType) Descriptor() protoreflect.EnumDescriptor {
+	return file_entities_proto_enumTypes[2].Descriptor()
+}
+
+func (SimNetworkNodeType) Type() protoreflect.EnumType {
+	return &file_entities_proto_enumTypes[2]
+}
+
+func (x SimNetworkNodeType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SimNetworkNodeType.Descriptor instead.
+func (SimNetworkNodeType) EnumDescriptor() ([]byte, []int) {
+	return file_entities_proto_rawDescGZIP(), []int{2}
+}
+
+type SimDirectedLinkType int32
+
+const (
+	SimDirectedLinkType_SimDirectedPvLink     SimDirectedLinkType = 0
+	SimDirectedLinkType_SimDirectedNormalLink SimDirectedLinkType = 1
+)
+
+// Enum value maps for SimDirectedLinkType.
+var (
+	SimDirectedLinkType_name = map[int32]string{
+		0: "SimDirectedPvLink",
+		1: "SimDirectedNormalLink",
+	}
+	SimDirectedLinkType_value = map[string]int32{
+		"SimDirectedPvLink":     0,
+		"SimDirectedNormalLink": 1,
+	}
+)
+
+func (x SimDirectedLinkType) Enum() *SimDirectedLinkType {
+	p := new(SimDirectedLinkType)
+	*p = x
+	return p
+}
+
+func (x SimDirectedLinkType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SimDirectedLinkType) Descriptor() protoreflect.EnumDescriptor {
+	return file_entities_proto_enumTypes[3].Descriptor()
+}
+
+func (SimDirectedLinkType) Type() protoreflect.EnumType {
+	return &file_entities_proto_enumTypes[3]
+}
+
+func (x SimDirectedLinkType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SimDirectedLinkType.Descriptor instead.
+func (SimDirectedLinkType) EnumDescriptor() ([]byte, []int) {
+	return file_entities_proto_rawDescGZIP(), []int{3}
+}
+
 type NetworkLinkType int32
 
 const (
@@ -197,11 +289,11 @@ func (x NetworkLinkType) String() string {
 }
 
 func (NetworkLinkType) Descriptor() protoreflect.EnumDescriptor {
-	return file_entities_proto_enumTypes[2].Descriptor()
+	return file_entities_proto_enumTypes[4].Descriptor()
 }
 
 func (NetworkLinkType) Type() protoreflect.EnumType {
-	return &file_entities_proto_enumTypes[2]
+	return &file_entities_proto_enumTypes[4]
 }
 
 func (x NetworkLinkType) Number() protoreflect.EnumNumber {
@@ -210,7 +302,7 @@ func (x NetworkLinkType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use NetworkLinkType.Descriptor instead.
 func (NetworkLinkType) EnumDescriptor() ([]byte, []int) {
-	return file_entities_proto_rawDescGZIP(), []int{2}
+	return file_entities_proto_rawDescGZIP(), []int{4}
 }
 
 var File_entities_proto protoreflect.FileDescriptor
@@ -241,7 +333,13 @@ const file_entities_proto_rawDesc = "" +
 	"\x0eFabricPeerNode\x10\v\x12\x13\n" +
 	"\x0fFabricOrderNode\x10\f\x12\x10\n" +
 	"\fLiRSatellite\x10\r\x12\x11\n" +
-	"\rFiscoBcosNode\x10\x0e*\x86\x01\n" +
+	"\rFiscoBcosNode\x10\x0e*@\n" +
+	"\x12SimNetworkNodeType\x12\x10\n" +
+	"\fNormalRouter\x10\x00\x12\x18\n" +
+	"\x14PathValidationRouter\x10\x01*G\n" +
+	"\x13SimDirectedLinkType\x12\x15\n" +
+	"\x11SimDirectedPvLink\x10\x00\x12\x19\n" +
+	"\x15SimDirectedNormalLink\x10\x01*\x86\x01\n" +
 	"\x0fNetworkLinkType\x12\x1b\n" +
 	"\x17IntraOrbitSatelliteLink\x10\x00\x12\x1b\n" +
 	"\x17InterOrbitSatelliteLink\x10\x01\x12\x17\n" +
@@ -263,11 +361,13 @@ func file_entities_proto_rawDescGZIP() []byte {
 	return file_entities_proto_rawDescData
 }
 
-var file_entities_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_entities_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
 var file_entities_proto_goTypes = []any{
-	(NetworkNodeStatus)(0), // 0: NetworkNodeStatus
-	(NetworkNodeType)(0),   // 1: NetworkNodeType
-	(NetworkLinkType)(0),   // 2: NetworkLinkType
+	(NetworkNodeStatus)(0),   // 0: NetworkNodeStatus
+	(NetworkNodeType)(0),     // 1: NetworkNodeType
+	(SimNetworkNodeType)(0),  // 2: SimNetworkNodeType
+	(SimDirectedLinkType)(0), // 3: SimDirectedLinkType
+	(NetworkLinkType)(0),     // 4: NetworkLinkType
 }
 var file_entities_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -287,7 +387,7 @@ func file_entities_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_entities_proto_rawDesc), len(file_entities_proto_rawDesc)),
-			NumEnums:      3,
+			NumEnums:      5,
 			NumMessages:   0,
 			NumExtensions: 0,
 			NumServices:   0,

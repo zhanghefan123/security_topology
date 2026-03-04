@@ -8,6 +8,7 @@ import (
 	"zhanghefan123/security_topology/cmd/fabric"
 	"zhanghefan123/security_topology/cmd/http_service"
 	"zhanghefan123/security_topology/cmd/images"
+	"zhanghefan123/security_topology/cmd/online_securest_path"
 	"zhanghefan123/security_topology/cmd/raspberrypi"
 	"zhanghefan123/security_topology/cmd/root"
 	"zhanghefan123/security_topology/cmd/test"
@@ -27,11 +28,14 @@ func main() {
 	imagesCmd := images.CreateImagesCmd()
 	testCmd := test.CreateTestCommand()
 	fabricCmd := fabric.CreateFabricCmd()
+	onlineSecurestPathCommand := online_securest_path.CreateOnlineSecurestPathCmd()
+	rootCmd.AddCommand()
 	rootCmd.AddCommand(httpServiceCmd)
 	rootCmd.AddCommand(raspberrypiClientCmd)
 	rootCmd.AddCommand(imagesCmd)
 	rootCmd.AddCommand(testCmd)
 	rootCmd.AddCommand(fabricCmd)
+	rootCmd.AddCommand(onlineSecurestPathCommand)
 	err = rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)

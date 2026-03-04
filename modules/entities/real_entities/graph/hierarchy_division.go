@@ -3,20 +3,17 @@ package graph
 import (
 	"math"
 	"sort"
-	"strconv"
+	"zhanghefan123/security_topology/modules/entities/real_entities/graph/entities"
+	"zhanghefan123/security_topology/utils/extract"
 
 	"gonum.org/v1/gonum/graph/path"
 	"gonum.org/v1/gonum/graph/simple"
 )
 
-var finalSegments []*Segment
-var finallyFuck bool = false
-var fuckResult []*Path
-
 // HierarchyDivision 进行分层切割 (paths 代表多路径, depth 代表深度)
-func HierarchyDivision(paths []*Path, depth int) {
+func HierarchyDivision(paths []*entities.Path, depth int, finalSegmentsTmp *[]*entities.Segment) {
 	// step 5 Build directed mulitpath graph using paths
-	createdGraph, multipathNodeMapping, sourceAndDest := CreateNewGraphFromRealPaths(paths)
+	createdGraph, multipathNodeMapping, sourceAndDest := entities.CreateNewGraphFromRealPaths(paths)
 	// step 6-7 traverse each node in graph and calculate their excess value
 	CalculateExcessValue(paths, multipathNodeMapping)
 	//fmt.Println("------------------------------------------------------")
@@ -25,7 +22,7 @@ func HierarchyDivision(paths []*Path, depth int) {
 	//}
 	//fmt.Println("------------------------------------------------------")
 	// step 8-9 进行 segment 的创建
-	segment := CreateSegment(sourceAndDest.Source, sourceAndDest.Destination, depth, nil)
+	segment := entities.CreateSegment(sourceAndDest.Source, sourceAndDest.Destination, depth, nil)
 	// step 10-12 找到和源具有相同 excess value 的节点并入到其中
 	nodeListWithSameExcessValue := FindNodesWithExcessValueSameAsSource(paths, sourceAndDest.Source)
 	//fmt.Println("------------------------------------------------------")
@@ -34,7 +31,8 @@ func HierarchyDivision(paths []*Path, depth int) {
 	//}
 	//fmt.Println("------------------------------------------------------")
 	// 将 nodeList 按照到目的节点的距离进行排序
-	sortedHighLevelNodes := SortNodeListBasedOnDistanceToDestination(nodeListWithSameExcessValue, createdGraph, sourceAndDest.Source)
+	//fmt.Printf("destination: %s\n", sourceAndDest.Destination.NodeName)
+	sortedHighLevelNodes := SortNodeListBasedOnDistanceToDestination(nodeListWithSameExcessValue, createdGraph, sourceAndDest.Destination)
 	//fmt.Println("------------------------------------------------------")
 	//finalString := ""
 	//for index, node := range sortedHighLevelNodes {
@@ -48,8 +46,9 @@ func HierarchyDivision(paths []*Path, depth int) {
 	//fmt.Println("------------------------------------------------------")
 	segment.Path = sortedHighLevelNodes
 	// step 13 将 segment 并入到 finalSegments 之中
-	finalSegments = append(finalSegments, segment)
+	*finalSegmentsTmp = append(*finalSegmentsTmp, segment)
 	// step 14 进行所有在 segment 之中的但是不在 graph 之中的边的遍历
+
 	virtualEdges := FindVirtualEdgesInHighLevelPath(segment, createdGraph)
 	//fmt.Println("------------------------------------------------------")
 	//for _, edge := range virtualEdges {
@@ -60,20 +59,15 @@ func HierarchyDivision(paths []*Path, depth int) {
 		// step 15 找到 virtual edge 的连接的子路径
 		subpaths := FindPathsInVirtualEdge(virtualEdge, paths)
 		// step 16 通过这些 subpaths 构建一个 subgraph
-		subGraph, subGraphNodeMapping, _ := CreateNewGraphFromRealPaths(subpaths)
+		subGraph, subGraphNodeMapping, _ := entities.CreateNewGraphFromRealPaths(subpaths)
 
 		// step 17 找到大于等于2 的入度的节点
 		CalculateExcessValue(subpaths, subGraphNodeMapping)
-		//convergencePoints := FindConvergencePointsUsingExcessValue(subGraphNodeMapping)
 		convergencePoints := FindConvergencePointsUsingIndegree(subGraph, subGraphNodeMapping)
-		if len(convergencePoints) == 0 {
-			finallyFuck = true
-			fuckResult = subpaths
-		}
 		//fmt.Println()
 		//fmt.Println("------------------------------------------------------")
 		//fmt.Printf("virtual edge: %s <-> %s\n", virtualEdge.From.NodeName, virtualEdge.To.NodeName)
-		//PrintPaths(subpaths)
+		//entities.PrintPaths(subpaths)
 		//for _, node := range convergencePoints {
 		//	fmt.Printf("convergence point: %s\n", node.NodeName)
 		//}
@@ -83,8 +77,8 @@ func HierarchyDivision(paths []*Path, depth int) {
 			if len(convergencePoints) == 0 {
 				for _, subpath := range subpaths {
 					// step 21-23 创建一个新的 segment:
-					subPathSegment := CreateSegment(virtualEdge.From, virtualEdge.To, depth+1, subpath.NodeList)
-					finalSegments = append(finalSegments, subPathSegment)
+					subPathSegment := entities.CreateSegment(virtualEdge.From, virtualEdge.To, depth+1, subpath.NodeList)
+					*finalSegmentsTmp = append(*finalSegmentsTmp, subPathSegment)
 				}
 				break
 			}
@@ -93,11 +87,11 @@ func HierarchyDivision(paths []*Path, depth int) {
 			if len(convergencePoints) > 1 {
 				convergencePoints = convergencePoints[1:]
 			} else {
-				convergencePoints = []*Node{}
+				convergencePoints = []*entities.Node{}
 				for _, subpath := range subpaths {
 					// step 21-23 创建一个新的 segment:
-					subPathSegment := CreateSegment(virtualEdge.From, virtualEdge.To, depth+1, subpath.NodeList)
-					finalSegments = append(finalSegments, subPathSegment)
+					subPathSegment := entities.CreateSegment(virtualEdge.From, virtualEdge.To, depth+1, subpath.NodeList)
+					*finalSegmentsTmp = append(*finalSegmentsTmp, subPathSegment)
 				}
 				break
 			}
@@ -108,27 +102,29 @@ func HierarchyDivision(paths []*Path, depth int) {
 			selectedPaths, ignoredPaths := FindSubsetPathIncludingTheConvergencePoint(subpaths, firstConvergencePoint) // 找到包含某个聚合点的所有路径
 			if len(selectedPaths) == 0 {
 				//fmt.Println("No selected paths, ignored paths:", ignoredPaths)
-				//for _, singlePath := range subpaths {
-				//	fmt.Printf("singleSubPath: %v\n", singlePath)
-				//}
 				continue // 可能有节点还没选完
+			} else {
+				//for index, singlePath := range selectedPaths {
+				//	entities.PrintPath(singlePath, index)
+				//	//fmt.Printf("singleSubPath: %v\n", singlePath)
+				//}
 			}
 			// step 28 进行递归调用
-			HierarchyDivision(selectedPaths, depth+1)
+			HierarchyDivision(selectedPaths, depth+1, finalSegmentsTmp)
 			// step 29 调用完成后将节点移除, 路径也进行移除
 			//fmt.Println("convergencePoints length: ", len(convergencePoints))
 
 			subpaths = ignoredPaths // 剩下的这个路径还有用到吗？
 			// 视情况进行 break
-			if len(convergencePoints) == 0 {
-				break
-			}
+			//if len(convergencePoints) == 0 {
+			//	break
+			//}
 		}
 	}
 }
 
 // CalculateExcessValue 计算流经的路径的数量
-func CalculateExcessValue(multipaths []*Path, multipathNodeMapping map[string]*Node) {
+func CalculateExcessValue(multipaths []*entities.Path, multipathNodeMapping map[string]*entities.Node) {
 	// 遍历每个节点
 	for _, multipathNode := range multipathNodeMapping {
 		// 初始的 excessValue == 0
@@ -142,14 +138,15 @@ func CalculateExcessValue(multipaths []*Path, multipathNodeMapping map[string]*N
 				}
 			}
 		}
+		// fmt.Printf("node %s excessValue = %d\n", multipathNode.NodeName, multipathNode.ExcessValue)
 		multipathNode.ExcessValue = excessValue
 	}
 }
 
 // FindNodesWithExcessValueSameAsSource 找到所有和源节点具有相同的 ExcessValue 的节点
-func FindNodesWithExcessValueSameAsSource(multipaths []*Path, source *Node) map[string]*Node {
+func FindNodesWithExcessValueSameAsSource(multipaths []*entities.Path, source *entities.Node) map[string]*entities.Node {
 	// 已经添加的节点
-	nodesWithExcessValueSameAsSource := map[string]*Node{}
+	nodesWithExcessValueSameAsSource := map[string]*entities.Node{}
 	// 进行所有的 path 的遍历
 	for _, singlePath := range multipaths {
 		for _, node := range singlePath.NodeList {
@@ -161,46 +158,52 @@ func FindNodesWithExcessValueSameAsSource(multipaths []*Path, source *Node) map[
 	return nodesWithExcessValueSameAsSource
 }
 
-// SortNodeListBasedOnDistanceToDestination 根据到目的节点的举例将 nodeList 进行排序
-func SortNodeListBasedOnDistanceToDestination(nodesMapping map[string]*Node, graphTmp *simple.DirectedGraph, source *Node) []*Node {
-	var finalNodeList []*Node
-	dijkstraResult := path.DijkstraFrom(source, graphTmp)
+func SortNodeListBasedOnDistanceToDestination(nodesMapping map[string]*entities.Node, graphTmp *simple.DirectedGraph, destination *entities.Node) []*entities.Node {
+
+	var finalNodeList []*entities.Node
 	for _, node := range nodesMapping {
-		distance := dijkstraResult.WeightTo(node.ID())
+		dijkstraResult := path.DijkstraFrom(node, graphTmp)
+		distance := dijkstraResult.WeightTo(destination.ID())
+		//fmt.Printf("weight to %s = %f\n", node.NodeName, distance)
 		node.Distance = distance
 		finalNodeList = append(finalNodeList, node)
 	}
-	// 将 nodeList 按照 Distance 进行从小到大的排列
+
+	// 将 nodeList 按照 Distance 进行从大到小的排列
 	sort.Slice(finalNodeList, func(i, j int) bool {
-		return finalNodeList[i].Distance < finalNodeList[j].Distance
+		return finalNodeList[i].Distance > finalNodeList[j].Distance
 	})
-	// 最终结果
+
 	return finalNodeList
 }
 
 // FindVirtualEdgesInHighLevelPath 一种情况是高级节点之间没有边连接, 一种情况是高级节点间不但存在直接边连接，还存在间接的边的连接
-func FindVirtualEdgesInHighLevelPath(segment *Segment, multipathGraph *simple.DirectedGraph) []*DirectedEdge {
+func FindVirtualEdgesInHighLevelPath(segment *entities.Segment, multipathGraph *simple.DirectedGraph) []*entities.DirectedEdge {
 	// 找到的虚链路
-	var virtualEdges []*DirectedEdge
+	var virtualEdges []*entities.DirectedEdge
 	// segment 之中的高层节点的顺序可能是不对的, 我们需要通过最短路径算法算一遍得到应该的顺序是什么样的
 	for index, node := range segment.Path {
 		if index != (len(segment.Path) - 1) {
 			nextNode := segment.Path[index+1]
 			// 第一种情况 -> 不包含边
 			if !(multipathGraph.HasEdgeBetween(node.ID(), nextNode.ID())) {
-				virtualEdges = append(virtualEdges, &DirectedEdge{
+				virtualEdges = append(virtualEdges, &entities.DirectedEdge{
 					From: node,
 					To:   nextNode,
 				})
 			}
+
 			// 第二种情况 -> 不但存在直接边连接，还存在间接的边的连接
 			if multipathGraph.HasEdgeBetween(node.ID(), nextNode.ID()) {
+				// fmt.Printf("node %s <-> next node %s have edge\n", node.NodeName, nextNode.NodeName)
 				// 将边暂时进行删除, 然后看看是否能够抵达
 				multipathGraph.RemoveEdge(node.ID(), nextNode.ID())
 				spf := path.DijkstraFrom(node, multipathGraph)
 				_, weight := spf.To(nextNode.ID())
+				//fmt.Printf("weight: %f\n", weight)
 				if weight != math.Inf(1) {
-					virtualEdges = append(virtualEdges, &DirectedEdge{
+					//fmt.Printf("node %s <-> next node %s have other edge\n", node.NodeName, nextNode.NodeName)
+					virtualEdges = append(virtualEdges, &entities.DirectedEdge{
 						From: node,
 						To:   nextNode,
 					})
@@ -209,38 +212,41 @@ func FindVirtualEdgesInHighLevelPath(segment *Segment, multipathGraph *simple.Di
 				newEdge := multipathGraph.NewEdge(node, nextNode)
 				multipathGraph.SetEdge(newEdge)
 			}
+			//else {
+			//	fmt.Printf("node %s <-> next node %s do not have edge\n", node.NodeName, nextNode.NodeName)
+			//}
 		}
 	}
 	// 将结果进行返回
 	return virtualEdges
 }
 
-// FindEdgeWithinSegmentButNotInGraph 找到存在于 Segment 但是不在 Graph 之中的
-func FindEdgeWithinSegmentButNotInGraph(segment *Segment, multipathGraph *simple.DirectedGraph) []*DirectedEdge {
-	// 找到的虚链路
-	var virtualEdges []*DirectedEdge
-	// segment 之中的高层节点的顺序可能是不对的, 我们需要通过最短路径算法算一遍得到应该的顺序是什么样的
-	for index, node := range segment.Path {
-		if index != (len(segment.Path) - 1) {
-			nextNode := segment.Path[index+1]
-			if !(multipathGraph.HasEdgeBetween(node.ID(), nextNode.ID())) {
-				virtualEdges = append(virtualEdges, &DirectedEdge{
-					From: node,
-					To:   nextNode,
-				})
-			}
-		}
-	}
-	// 将结果进行返回
-	return virtualEdges
-}
+//// FindEdgeWithinSegmentButNotInGraph 找到存在于 Segment 但是不在 Graph 之中的
+//func FindEdgeWithinSegmentButNotInGraph(segment *entities.Segment, multipathGraph *simple.DirectedGraph) []*entities.DirectedEdge {
+//	// 找到的虚链路
+//	var virtualEdges []*entities.DirectedEdge
+//	// segment 之中的高层节点的顺序可能是不对的, 我们需要通过最短路径算法算一遍得到应该的顺序是什么样的
+//	for index, node := range segment.Path {
+//		if index != (len(segment.Path) - 1) {
+//			nextNode := segment.Path[index+1]
+//			if !(multipathGraph.HasEdgeBetween(node.ID(), nextNode.ID())) {
+//				virtualEdges = append(virtualEdges, &entities.DirectedEdge{
+//					From: node,
+//					To:   nextNode,
+//				})
+//			}
+//		}
+//	}
+//	// 将结果进行返回
+//	return virtualEdges
+//}
 
 // FindPathsInVirtualEdge 找到在 virtual Edge 之中的 paths
-func FindPathsInVirtualEdge(directedEdge *DirectedEdge, paths []*Path) []*Path {
-	var finalPaths []*Path
-	var subpathMap = make(map[string]*Path)
+func FindPathsInVirtualEdge(directedEdge *entities.DirectedEdge, paths []*entities.Path) []*entities.Path {
+	var finalPaths []*entities.Path
+	var subpathMap = make(map[string]*entities.Path)
 	for _, singlePath := range paths {
-		subPath := &Path{}
+		subPath := &entities.Path{}
 		subPathString := ""
 		recording := false
 		for _, node := range singlePath.NodeList {
@@ -285,8 +291,8 @@ func FindConvergencePointsUsingExcessValue(graphNodeMapping map[string]*Node) []
 */
 
 // FindConvergencePointsUsingIndegree 找到 ExcessValue >= 2 的汇聚点
-func FindConvergencePointsUsingIndegree(directedGraph *simple.DirectedGraph, graphNodeMapping map[string]*Node) []*Node {
-	var convergencePoints []*Node
+func FindConvergencePointsUsingIndegree(directedGraph *simple.DirectedGraph, graphNodeMapping map[string]*entities.Node) []*entities.Node {
+	var convergencePoints []*entities.Node
 	alreadyAddedPoints := make(map[string]struct{})
 	edgeIterator := directedGraph.Edges()
 	for _, node := range graphNodeMapping {
@@ -297,54 +303,45 @@ func FindConvergencePointsUsingIndegree(directedGraph *simple.DirectedGraph, gra
 			break
 		}
 		edge := edgeIterator.Edge()
-		graphNodeMapping[edge.To().(*Node).NodeName].Indegree++
-		if graphNodeMapping[edge.To().(*Node).NodeName].Indegree >= 2 {
-			if _, ok := alreadyAddedPoints[edge.To().(*Node).NodeName]; !ok {
-				alreadyAddedPoints[edge.To().(*Node).NodeName] = struct{}{}
-				convergencePoints = append(convergencePoints, edge.To().(*Node))
+		graphNodeMapping[edge.To().(*entities.Node).NodeName].Indegree++
+		if graphNodeMapping[edge.To().(*entities.Node).NodeName].Indegree >= 2 {
+			if _, ok := alreadyAddedPoints[edge.To().(*entities.Node).NodeName]; !ok {
+				alreadyAddedPoints[edge.To().(*entities.Node).NodeName] = struct{}{}
+				convergencePoints = append(convergencePoints, graphNodeMapping[edge.To().(*entities.Node).NodeName])
 			}
 		}
 	}
+
 	// 按照 ExcessValue 从小到大进行排序
 	sort.Slice(convergencePoints, func(i, j int) bool {
-		return convergencePoints[i].ExcessValue < convergencePoints[j].ExcessValue
+		if convergencePoints[i].ExcessValue < convergencePoints[j].ExcessValue {
+			return true
+		} else if convergencePoints[i].ExcessValue > convergencePoints[j].ExcessValue {
+			return false
+		} else {
+			firstNodeIndex, _ := extract.NumberFromString(convergencePoints[i].NodeName)
+			secondNodeIndex, _ := extract.NumberFromString(convergencePoints[j].NodeName)
+			return firstNodeIndex < secondNodeIndex
+		}
 	})
-
-	finalString := ""
-	for _, point := range convergencePoints {
-		finalString = finalString + strconv.Itoa(point.ExcessValue) + "->"
-	}
-	// fmt.Printf("ConvergencePoints: %s\n", finalString)
 
 	return convergencePoints
 }
 
-func CalculateIndegree(directedGraph *simple.DirectedGraph, graphNodeMapping map[string]*Node) {
-	edgeIterator := directedGraph.Edges()
-	for _, node := range graphNodeMapping {
-		node.Indegree = 0
-	}
-	for {
-		if !(edgeIterator.Next()) {
-			break
-		}
-		edge := edgeIterator.Edge()
-		graphNodeMapping[edge.To().(*Node).NodeName].Indegree++
-	}
-}
-
 // FindSubsetPathIncludingTheConvergencePoint 在一个大的路径集合之中找到包含某个节点的路径子集，以及被排除的路径的集合
-func FindSubsetPathIncludingTheConvergencePoint(paths []*Path, node *Node) ([]*Path, []*Path) {
+func FindSubsetPathIncludingTheConvergencePoint(paths []*entities.Path, node *entities.Node) ([]*entities.Path, []*entities.Path) {
 	// 选择的路径
-	var selectedPaths []*Path
+	var selectedPaths []*entities.Path
 	// 忽略的路径
-	var ignoredPaths []*Path
+	var ignoredPaths []*entities.Path
 	// 进行所有的路径遍历
 	for _, singlePath := range paths {
 		// 一开始判断是不包含的
 		selectPath := false
+		//entities.PrintPath(singlePath, 0)
 		for _, tmpNode := range singlePath.NodeList {
 			if tmpNode.NodeName == node.NodeName {
+				//fmt.Println("select")
 				selectPath = true
 				break
 			}
@@ -356,15 +353,4 @@ func FindSubsetPathIncludingTheConvergencePoint(paths []*Path, node *Node) ([]*P
 		}
 	}
 	return selectedPaths, ignoredPaths
-}
-
-// RemoveVirtualEdgeDestinationFromConvergencePoints 将虚链路的目的节点从汇聚点集合之中移除
-func RemoveVirtualEdgeDestinationFromConvergencePoints(convergencePoints []*Node, destination *Node) []*Node {
-	result := make([]*Node, 0, len(convergencePoints))
-	for _, node := range convergencePoints {
-		if node.NodeName != destination.NodeName {
-			result = append(result, node)
-		}
-	}
-	return result
 }

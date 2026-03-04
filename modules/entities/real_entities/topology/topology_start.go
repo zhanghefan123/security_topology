@@ -157,7 +157,10 @@ func (t *Topology) StartEtcdService() error {
 	t.abstractEtcdService = node.NewAbstractNode(types.NetworkNodeType_EtcdService, t.etcdService, nil)
 
 	// 5. 进行容器的创建和启动
-	err := container_api.CreateContainer(t.client, t.abstractEtcdService)
+	containerCreateParameter := &container_api.ContainerCreateParameter{
+		AbstractNode: t.abstractEtcdService,
+	}
+	err := container_api.CreateContainer(t.client, containerCreateParameter)
 	if err != nil {
 		return fmt.Errorf("create etcd container failed, %s", err.Error())
 	}
@@ -201,7 +204,13 @@ func (t *Topology) StartNodeContainers() error {
 	}
 	description := fmt.Sprintf("%20s", "start nodes")
 	var taskFunc multithread.TaskFunc[*node.AbstractNode] = func(node *node.AbstractNode) error {
-		err := container_api.CreateContainer(t.client, node)
+		containerCreateParam := &container_api.ContainerCreateParameter{
+			AbstractNode: node,
+		}
+		if node.Type == types.NetworkNodeType_LirNode {
+			containerCreateParam.NumberOfNodes = len(t.LirNodes)
+		}
+		err := container_api.CreateContainer(t.client, containerCreateParam)
 		if err != nil {
 			return err
 		}

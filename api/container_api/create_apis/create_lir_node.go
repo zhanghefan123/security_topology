@@ -13,7 +13,7 @@ import (
 )
 
 // CreateLirNode 创建 LiRNode
-func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode, graphNodeId int) error {
+func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode, graphNodeId int, numberOfLirNodes int) error {
 	// 1. 检查状态
 	if lirNode.Status != types.NetworkNodeStatus_Logic {
 		return fmt.Errorf("path_validation node not in logic status cannot create")
@@ -72,6 +72,7 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode, graphNodeId in
 	// 5. 创建容器卷映射
 	volumes := []string{
 		fmt.Sprintf("%s:%s", nodeDir, fmt.Sprintf("/configuration/%s", lirNode.ContainerName)),
+		fmt.Sprintf("%s:%s", "/home/zhf/Projects/emulator/backend/cmd/final_result", fmt.Sprintf("/result")),
 	}
 
 	// 6. 配置环境变量
@@ -89,6 +90,8 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode, graphNodeId in
 		fmt.Sprintf("%s=%d", "ROUTING_TABLE_TYPE", routingTableType),
 		fmt.Sprintf("%s=%d", "LIR_SINGLE_TIME_ENCODING_COUNT", configs.TopConfiguration.PathValidationConfig.LiRSingleTimeEncodingCount),
 		fmt.Sprintf("%s=%t", "ENABLE_SRV6", configs.TopConfiguration.NetworkConfig.EnableSRv6),
+		fmt.Sprintf("%s=%d", "NUMBER_OF_NODES", numberOfLirNodes),
+		fmt.Sprintf("%s=%d", "MULTIPATH_ROUTING_TYPE", configs.TopConfiguration.PathValidationConfig.MultipathRoutingType),
 	}
 
 	// 7. 容器配置

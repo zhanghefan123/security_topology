@@ -1,0 +1,28 @@
+# 查看当前 ARP 表大小
+sysctl net.ipv4.neigh.default.gc_thresh3
+
+# 增加 ARP 表大小
+sudo sysctl -w net.ipv4.neigh.default.gc_thresh3=4096
+sudo sysctl -w net.ipv4.neigh.default.gc_thresh2=2048
+sudo sysctl -w net.ipv4.neigh.default.gc_thresh1=1024
+sudo sysctl -w net.core.rmem_max=16777216  # 16MB
+sudo sysctl -w net.core.rmem_default=16777216
+
+# 使配置永久生效
+echo "net.ipv4.neigh.default.gc_thresh3=4096" | sudo tee -a /etc/sysctl.conf
+echo "net.ipv4.neigh.default.gc_thresh2=2048" | sudo tee -a /etc/sysctl.conf
+echo "net.ipv4.neigh.default.gc_thresh1=1024" | sudo tee -a /etc/sysctl.conf
+echo "net.core.rmem_max=16777216" | sudo tee -a /etc/sysctl.conf
+echo "net.core.rmem_default=16777216" | sudo tee -a /etc/sysctl.conf
+
+tc qdisc add dev veth0 root tbf \
+    rate 4000mbit \
+    burst 500mb \
+    latency 50ms
+
+
+# 增加 内存
+
+sudo sysctl -w net.core.rmem_max=1073741824
+sudo sysctl -w net.core.rmem_default=536870912
+sudo sysctl -w net.ipv4.udp_mem="1048576 2097152 4194304"

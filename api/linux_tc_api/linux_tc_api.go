@@ -204,6 +204,7 @@ func SetInterfaceBandwidth(containerInterface *intf.NetworkInterface, containerP
 		NetQdiscTemplate.QdiscAttrs,
 		netlink.NetemQdiscAttrs{
 			Latency: 0,
+			Limit:   4294967295,
 		}, // 这里没有设置延迟
 	)
 	netemInfo.LinkIndex = vethInterface.Attrs().Index
@@ -213,9 +214,9 @@ func SetInterfaceBandwidth(containerInterface *intf.NetworkInterface, containerP
 	}
 
 	// 8. 进行带宽的设置
-	rate := bandWidth
-	limit := bandWidth
-	buffer := bandWidth / 8
+	rate := bandWidth / 8
+	limit := bandWidth / 8
+	buffer := 128 * 1024 * 1024
 	tbfInfo := TbfQdiscTemplate
 	tbfInfo.LinkIndex = vethInterface.Attrs().Index
 	tbfInfo.Rate = uint64(rate)

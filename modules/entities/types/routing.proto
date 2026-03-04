@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+option go_package = "../types";
+
+enum RoutingType {
+  NOT_SPECIFIED = 0;
+  Atlas = 1;
+  MultipathSelir = 2;
+}

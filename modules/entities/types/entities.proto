@@ -27,6 +27,16 @@ enum NetworkNodeType {
   FiscoBcosNode = 14;
 }
 
+enum SimNetworkNodeType {
+  NormalRouter = 0;
+  PathValidationRouter = 1;
+}
+
+enum SimDirectedLinkType {
+  SimDirectedPvLink = 0;
+  SimDirectedNormalLink = 1;
+}
+
 enum NetworkLinkType {
   IntraOrbitSatelliteLink = 0;
   InterOrbitSatelliteLink = 1;

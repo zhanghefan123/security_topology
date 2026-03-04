@@ -339,6 +339,19 @@ func (absLink *AbstractLink) SetLinkParams() error {
 			fmt.Println("hello1")
 		}
 		fmt.Println("set link params")
+	} else {
+		//fmt.Println("set bandwidth")
+		//if absLink.Type == types.NetworkLinkType_BackboneLink {
+		//	var bandwidth = int(8 * 1e9)
+		//	err = linux_tc_api.SetInterfaceBandwidth(absLink.SourceInterface, sourceNode.Pid, bandwidth)
+		//	if err != nil {
+		//		return fmt.Errorf("failed to set link params: %w", err)
+		//	}
+		//	err = linux_tc_api.SetInterfaceBandwidth(absLink.TargetInterface, targetNode.Pid, bandwidth)
+		//	if err != nil {
+		//		return fmt.Errorf("failed to set link params: %w", err)
+		//	}
+		//}
 	}
 	//else {
 	//	if absLink.Type == types.NetworkLinkType_BackboneLink {

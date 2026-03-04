@@ -15,11 +15,14 @@ import (
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/intf"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/link"
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
+	"zhanghefan123/security_topology/modules/entities/real_entities/graph"
+	"zhanghefan123/security_topology/modules/entities/real_entities/graph/entities"
 	"zhanghefan123/security_topology/modules/entities/real_entities/nodes"
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/entities/types"
 	"zhanghefan123/security_topology/services/http/params"
 	"zhanghefan123/security_topology/utils/dir"
+	"zhanghefan123/security_topology/utils/extract"
 	"zhanghefan123/security_topology/utils/file"
 	"zhanghefan123/security_topology/utils/judge"
 	"zhanghefan123/security_topology/utils/network"
@@ -33,20 +36,22 @@ type InitModule struct {
 }
 
 const (
-	GenerateChainMakerConfig              = "GenerateChainMakerConfig"              // 生成长安链配置
-	GenerateFabricConfig                  = "GenerateFabricConfig"                  // 生成 fabric 配置
-	GenerateFiscoBcosConfig               = "GenerateFiscoBcosConfig"               // 生成 fisco bcos 配置
-	GenerateNodes                         = "GenerateNodes"                         // 生成节点
-	GenerateSubnets                       = "GenerateSubnets"                       // 创建子网
-	GenerateLinks                         = "GenerateISLs"                          // 生成链路
-	GenerateFrrConfigurationFiles         = "GenerateFrrConfigurationFiles"         // 生成 frr 配置
-	GenerateAddressMapping                = "GenerateAddressMapping"                // 生成容器名 -> 地址的映射
-	GeneratePortMapping                   = "GeneratePortMapping"                   // 生成容器名 -> 端口的映射
-	CalculateAndWriteSegmentRoutes        = "CalculateAndWriteSegmentRoutes"        // 生成 srv6 路由文件
-	CalculateAndWriteLiRRoutes            = "CalculateAndWriteLiRRoutes"            // 生成 path_validation 路由文件
-	GenerateIfnameToLinkIdentifierMapping = "GenerateIfnameToLinkIdentifierMapping" // 生成从接口名称到 link identifier 的映射文件
-	GenerateFabricNodeIDtoAddressMapping  = "GenerateFabricNodeIDtoAddressMapping"  // 生成从 fabric 节点 id 到对应的 ip 地址的映射文件
-	GenerateChainMakerIDtoNameMapping     = "GenerateChainMakerIDtoNameMapping"     // 生成从 id 到 name 的映射
+	GenerateChainMakerConfig                            = "GenerateChainMakerConfig"                            // 生成长安链配置
+	GenerateFabricConfig                                = "GenerateFabricConfig"                                // 生成 fabric 配置
+	GenerateFiscoBcosConfig                             = "GenerateFiscoBcosConfig"                             // 生成 fisco bcos 配置
+	GenerateNodes                                       = "GenerateNodes"                                       // 生成节点
+	GenerateSubnets                                     = "GenerateSubnets"                                     // 创建子网
+	GenerateLinks                                       = "GenerateISLs"                                        // 生成链路
+	GenerateFrrConfigurationFiles                       = "GenerateFrrConfigurationFiles"                       // 生成 frr 配置
+	GenerateAddressMapping                              = "GenerateAddressMapping"                              // 生成容器名 -> 地址的映射
+	GeneratePortMapping                                 = "GeneratePortMapping"                                 // 生成容器名 -> 端口的映射
+	CalculateAndWriteSegmentRoutes                      = "CalculateAndWriteSegmentRoutes"                      // 生成 srv6 路由文件
+	CalculateAndWriteLiRRoutes                          = "CalculateAndWriteLiRRoutes"                          // 生成 path_validation 路由文件
+	GenerateIfnameToLinkIdentifierMapping               = "GenerateIfnameToLinkIdentifierMapping"               // 生成从接口名称到 link identifier 的映射文件
+	GenerateFabricNodeIDtoAddressMapping                = "GenerateFabricNodeIDtoAddressMapping"                // 生成从 fabric 节点 id 到对应的 ip 地址的映射文件
+	GenerateChainMakerIDtoNameMapping                   = "GenerateChainMakerIDtoNameMapping"                   // 生成从 id 到 name 的映射
+	GenerateAtlasSegmentsAndOutputLinkIdentifiers       = "GenerateAtlasSegmentsAndOutputLinkIdentifiers"       // 生成 atlas 多路径的分段
+	GenerateMultipathSelirPathsAndOutputLinkIdentifiers = "GenerateMultipathSelirPathsAndOutputLinkIdentifiers" // 生成 multipath_selir 多路径
 )
 
 // Init 进行初始化
@@ -56,6 +61,21 @@ func (t *Topology) Init() error {
 	err := t.GenerateNodes()
 	if err != nil {
 		return fmt.Errorf("generate nodes failed")
+	}
+
+	var enableUnicast = false
+	var enableAtlas = false
+	var enableMultipathSelir = false
+	if configs.TopConfiguration.PathValidationConfig.EnableMultipathSupport {
+		if configs.TopConfiguration.PathValidationConfig.MultipathRoutingType == (int)(types.RoutingType_Atlas) {
+			enableAtlas = true
+		} else if configs.TopConfiguration.PathValidationConfig.MultipathRoutingType == (int)(types.RoutingType_MultipathSelir) {
+			enableMultipathSelir = true
+		} else {
+			fmt.Printf("unsupported specific multipath protocol\n")
+		}
+	} else {
+		enableUnicast = true
 	}
 
 	initSteps := []map[string]InitModule{
@@ -69,9 +89,11 @@ func (t *Topology) Init() error {
 		{GenerateAddressMapping: InitModule{true, t.GenerateAddressMapping}},
 		{GeneratePortMapping: InitModule{true, t.GeneratePortMapping}},
 		{CalculateAndWriteSegmentRoutes: InitModule{true, t.CalculateAndWriteSegmentRoutes}},
-		{CalculateAndWriteLiRRoutes: InitModule{true, t.CalculateAndWriteLiRRoutes}},
 		{GenerateIfnameToLinkIdentifierMapping: InitModule{true, t.GenerateIfnameToLinkIdentifierMapping}},
 		{GenerateChainMakerIDtoNameMapping: InitModule{t.ChainMakerEnabled, t.GenerateChainMakerIDtoNameMapping}},
+		{CalculateAndWriteLiRRoutes: InitModule{enableUnicast, t.CalculateAndWriteLiRRoutes}},
+		{GenerateAtlasSegmentsAndOutputLinkIdentifiers: InitModule{enableAtlas, t.GenerateAtlasSegmentsAndOutputLinkIdentifiers}},
+		{GenerateMultipathSelirPathsAndOutputLinkIdentifiers: InitModule{enableMultipathSelir, t.GenerateMultipathSelirPathsAndOutputLinkIdentifiers}},
 	}
 
 	err = t.initializeSteps(initSteps)
@@ -274,7 +296,7 @@ func (t *Topology) GenerateLinks() error {
 		var bandWidth int
 		if linkTmp.LinkType == "access" {
 			//linkType = types.NetworkLinkType_AccessLink
-			////bandWidth = t.TopologyParams.AccessLinkBandwidth * 1e6
+			////bandWidth = tt.TopologyParams.AccessLinkBandwidth * 1e6
 			//bandWidth = 50 * 1e6
 			linkType = types.NetworkLinkType_AccessLink
 			bandWidth = 20 * 1e6 // 没有限制
@@ -745,11 +767,20 @@ func (t *Topology) CalculateAndWriteLiRRoutes() error {
 		// 所有节点路由文件的路径
 		allLiRRouteFilePath := filepath.Join(routeDir, "all_lir.txt")
 		// 写入文件
-		err = file.WriteStringIntoFile(lirRouteFilePath, allLiRRoutes[index])
-		if err != nil {
-			return fmt.Errorf("error writing path_validation route file, %w", err)
+		if !configs.TopConfiguration.PathValidationConfig.EnableMulticastSupport {
+			// 如果并不支持多播的时候才进行写入
+			err = file.WriteStringIntoFile(lirRouteFilePath, allLiRRoutes[index])
+			if err != nil {
+				return fmt.Errorf("error writing lir.txt file, %w", err)
+			}
 		}
-		err = file.WriteStringIntoFile(allLiRRouteFilePath, allLirRoutesString)
+		// 在支持多播的时候才进行写入 ()
+		if (normalNode.Id == 1) && (configs.TopConfiguration.PathValidationConfig.EnableMulticastSupport) {
+			err = file.WriteStringIntoFile(allLiRRouteFilePath, allLirRoutesString)
+			if err != nil {
+				return fmt.Errorf("error writing all_lir.txt")
+			}
+		}
 	}
 
 	t.topologyInitSteps[CalculateAndWriteLiRRoutes] = struct{}{}
@@ -758,23 +789,97 @@ func (t *Topology) CalculateAndWriteLiRRoutes() error {
 }
 
 // GenerateIfnameToLinkIdentifierMapping 生成从接口名到链路标识的映射
-func (t *Topology) GenerateIfnameToLinkIdentifierMapping() error {
+func (t *Topology) GenerateIfnameToLinkIdentifierMapping() (err error) {
 	if _, ok := t.topologyInitSteps[GenerateIfnameToLinkIdentifierMapping]; ok {
 		topologyLogger.Infof("already generate ifname to link identifier")
 		return nil
 	}
 
-	// 遍历所有的节点生成 mapping
-	for _, abstractNode := range t.AllAbstractNodes {
-		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
+	finalMapping := map[string]string{}
+
+	// 进行所有的链路的遍历
+	for _, abstractLink := range t.Links {
+		// 提取源节点信息
+		sourceNode := abstractLink.SourceNode
+		sourceIntf := abstractLink.SourceInterface
+		var sourceNormalNode *normal_node.NormalNode
+		sourceNormalNode, err = sourceNode.GetNormalNodeFromAbstractNode()
 		if err != nil {
-			return fmt.Errorf("generate ifname to link identifier mapping files failed, %w", err)
+			return fmt.Errorf("get normal node from abstract node failed: %v", err)
 		}
-		err = normalNode.GenerateIfnameToLidMapping()
+		sourceNodeIdx := sourceNormalNode.Id
+
+		// 提取目的节点信息
+		targetNode := abstractLink.TargetNode
+		targetIntf := abstractLink.TargetInterface
+		var targetNormalNode *normal_node.NormalNode
+		targetNormalNode, err = targetNode.GetNormalNodeFromAbstractNode()
 		if err != nil {
-			return fmt.Errorf("generate ifname to link identifier mapping files failed, %w", err)
+			return fmt.Errorf("get normal node from abstract node failed: %v", err)
+		}
+		targetNodeIdx := targetNormalNode.Id
+
+		// 更新源接口
+		if result, ok := finalMapping[sourceNormalNode.ContainerName]; !ok {
+			result += fmt.Sprintf("%s->%d->%d->%d->%s\n", sourceIntf.IfName, sourceIntf.LinkIdentifier, sourceNodeIdx, targetNodeIdx, sourceIntf.TargetIpv4Addr)
+			finalMapping[sourceNormalNode.ContainerName] = result
+		} else {
+			result = fmt.Sprintf("%s->%d->%d->%d->%s\n", sourceIntf.IfName, sourceIntf.LinkIdentifier, sourceNodeIdx, targetNodeIdx, sourceIntf.TargetIpv4Addr)
+			finalMapping[sourceNormalNode.ContainerName] += result
+		}
+
+		// 更新目的接口
+		if result, ok := finalMapping[targetNormalNode.ContainerName]; !ok {
+			result += fmt.Sprintf("%s->%d->%d->%d->%s\n", targetIntf.IfName, targetIntf.LinkIdentifier, targetNodeIdx, sourceNodeIdx, targetIntf.TargetIpv4Addr)
+			finalMapping[targetNormalNode.ContainerName] = result
+		} else {
+			result = fmt.Sprintf("%s->%d->%d->%d->%s\n", targetIntf.IfName, targetIntf.LinkIdentifier, targetNodeIdx, sourceNodeIdx, targetIntf.TargetIpv4Addr)
+			finalMapping[targetNormalNode.ContainerName] += result
 		}
 	}
+
+	// 进行所有的节点的遍历
+	for _, abstractNode := range t.AllAbstractNodes {
+		var normalNode *normal_node.NormalNode
+		normalNode, err = abstractNode.GetNormalNodeFromAbstractNode()
+		if err != nil {
+			return fmt.Errorf("generate ifname to link identifier mapping files failed, %w", err)
+		}
+		// simulationDir 文件夹的位置
+		simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
+		// interface dir 文件架的位置
+		outputDir := filepath.Join(simulationDir, normalNode.ContainerName, "interface")
+		// 进行文件夹的创建
+		err = os.MkdirAll(outputDir, os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("mkdir for interface error: %w", err)
+		}
+		filePath := filepath.Join(outputDir, "interface.txt")
+		// 进行写入
+		var writeFile *os.File
+		writeFile, err = os.OpenFile(filePath, os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0666)
+		if err != nil {
+			return fmt.Errorf("Error opening file %s: %s\n", filePath, err)
+		}
+		_, err = writeFile.WriteString(finalMapping[normalNode.ContainerName])
+		if err != nil {
+			return fmt.Errorf("Error writing to file %s: %s\n", filePath, err)
+		}
+	}
+
+	// 遍历所有的节点生成 mapping
+	/*
+		for _, abstractNode := range t.AllAbstractNodes {
+			normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
+			if err != nil {
+				return fmt.Errorf("generate ifname to link identifier mapping files failed, %w", err)
+			}
+			err = normalNode.GenerateIfnameToLidMapping()
+			if err != nil {
+				return fmt.Errorf("generate ifname to link identifier mapping files failed, %w", err)
+			}
+		}
+	*/
 
 	t.topologyInitSteps[GenerateIfnameToLinkIdentifierMapping] = struct{}{}
 	topologyLogger.Infof("generate ifname to link identifier")
@@ -811,5 +916,348 @@ func (t *Topology) GenerateChainMakerIDtoNameMapping() error {
 
 	t.topologyInitSteps[GenerateChainMakerIDtoNameMapping] = struct{}{}
 	topologyLogger.Infof("generate chainmaker id to name mapping")
+	return nil
+}
+
+// GenerateAtlasSegmentsAndOutputLinkIdentifiers 生成 Segments 和 output link identifiers
+func (t *Topology) GenerateAtlasSegmentsAndOutputLinkIdentifiers() error {
+	if _, ok := t.topologyInitSteps[GenerateAtlasSegmentsAndOutputLinkIdentifiers]; ok {
+		topologyLogger.Infof("already generate segments and output link identifiers")
+		return nil
+	}
+
+	// 图配置
+	// numberOfPaths := configs.TopConfiguration.PathValidationConfig.NumberOfMultipaths
+	resourcesFilePath := configs.TopConfiguration.PathConfig.ResourcesPath
+	multipathFileName := configs.TopConfiguration.PathValidationConfig.MultipathFileName
+	multipathFilePath := filepath.Join(resourcesFilePath, fmt.Sprintf("multipath/complex/%s", multipathFileName))
+	paths, segments, nodeSegmentsMapping, graphParams := graph.GenerateAtlasPathsAndSegmentsViaPathsFile(multipathFilePath)
+
+	// 源节点的处理流程
+	// ----------------------------------------------------------------------------------------------------
+	var allUniqueOutputLinkIndentifiers = make(map[int]struct{})
+
+	// 根据 paths 找到所有的 Link identifiers
+	for _, path := range paths {
+		sourceNodeName := path.NodeList[0].NodeName
+		targetNodeName := path.NodeList[1].NodeName
+		if abstractLink, ok := t.AllLinksMap[sourceNodeName][targetNodeName]; ok {
+			if _, ok = allUniqueOutputLinkIndentifiers[abstractLink.SourceInterface.LinkIdentifier]; !ok {
+				allUniqueOutputLinkIndentifiers[abstractLink.SourceInterface.LinkIdentifier] = struct{}{}
+			}
+		} else if abstractLink, ok = t.AllLinksMap[targetNodeName][sourceNodeName]; ok {
+			if _, ok = allUniqueOutputLinkIndentifiers[abstractLink.TargetInterface.LinkIdentifier]; !ok {
+				allUniqueOutputLinkIndentifiers[abstractLink.TargetInterface.LinkIdentifier] = struct{}{}
+			}
+		} else {
+			fmt.Printf("cannot find link identifier\n")
+		}
+	}
+	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
+	nodeDir := filepath.Join(simulationDir, graphParams.Source)
+	multipathOutputLinkIdentifiersFilePath := filepath.Join(nodeDir, "multipath_output_link_identifiers.txt")
+	linkIdentifiersString := fmt.Sprintf("%d,%d,", graphParams.DestinationIndex, len(allUniqueOutputLinkIndentifiers))
+	count := 0
+	for linkIdentifier, _ := range allUniqueOutputLinkIndentifiers {
+		if count != (len(allUniqueOutputLinkIndentifiers) - 1) {
+			linkIdentifiersString += fmt.Sprintf("%d,", linkIdentifier)
+		} else {
+			linkIdentifiersString += fmt.Sprintf("%d", linkIdentifier)
+		}
+		count += 1
+	}
+	err := file.WriteStringIntoFile(multipathOutputLinkIdentifiersFilePath, linkIdentifiersString)
+	if err != nil {
+		return fmt.Errorf("write string into file error: %v", err)
+	}
+
+	// 打印所有的 segments
+	multipathSegmentsFilePath := filepath.Join(nodeDir, "multipath_segments.txt")
+	multipathSegmentsString := ""
+	for index, segment := range segments {
+		if index != (len(segments) - 1) {
+			segmentString := entities.SegmentToIndexString(segment)
+			multipathSegmentsString += fmt.Sprintf("%s\n", segmentString)
+		} else {
+			segmentString := entities.SegmentToIndexString(segment)
+			multipathSegmentsString += fmt.Sprintf("%s", segmentString)
+		}
+	}
+	err = file.WriteStringIntoFile(multipathSegmentsFilePath, multipathSegmentsString)
+	if err != nil {
+		return fmt.Errorf("write string into file error: %v", err)
+	}
+
+	// ----------------------------------------------------------------------------------------------------
+
+	// 中间节点的处理流程
+	// ----------------------------------------------------------------------------------------------------
+
+	// 每个节点进行 nodeSegment 的存储
+	for nodeName, nodeSegments := range nodeSegmentsMapping {
+		if nodeName == graphParams.Source {
+			continue
+		}
+
+		nodeDir = filepath.Join(simulationDir, nodeName)
+		//fmt.Printf("intermediate node segment: %s", nodeDir)
+
+		// 根据 segment 找到所有的可能的出接口
+		// ------------------------------------------------------------------------------------------
+		intermediateMultipathOutputLinkIdentifiers := filepath.Join(nodeDir, "intermediate_multipath_output_link_identifiers.txt")
+		intermediateAllUniqueLinkIdentifiers := map[int]struct{}{}
+		for _, path := range paths {
+			for index, singleNode := range path.NodeList {
+				if index != (len(path.NodeList) - 1) {
+					if singleNode.NodeName == nodeName {
+						sourceNodeName := nodeName
+						targetNodeName := path.NodeList[index+1].NodeName
+						if abstractLink, ok := t.AllLinksMap[sourceNodeName][targetNodeName]; ok {
+							if _, ok = intermediateAllUniqueLinkIdentifiers[abstractLink.SourceInterface.LinkIdentifier]; !ok {
+								intermediateAllUniqueLinkIdentifiers[abstractLink.SourceInterface.LinkIdentifier] = struct{}{}
+							}
+						} else if abstractLink, ok = t.AllLinksMap[targetNodeName][sourceNodeName]; ok {
+							if _, ok = intermediateAllUniqueLinkIdentifiers[abstractLink.TargetInterface.LinkIdentifier]; !ok {
+								intermediateAllUniqueLinkIdentifiers[abstractLink.TargetInterface.LinkIdentifier] = struct{}{}
+							}
+						} else {
+							fmt.Printf("cannot find link identifier\n")
+						}
+					}
+				}
+			}
+		}
+
+		if len(intermediateAllUniqueLinkIdentifiers) > 0 {
+			linkIdentifiersString = fmt.Sprintf("%d,%d,", graphParams.DestinationIndex, len(intermediateAllUniqueLinkIdentifiers))
+			count = 0
+			for linkIdentifier, _ := range intermediateAllUniqueLinkIdentifiers {
+				if count != (len(intermediateAllUniqueLinkIdentifiers) - 1) {
+					linkIdentifiersString += fmt.Sprintf("%d,", linkIdentifier)
+				} else {
+					linkIdentifiersString += fmt.Sprintf("%d", linkIdentifier)
+				}
+				count += 1
+			}
+			err = file.WriteStringIntoFile(intermediateMultipathOutputLinkIdentifiers, linkIdentifiersString)
+			if err != nil {
+				return fmt.Errorf("write string into file error: %v", err)
+			}
+		}
+		// ------------------------------------------------------------------------------------------
+		// 为每个 segment 找到对应的 link identifier
+
+		// 进行每个中间节点的 segment list 的构造
+		// ------------------------------------------------------------------------------------------
+		intermediateMultipathSegmentsFilePath := filepath.Join(nodeDir, "intermediate_multipath_segments.txt")
+		intermediateMultipathSegmentsString := ""
+		for index, nodeSegment := range nodeSegments {
+			if index != (len(nodeSegments) - 1) {
+				segmentString := entities.SegmentToIndexString(nodeSegment)
+				intermediateMultipathSegmentsString += fmt.Sprintf("%s\n", segmentString)
+			} else {
+				segmentString := entities.SegmentToIndexString(nodeSegment)
+				intermediateMultipathSegmentsString += fmt.Sprintf("%s", segmentString)
+			}
+		}
+		err = file.WriteStringIntoFile(intermediateMultipathSegmentsFilePath, intermediateMultipathSegmentsString)
+		if err != nil {
+			return fmt.Errorf("write string into file error: %v", err)
+		}
+		// ------------------------------------------------------------------------------------------
+	}
+	// ----------------------------------------------------------------------------------------------------
+
+	t.topologyInitSteps[GenerateAtlasSegmentsAndOutputLinkIdentifiers] = struct{}{}
+	topologyLogger.Infof("generate segments and output link identifiers")
+	return nil
+}
+
+// GenerateMultipathSelirPathsAndOutputLinkIdentifiers (1) 源和目的节点插入全部的路由 (2) 中间节点只需要存储 output_link_identifiers. 确实不需要 array_based and hash_based routing table
+func (t *Topology) GenerateMultipathSelirPathsAndOutputLinkIdentifiers() error {
+	if _, ok := t.topologyInitSteps[GenerateMultipathSelirPathsAndOutputLinkIdentifiers]; ok {
+		topologyLogger.Infof("already generate multipath selir mulitpaths and output link identifiers")
+		return nil
+	}
+
+	// 最终结果
+	var finalResult []string
+
+	// 图配置
+	// ----------------------------------------------------------------------------------------------------
+	resourcesFilePath := configs.TopConfiguration.PathConfig.ResourcesPath
+	multipathFileName := configs.TopConfiguration.PathValidationConfig.MultipathFileName
+	multipathFilePath := filepath.Join(resourcesFilePath, fmt.Sprintf("multipath/complex/%s", multipathFileName))
+	multipathSelirComplexGraph, paths, nameToNodeMapping, sourceStr, destinationStr := graph.GenerateMultipathSelirMultipathsViaPathsFile(multipathFilePath)
+
+	// 进行源和目的节点的提取
+	sourceIndex, _ := extract.NumberFromString(sourceStr)
+	destinationIndex, _ := extract.NumberFromString(destinationStr)
+
+	// 进行 relationship 的生成
+	// ----------------------------------------------------------------------------------------------------
+	for splitNode, mappings := range multipathSelirComplexGraph.RelationshipMapping {
+		simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
+		outputDir := filepath.Join(simulationDir, splitNode)
+		relationshipFilePath := filepath.Join(outputDir, "relationship.txt")
+		finalString := ""
+		for index, singleMapping := range mappings {
+			if index != (len(singleMapping) - 1) {
+				finalString += singleMapping + "\n"
+			} else {
+				finalString += singleMapping
+			}
+		}
+		err := file.WriteStringIntoFile(relationshipFilePath, finalString)
+		if err != nil {
+			return fmt.Errorf("write string into file error: %v", err)
+		}
+	}
+
+	// ----------------------------------------------------------------------------------------------------
+
+	// 根据 paths 进行路由条目的生成
+	// ----------------------------------------------------------------------------------------------------
+	for _, path := range paths {
+		var linkIdentifiers []int
+		var nodeIds []int
+		for index := 0; index < len(path.NodeList); index++ {
+			if index != (len(path.NodeList) - 1) {
+				nextNodeIndex := index + 1
+				sourceNode := path.NodeList[index]
+				targetNode := path.NodeList[nextNodeIndex]
+				sourceNodeName := sourceNode.NodeName
+				targetNodeName := targetNode.NodeName
+				var abstractLink *link.AbstractLink
+				var ok bool
+				if abstractLink, ok = t.AllLinksMap[sourceNodeName][targetNodeName]; ok {
+					abstractLink = t.AllLinksMap[sourceNodeName][targetNodeName]
+				} else if abstractLink, ok = t.AllLinksMap[targetNodeName][sourceNodeName]; ok {
+					abstractLink = t.AllLinksMap[targetNodeName][sourceNodeName]
+				} else {
+					abstractLink = nil
+					return fmt.Errorf("cannot find link")
+				}
+				linkIdentifier := abstractLink.SourceInterface.LinkIdentifier
+				nodeId := targetNode.Index
+				linkIdentifiers = append(linkIdentifiers, linkIdentifier)
+				nodeIds = append(nodeIds, nodeId)
+			}
+		}
+		generateLiRRouteString := route.GenerateLiRRoutingString((int64)(sourceIndex), (int64)(destinationIndex), linkIdentifiers, nodeIds)
+		finalResult = append(finalResult, generateLiRRouteString)
+	}
+	// ----------------------------------------------------------------------------------------------------
+
+	// 源和目的路由配置
+	// ----------------------------------------------------------------------------------------------------
+
+	// simulation dir 的位置
+	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
+
+	// containerNames
+	containerNames := []string{sourceStr}
+	// 遍历 containerName 进行写入 (只向源和目的节点进行写入)
+	for _, containerName := range containerNames {
+		// route dir 文件的位置
+		outputDir := filepath.Join(simulationDir, containerName, "route")
+		// 进行文件夹的生成
+		err := dir.Generate(outputDir)
+		if err != nil {
+			return fmt.Errorf("write route error: %w", err)
+		}
+		// 文件的路径
+		var filePath string
+		if containerName == destinationStr {
+			fmt.Printf("write dest_multipath.txt\n")
+			filePath = filepath.Join(outputDir, "dest_multipath.txt")
+		} else {
+			fmt.Printf("write multipath.txt\n")
+			filePath = filepath.Join(outputDir, "multipath.txt")
+		}
+		// 创建写入文件
+		var lirRouteFile *os.File
+		lirRouteFile, err = os.Create(filePath)
+		defer func() {
+			closeErr := lirRouteFile.Close()
+			if err == nil {
+				err = closeErr
+			}
+		}()
+		if err != nil {
+			return fmt.Errorf("write route error: %w", err)
+		}
+		// 进行实际的写入
+		_, err = lirRouteFile.WriteString(strings.Join(finalResult, "\n"))
+		if err != nil {
+			return fmt.Errorf("write route failed: %v", err)
+		}
+	}
+
+	// 将存在多少的路径进行写入
+	for _, abstractNode := range t.AllAbstractNodes {
+		normalNode, _ := abstractNode.GetNormalNodeFromAbstractNode()
+		filePath := filepath.Join(simulationDir, normalNode.ContainerName, "num_of_paths.txt")
+		_ = file.WriteStringIntoFile(filePath, fmt.Sprintf("%d", len(paths)))
+	}
+
+	// ----------------------------------------------------------------------------------------------------
+
+	// 中间节点出接口配置
+	// ----------------------------------------------------------------------------------------------------
+	for _, singleNode := range nameToNodeMapping {
+		intermediateAllUniqueLinkIdentifiers := map[int]struct{}{}
+		// 进行所有的 path 的遍历
+		for _, path := range paths {
+			for index := 0; index < len(path.NodeList); index++ {
+				if index != (len(path.NodeList) - 1) {
+					nextNodeIndex := index + 1
+					sourceNode := path.NodeList[index]
+					targetNode := path.NodeList[nextNodeIndex]
+					sourceNodeName := sourceNode.NodeName
+					targetNodeName := targetNode.NodeName
+					if sourceNodeName == singleNode.NodeName {
+						if abstractLink, ok := t.AllLinksMap[sourceNodeName][targetNodeName]; ok {
+							if _, ok = intermediateAllUniqueLinkIdentifiers[abstractLink.SourceInterface.LinkIdentifier]; !ok {
+								intermediateAllUniqueLinkIdentifiers[abstractLink.SourceInterface.LinkIdentifier] = struct{}{}
+							}
+						} else if abstractLink, ok = t.AllLinksMap[targetNodeName][sourceNodeName]; ok {
+							if _, ok = intermediateAllUniqueLinkIdentifiers[abstractLink.TargetInterface.LinkIdentifier]; !ok {
+								intermediateAllUniqueLinkIdentifiers[abstractLink.TargetInterface.LinkIdentifier] = struct{}{}
+							}
+						} else {
+							fmt.Printf("cannot find link identifier\n")
+						}
+					}
+				}
+			}
+		}
+
+		if len(intermediateAllUniqueLinkIdentifiers) > 0 {
+			// 构建 link identifier string
+			linkIdentifiersString := fmt.Sprintf("%d,%d,", destinationIndex, len(intermediateAllUniqueLinkIdentifiers))
+			count := 0
+			for linkIdentifier, _ := range intermediateAllUniqueLinkIdentifiers {
+				if count != (len(intermediateAllUniqueLinkIdentifiers) - 1) {
+					linkIdentifiersString += fmt.Sprintf("%d,", linkIdentifier)
+				} else {
+					linkIdentifiersString += fmt.Sprintf("%d", linkIdentifier)
+				}
+				count += 1
+			}
+
+			// 将 uniqueLinkIdentifiersMapping 写入
+			nodeDir := filepath.Join(simulationDir, singleNode.NodeName)
+			intermediateMultipathOutputLinkIdentifiers := filepath.Join(nodeDir, "intermediate_multipath_output_link_identifiers.txt")
+			fmt.Println("write string into file", intermediateMultipathOutputLinkIdentifiers)
+			err := file.WriteStringIntoFile(intermediateMultipathOutputLinkIdentifiers, linkIdentifiersString)
+			if err != nil {
+				return fmt.Errorf("cannot write string into file: %v", err)
+			}
+		}
+	}
+	// ----------------------------------------------------------------------------------------------------
+
+	t.topologyInitSteps[GenerateMultipathSelirPathsAndOutputLinkIdentifiers] = struct{}{}
 	return nil
 }

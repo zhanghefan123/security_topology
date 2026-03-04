@@ -726,23 +726,97 @@ func (c *Constellation) CalculateAndWriteLiRRoutes() error {
 }
 
 // GenerateIfnameToLinkIdentifierMapping 生成 ifname 到链路标识符的映射
-func (c *Constellation) GenerateIfnameToLinkIdentifierMapping() error {
+func (c *Constellation) GenerateIfnameToLinkIdentifierMapping() (err error) {
 	if _, ok := c.systemInitSteps[GenerateIfnameToLinkIdentifierMapping]; ok {
 		constellationLogger.Infof("already generate ifname to link identifier")
 		return nil
 	}
 
-	// 遍历所有的节点生成 mapping
-	for _, abstractNode := range c.SatelliteAbstractNodes {
-		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
+	finalMapping := map[string]string{}
+
+	// 进行所有的链路的遍历
+	for _, abstractLink := range c.AllSatelliteLinks {
+		// 提取源节点信息
+		sourceNode := abstractLink.SourceNode
+		sourceIntf := abstractLink.SourceInterface
+		var sourceNormalNode *normal_node.NormalNode
+		sourceNormalNode, err = sourceNode.GetNormalNodeFromAbstractNode()
 		if err != nil {
-			return fmt.Errorf("generate ifname to link identifier mapping files failed, %w", err)
+			return fmt.Errorf("get normal node from abstract node failed: %v", err)
 		}
-		err = normalNode.GenerateIfnameToLidMapping()
+		sourceNodeIdx := sourceNormalNode.Id
+
+		// 提取目的节点信息
+		targetNode := abstractLink.TargetNode
+		targetIntf := abstractLink.TargetInterface
+		var targetNormalNode *normal_node.NormalNode
+		targetNormalNode, err = targetNode.GetNormalNodeFromAbstractNode()
 		if err != nil {
-			return fmt.Errorf("generate ifname to link identifier mapping files failed, %w", err)
+			return fmt.Errorf("get normal node from abstract node failed: %v", err)
+		}
+		targetNodeIdx := targetNormalNode.Id
+
+		// 更新源接口
+		if result, ok := finalMapping[sourceNormalNode.ContainerName]; !ok {
+			result += fmt.Sprintf("%s->%d->%d->%d->%s\n", sourceIntf.IfName, sourceIntf.LinkIdentifier, sourceNodeIdx, targetNodeIdx, sourceIntf.TargetIpv4Addr)
+			finalMapping[sourceNormalNode.ContainerName] = result
+		} else {
+			result = fmt.Sprintf("%s->%d->%d->%d->%s\n", sourceIntf.IfName, sourceIntf.LinkIdentifier, sourceNodeIdx, targetNodeIdx, sourceIntf.TargetIpv4Addr)
+			finalMapping[sourceNormalNode.ContainerName] = result
+		}
+
+		// 更新目的接口
+		if result, ok := finalMapping[targetNormalNode.ContainerName]; !ok {
+			result += fmt.Sprintf("%s->%d->%d->%d->%s\n", targetIntf.IfName, targetIntf.LinkIdentifier, targetNodeIdx, sourceNodeIdx, targetIntf.TargetIpv4Addr)
+			finalMapping[targetNormalNode.ContainerName] = result
+		} else {
+			result = fmt.Sprintf("%s->%d-%d->%d->%s\n", targetIntf.IfName, targetIntf.LinkIdentifier, targetNodeIdx, sourceNodeIdx, targetIntf.TargetIpv4Addr)
+			finalMapping[targetNormalNode.ContainerName] = result
 		}
 	}
+
+	// 进行所有的节点的遍历
+	for _, abstractNode := range c.SatelliteAbstractNodes {
+		var normalNode *normal_node.NormalNode
+		normalNode, err = abstractNode.GetNormalNodeFromAbstractNode()
+		if err != nil {
+			return fmt.Errorf("generate ifname to link identifier mapping files failed, %w", err)
+		}
+		// simulationDir 文件夹的位置
+		simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
+		// interface dir 文件架的位置
+		outputDir := filepath.Join(simulationDir, normalNode.ContainerName, "interface")
+		// 进行文件夹的创建
+		err = os.MkdirAll(outputDir, os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("mkdir for interface error: %w", err)
+		}
+		filePath := filepath.Join(outputDir, "interface.txt")
+		// 进行写入
+		var writeFile *os.File
+		writeFile, err = os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0666)
+		if err != nil {
+			return fmt.Errorf("Error opening file %s: %s\n", filePath, err)
+		}
+		_, err = writeFile.WriteString(finalMapping[normalNode.ContainerName])
+		if err != nil {
+			return fmt.Errorf("Error writing to file %s: %s\n", filePath, err)
+		}
+	}
+
+	// 遍历所有的节点生成 mapping
+	/*
+		for _, abstractNode := range c.SatelliteAbstractNodes {
+			normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
+			if err != nil {
+				return fmt.Errorf("generate ifname to link identifier mapping files failed, %w", err)
+			}
+			err = normalNode.GenerateIfnameToLidMapping()
+			if err != nil {
+				return fmt.Errorf("generate ifname to link identifier mapping files failed, %w", err)
+			}
+		}
+	*/
 
 	c.systemInitSteps[GenerateIfnameToLinkIdentifierMapping] = struct{}{}
 	constellationLogger.Infof("generate ifname to link identifier")

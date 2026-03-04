@@ -208,12 +208,12 @@ func StartTopology(c *gin.Context) {
 
 	// 2. 进行拓扑参数的绑定
 	topologyParams := &params.TopologyParams{}
-	fmt.Println("topology params:", topologyParams)
 	err := c.BindJSON(topologyParams)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": fmt.Sprintf("bindjson err: %v", err),
 		})
+		fmt.Println("error")
 		return
 	}
 	topologyParams.BlockChainType = params.ResolveBlockChainType(topologyParams.BlockChainTypeString) // 解析

@@ -126,7 +126,10 @@ func (c *Constellation) StartSatelliteContainers() error {
 	}
 	description := fmt.Sprintf("%20s", "start containers")
 	var taskFunc multithread.TaskFunc[*node.AbstractNode] = func(node *node.AbstractNode) error {
-		err := container_api.CreateContainer(c.client, node)
+		containerCreateParameter := &container_api.ContainerCreateParameter{
+			AbstractNode: node,
+		}
+		err := container_api.CreateContainer(c.client, containerCreateParameter)
 		if err != nil {
 			return err
 		}
@@ -151,7 +154,10 @@ func (c *Constellation) StartGroundStationContainers() error {
 	}
 	description := fmt.Sprintf("%20s", "start ground station containers")
 	var taskFunc multithread.TaskFunc[*node.AbstractNode] = func(node *node.AbstractNode) error {
-		err := container_api.CreateContainer(c.client, node)
+		containerCreateParameter := &container_api.ContainerCreateParameter{
+			AbstractNode: node,
+		}
+		err := container_api.CreateContainer(c.client, containerCreateParameter)
 		if err != nil {
 			return err
 		}
@@ -217,7 +223,10 @@ func (c *Constellation) StartEtcdService() error {
 	c.abstractEtcdService = node.NewAbstractNode(types.NetworkNodeType_EtcdService, c.etcdService, nil)
 
 	// 5. 进行容器的创建和启动
-	err := container_api.CreateContainer(c.client, c.abstractEtcdService)
+	containerCreateParameter := &container_api.ContainerCreateParameter{
+		AbstractNode: c.abstractEtcdService,
+	}
+	err := container_api.CreateContainer(c.client, containerCreateParameter)
 	if err != nil {
 		return fmt.Errorf("create etcd container failed, %s", err.Error())
 	}
@@ -359,7 +368,10 @@ func (c *Constellation) StartPositionService() error {
 	c.abstractPositionService = node.NewAbstractNode(types.NetworkNodeType_PositionService, positionService, nil)
 
 	// 4. 进行容器的创建
-	err := container_api.CreateContainer(c.client, c.abstractPositionService)
+	containerCreateParameter := &container_api.ContainerCreateParameter{
+		AbstractNode: c.abstractPositionService,
+	}
+	err := container_api.CreateContainer(c.client, containerCreateParameter)
 	if err != nil {
 		return fmt.Errorf("create position service failed, %s", err)
 	}

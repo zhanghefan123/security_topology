@@ -20,6 +20,7 @@ const (
 	ModuleFabricPrepare            = "FABRIC_PREPARE"
 	ModuleRaspberrypiConfigure     = "RASPBERRYPI_CONFIGURE"
 	ModuleFiscoBcosPrepare         = "FISCO_BCOS_PREPARE"
+	ModuleOnlineSecurestPath       = "MODULE_ONLINE_SECUREST_PATH"
 )
 
 func init() {

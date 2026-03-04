@@ -105,12 +105,23 @@ resources_config:
   topologies_dir: "../resources/topologies/"
 
 path_validation_config:
-  routing_table_type: 1 # 1 -> array based routing table | 2 -> hash based routing table
-  bf_effective_bits: 72 # 有效的位数 (在 lir 之中是 bf 的大小, 在 selir 之中是 ppf 的大小)
-  pvf_effective_bits: 72 # 在 selir 之中有效, 其代表的是 selir 之中的 pvf 的大小
+  bf_effective_bits: 407 # 有效的位数 (在 lir 之中是 bf 的大小, 在 selir 之中是 ppf 的大小)
+  pvf_effective_bits: 407 # 在 selir 之中有效, 其代表的是 selir 之中的 pvf 的大小
   hash_seed: 5 # hash 种子
   number_of_hash_functions: 5 # 哈希函数的个数
   lir_single_time_encoding_count: -1 # 设置的每次封装的元素个数
+  routing_table_type: 2 # 1 -> array based routing table | 2 -> hash based routing table | 3 -> array based multipath table
+  multipath_routing_type: 1 # 1 -> atlas | 2 -> multipath_selir
+  enable_multipath_support: false # 代表是否支持多路径
+  enable_multicast_support: true # 是否支持多播
+#  routing_table_type: 3 # 1 -> array based routing table | 2 -> hash based routing table | 3 -> array based multipath table
+#  multipath_routing_type: 2 # 1 -> atlas | 2 -> multipath_selir
+#  enable_multipath_support: true # 代表是否支持多路径
+  number_of_multipaths: 6
+  multipath_file_name: "multipath_2.txt"
+  validation_topology: "atlas_complex_topology"
+
+
 
 fabric_config:
   order_general_listen_start_port: 7050
@@ -240,3 +251,6 @@ raspberrypi_config:
   password: zeusnet123
   grpc_port: 8972
   python_path: /home/zeusnet/miniconda3/envs/lir/bin/python
+
+online_config:
+  topology_file_path: ../resources/online_topologies/online_topology.txt

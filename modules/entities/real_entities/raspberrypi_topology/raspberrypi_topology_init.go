@@ -90,7 +90,7 @@ func (rpt *RaspberrypiTopology) GenerateNodes() error {
 		}
 		switch *nodeType {
 		case types.NetworkNodeType_Router: // 进行普通路由节点的添加
-			routerTmp := nodes.NewRouter(nodeId, 0, 0)
+			routerTmp := nodes.NewRouter(nodeId, 0, 0) // 最后一个参数是丢包的分布, 这里设置为 nil
 			rpt.Routers = append(rpt.Routers, routerTmp)
 			// 注意只能唯一创建一次
 			abstractRouter := node.NewAbstractNode(types.NetworkNodeType_Router, routerTmp, rpt.TopologyGraph)

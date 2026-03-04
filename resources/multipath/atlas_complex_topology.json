@@ -1,6 +1,8 @@
 {
   "source": "LirNode-1",
+  "source_index": 1,
   "destination": "LirNode-26",
+  "destination_index": 26,
   "limit_of_cost": 50,
   "nodes": [
     {

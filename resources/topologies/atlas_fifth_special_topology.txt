@@ -1,0 +1,339 @@
+{
+  "nodes": [
+    {
+      "index": 1,
+      "type": "LirNode",
+      "x": -34.286805120417746,
+      "y": 347.3599026044284
+    },
+    {
+      "index": 2,
+      "type": "LirNode",
+      "x": 137.6984199563076,
+      "y": 340.77403512337213
+    },
+    {
+      "index": 3,
+      "type": "LirNode",
+      "x": 266.40508730037766,
+      "y": 193.4387711900287
+    },
+    {
+      "index": 4,
+      "type": "LirNode",
+      "x": 388.33771952107566,
+      "y": 337.3870175616861
+    },
+    {
+      "index": 5,
+      "type": "LirNode",
+      "x": 559.3821063862215,
+      "y": 339.0805263425291
+    },
+    {
+      "index": 6,
+      "type": "LirNode",
+      "x": 667.7666683601755,
+      "y": 181.5842097241275
+    },
+    {
+      "index": 7,
+      "type": "LirNode",
+      "x": 970.7165724887616,
+      "y": 189.1109154167632
+    },
+    {
+      "index": 8,
+      "type": "LirNode",
+      "x": 650.831580551745,
+      "y": 531.5760244316866
+    },
+    {
+      "index": 9,
+      "type": "LirNode",
+      "x": 818.3007822128891,
+      "y": 407.3853805031979
+    },
+    {
+      "index": 10,
+      "type": "LirNode",
+      "x": 820.1824586360478,
+      "y": 535.3393772780043
+    },
+    {
+      "index": 11,
+      "type": "LirNode",
+      "x": 820.1824586360478,
+      "y": 668.9384033222877
+    },
+    {
+      "index": 12,
+      "type": "LirNode",
+      "x": 987.6516602971919,
+      "y": 537.2210537011633
+    },
+    {
+      "index": 13,
+      "type": "LirNode",
+      "x": 1126.8957156109518,
+      "y": 358.4617935010659
+    }
+  ],
+  "links": [
+    {
+      "source_node": {
+        "index": 1,
+        "type": "LirNode",
+        "x": -34.286805120417746,
+        "y": 347.3599026044284
+      },
+      "target_node": {
+        "index": 2,
+        "type": "LirNode",
+        "x": 137.6984199563076,
+        "y": 340.77403512337213
+      },
+      "link_type": "backbone"
+    },
+    {
+      "source_node": {
+        "index": 2,
+        "type": "LirNode",
+        "x": 137.6984199563076,
+        "y": 340.77403512337213
+      },
+      "target_node": {
+        "index": 3,
+        "type": "LirNode",
+        "x": 266.40508730037766,
+        "y": 193.4387711900287
+      },
+      "link_type": "backbone"
+    },
+    {
+      "source_node": {
+        "index": 3,
+        "type": "LirNode",
+        "x": 266.40508730037766,
+        "y": 193.4387711900287
+      },
+      "target_node": {
+        "index": 4,
+        "type": "LirNode",
+        "x": 388.33771952107566,
+        "y": 337.3870175616861
+      },
+      "link_type": "backbone"
+    },
+    {
+      "source_node": {
+        "index": 2,
+        "type": "LirNode",
+        "x": 137.6984199563076,
+        "y": 340.77403512337213
+      },
+      "target_node": {
+        "index": 4,
+        "type": "LirNode",
+        "x": 388.33771952107566,
+        "y": 337.3870175616861
+      },
+      "link_type": "backbone"
+    },
+    {
+      "source_node": {
+        "index": 4,
+        "type": "LirNode",
+        "x": 388.33771952107566,
+        "y": 337.3870175616861
+      },
+      "target_node": {
+        "index": 5,
+        "type": "LirNode",
+        "x": 559.3821063862215,
+        "y": 339.0805263425291
+      },
+      "link_type": "backbone"
+    },
+    {
+      "source_node": {
+        "index": 5,
+        "type": "LirNode",
+        "x": 559.3821063862215,
+        "y": 339.0805263425291
+      },
+      "target_node": {
+        "index": 6,
+        "type": "LirNode",
+        "x": 667.7666683601755,
+        "y": 181.5842097241275
+      },
+      "link_type": "backbone"
+    },
+    {
+      "source_node": {
+        "index": 6,
+        "type": "LirNode",
+        "x": 667.7666683601755,
+        "y": 181.5842097241275
+      },
+      "target_node": {
+        "index": 7,
+        "type": "LirNode",
+        "x": 970.7165724887616,
+        "y": 189.1109154167632
+      },
+      "link_type": "backbone"
+    },
+    {
+      "source_node": {
+        "index": 7,
+        "type": "LirNode",
+        "x": 970.7165724887616,
+        "y": 189.1109154167632
+      },
+      "target_node": {
+        "index": 13,
+        "type": "LirNode",
+        "x": 1126.8957156109518,
+        "y": 358.4617935010659
+      },
+      "link_type": "backbone"
+    },
+    {
+      "source_node": {
+        "index": 13,
+        "type": "LirNode",
+        "x": 1126.8957156109518,
+        "y": 358.4617935010659
+      },
+      "target_node": {
+        "index": 5,
+        "type": "LirNode",
+        "x": 559.3821063862215,
+        "y": 339.0805263425291
+      },
+      "link_type": "backbone"
+    },
+    {
+      "source_node": {
+        "index": 5,
+        "type": "LirNode",
+        "x": 559.3821063862215,
+        "y": 339.0805263425291
+      },
+      "target_node": {
+        "index": 8,
+        "type": "LirNode",
+        "x": 650.831580551745,
+        "y": 531.5760244316866
+      },
+      "link_type": "backbone"
+    },
+    {
+      "source_node": {
+        "index": 8,
+        "type": "LirNode",
+        "x": 650.831580551745,
+        "y": 531.5760244316866
+      },
+      "target_node": {
+        "index": 9,
+        "type": "LirNode",
+        "x": 818.3007822128891,
+        "y": 407.3853805031979
+      },
+      "link_type": "backbone"
+    },
+    {
+      "source_node": {
+        "index": 8,
+        "type": "LirNode",
+        "x": 650.831580551745,
+        "y": 531.5760244316866
+      },
+      "target_node": {
+        "index": 11,
+        "type": "LirNode",
+        "x": 820.1824586360478,
+        "y": 668.9384033222877
+      },
+      "link_type": "backbone"
+    },
+    {
+      "source_node": {
+        "index": 8,
+        "type": "LirNode",
+        "x": 650.831580551745,
+        "y": 531.5760244316866
+      },
+      "target_node": {
+        "index": 10,
+        "type": "LirNode",
+        "x": 820.1824586360478,
+        "y": 535.3393772780043
+      },
+      "link_type": "backbone"
+    },
+    {
+      "source_node": {
+        "index": 10,
+        "type": "LirNode",
+        "x": 820.1824586360478,
+        "y": 535.3393772780043
+      },
+      "target_node": {
+        "index": 12,
+        "type": "LirNode",
+        "x": 987.6516602971919,
+        "y": 537.2210537011633
+      },
+      "link_type": "backbone"
+    },
+    {
+      "source_node": {
+        "index": 9,
+        "type": "LirNode",
+        "x": 818.3007822128891,
+        "y": 407.3853805031979
+      },
+      "target_node": {
+        "index": 12,
+        "type": "LirNode",
+        "x": 987.6516602971919,
+        "y": 537.2210537011633
+      },
+      "link_type": "backbone"
+    },
+    {
+      "source_node": {
+        "index": 11,
+        "type": "LirNode",
+        "x": 820.1824586360478,
+        "y": 668.9384033222877
+      },
+      "target_node": {
+        "index": 12,
+        "type": "LirNode",
+        "x": 987.6516602971919,
+        "y": 537.2210537011633
+      },
+      "link_type": "backbone"
+    },
+    {
+      "source_node": {
+        "index": 12,
+        "type": "LirNode",
+        "x": 987.6516602971919,
+        "y": 537.2210537011633
+      },
+      "target_node": {
+        "index": 13,
+        "type": "LirNode",
+        "x": 1126.8957156109518,
+        "y": 358.4617935010659
+      },
+      "link_type": "backbone"
+    }
+  ]
+}
