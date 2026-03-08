@@ -2,7 +2,7 @@ package params
 
 import (
 	"fmt"
-	"zhanghefan123/security_topology/modules/entities/types"
+	"zhanghefan123/security_topology/modules/entities/real_entities/online/types"
 )
 
 // ResolveSimNodeType 进行节点类型的解析

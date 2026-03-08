@@ -1,11 +1,11 @@
-package corrupt_decider
+package decider
 
 type DecideFunction func() int
 
-type CorruptDecider struct {
+type ActionDecider struct {
 	DecideFunction *DecideFunction
 }
 
-func (cd *CorruptDecider) ShouldCorrupt() bool {
+func (cd *ActionDecider) ShouldTakeAction() bool {
 	return (*cd.DecideFunction)() == 1
 }

@@ -23,17 +23,20 @@ func NewSimPathValidationRouter(NodeName string, NodeIndex int) *SimPathValidati
 }
 
 // ProcessPacket 进行数据包的处理
-func (pathValidationRouter *SimPathValidationRouter) ProcessPacket(pkt *SimPacket) error {
+func (pathValidationRouter *SimPathValidationRouter) ProcessPacket(pkt *SimPacket) (bool, error) {
 	// find corresponding counter
 	if counter, ok := pathValidationRouter.SessionToCounterMapping[pkt.SessionId]; ok {
+		var dropPacket bool
 		if pkt.IsCorrupted {
 			counter.IllegalPackets += 1
+			dropPacket = true
 		} else {
 			counter.LegalPackets += 1
+			dropPacket = false
 		}
-		return nil
+		return dropPacket, nil
 	} else {
-		return fmt.Errorf("process packet failed due to cannot find sessionid %s corresponding counter", pkt.SessionId)
+		return true, fmt.Errorf("process packet failed due to cannot find sessionid %s corresponding counter", pkt.SessionId)
 	}
 }
 
@@ -60,10 +63,16 @@ func (pathValidationRouter *SimPathValidationRouter) DestroySession(sessionId st
 	}
 }
 
-// RetrieveInformation 获取 counter 信息
-func (pathValidationRouter *SimPathValidationRouter) RetrieveInformation(sessionId string) (*Counter, error) {
+// RetrieveCounter 获取 counter 信息
+func (pathValidationRouter *SimPathValidationRouter) RetrieveCounter(sessionId string) (*Counter, error) {
 	if counter, ok := pathValidationRouter.SessionToCounterMapping[sessionId]; ok {
-		return counter, nil
+		oldCounter := &Counter{
+			IllegalPackets: counter.IllegalPackets,
+			LegalPackets:   counter.LegalPackets,
+		}
+		counter.IllegalPackets = 0
+		counter.LegalPackets = 0
+		return oldCounter, nil
 	} else {
 		return nil, fmt.Errorf("fail to retrieve counter of path validation router %s", pathValidationRouter.NodeName)
 	}

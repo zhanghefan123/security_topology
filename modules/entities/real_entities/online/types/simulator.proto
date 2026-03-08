@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option go_package = "../types";
+
+enum NodeMaliciousActionType {
+  CorruptPacket = 0;
+  DropPacket = 1;
+}
+
+enum SimNetworkNodeType {
+  NormalRouter = 0;
+  PathValidationRouter = 1;
+}
+
+enum SimDirectedLinkType {
+  SimDirectedPvLink = 0;
+  SimDirectedNormalLink = 1;
+}

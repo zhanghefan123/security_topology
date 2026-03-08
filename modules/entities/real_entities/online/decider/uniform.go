@@ -1,20 +1,19 @@
-package corrupt_decider
+package decider
 
 import (
 	"fmt"
 	"math/rand"
-	"time"
 )
 
-// CreateUniformCorruptDecider 进行均匀分布的生成的损坏者的构建
-func CreateUniformCorruptDecider(start, end float64) (*CorruptDecider, error) {
+// CreateUniformDecider 进行均匀分布的生成的损坏者的构建
+func CreateUniformDecider(start, end float64, nodeIndex int) (*ActionDecider, error) {
 	// 相反则返回错误
 	if start > end {
 		return nil, fmt.Errorf("start must < end")
 	}
 
-	// 内部创建随机源
-	rand.Seed(time.Now().UnixNano())
+	// 内部创建随机源 (这里使用 nodeIndex 作为种子, 确保每次运行结果一致)
+	rand.Seed(int64(nodeIndex))
 
 	// 创建 decide function
 	decideFunction := func() int {
@@ -27,10 +26,10 @@ func CreateUniformCorruptDecider(start, end float64) (*CorruptDecider, error) {
 	}
 
 	// 创建 decider
-	corruptDecider := &CorruptDecider{
+	decider := &ActionDecider{
 		DecideFunction: (*DecideFunction)(&decideFunction),
 	}
 
 	// 返回闭包
-	return corruptDecider, nil
+	return decider, nil
 }

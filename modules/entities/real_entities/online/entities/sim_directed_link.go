@@ -1,6 +1,6 @@
 package entities
 
-import "zhanghefan123/security_topology/modules/entities/types"
+import "zhanghefan123/security_topology/modules/entities/real_entities/online/types"
 
 type SimDirectedLinkBase struct {
 	Type   types.SimDirectedLinkType
@@ -40,18 +40,24 @@ func NewSimDirectedNormalLink(source *SimAbstractNode, target *SimAbstractNode) 
 
 type SimDirectedPvLink struct {
 	*SimDirectedLinkBase
-	Weights               []float64 // 随时间 t 变化
-	IllegalRatios         []float64 // 随时间 t 变化
-	ExploreProbability    float64   // 探索概率
-	EstimatedIllegalRatio float64   // 估计的非法比例
-	EstimatedLegalRatio   float64   // 估计的合法比例
-	RectifiedGain         float64   // 修正增益
+	Intermediate         *SimAbstractNode // pvlink 的中间节点
+	Weights              []float64        // 随时间 t 变化
+	IllegalRatios        []float64        // 随时间 t 变化
+	DropRatios           []float64        // 随时间 t 变化
+	ExploreProbabilities []float64        // 探索概率
+	RectifiedGains       []float64        // 修正增益
+	Description          string           // 对这个 directed pv link 的唯一描述
 }
 
-func NewSimDirectedPvLink(source *SimAbstractNode, target *SimAbstractNode) *SimDirectedPvLink {
+func NewSimDirectedPvLink(pvLinkDescription string, source *SimAbstractNode, intermediate *SimAbstractNode, target *SimAbstractNode) *SimDirectedPvLink {
 	return &SimDirectedPvLink{
-		SimDirectedLinkBase: NewSimDirectedLinkBase(types.SimDirectedLinkType_SimDirectedPvLink, source, target),
-		Weights:             make([]float64, 0),
-		IllegalRatios:       make([]float64, 0),
+		SimDirectedLinkBase:  NewSimDirectedLinkBase(types.SimDirectedLinkType_SimDirectedPvLink, source, target),
+		Intermediate:         intermediate,
+		Weights:              make([]float64, 0),
+		IllegalRatios:        make([]float64, 0),
+		DropRatios:           make([]float64, 0),
+		ExploreProbabilities: make([]float64, 0),
+		RectifiedGains:       make([]float64, 0),
+		Description:          pvLinkDescription,
 	}
 }

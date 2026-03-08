@@ -60,6 +60,10 @@ func (s *Simulator) InitializeSteps(initSteps []map[string]InitModule) (err erro
 }
 
 func (s *Simulator) InitGraphFromConfigurationFile() error {
+	if _, ok := s.SimulatorInitSteps[InitGraphFromConfigurationFile]; ok {
+		SimulatorLogger.Infof("already initialized graph from configuration file, skip this step")
+		return nil
+	}
 	s.SimGraph = entities.NewSimGraph()
 	// step1: load graph params
 	err := s.SimGraph.LoadGraphParamsFromConfigurationFile(s.SimulationGraphPath)
@@ -76,20 +80,28 @@ func (s *Simulator) InitGraphFromConfigurationFile() error {
 	if err != nil {
 		return fmt.Errorf("load source and destination from configuration file failed, %s", err)
 	}
+	// step3: load pv links
+	err = s.SimGraph.LoadPvLinksFromPvLinkParams()
+	if err != nil {
+		return fmt.Errorf("load pvLinks from configuration file failed, %s", err)
+	}
 	// step4: load links
 	err = s.SimGraph.LoadLinksFromLinkParams()
 	if err != nil {
 		return fmt.Errorf("init graph links from configuration file failed, %s", err)
 	}
-	// step5: load coverage paths
-	err = s.SimGraph.LoadCoveragePathsFromParams()
-	if err != nil {
-		return fmt.Errorf("load coverage paths from configuration file failed, %s", err)
-	}
-	// step6: calculate k shortest paths
+	// step5: calculate k shortest paths
 	err = s.SimGraph.CalculateKShortestPaths()
 	if err != nil {
 		return fmt.Errorf("calculate k shortest paths failed, %s", err)
 	}
+	// step6: load coverage paths
+	err = s.SimGraph.LoadCoveragePathsFromParams()
+	if err != nil {
+		return fmt.Errorf("load coverage paths from configuration file failed, %s", err)
+	}
+
+	SimulatorLogger.Infof("init graph success")
+	s.SimulatorInitSteps[InitGraphFromConfigurationFile] = struct{}{}
 	return nil
 }

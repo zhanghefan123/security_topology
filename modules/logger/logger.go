@@ -12,6 +12,7 @@ const (
 	ModuleMainCmdHttpService       = "MAIN_CMD_HTTP_SERVICE"
 	ModuleMainCmdImages            = "MAIN_CMD_IMAGES"
 	ModuleMainCmdTest              = "MAIN_CMD_TEST"
+	ModuleCmdOnlineSecurestPath    = "MODULE_CMD_ONLINE_SECUREST_PATH"
 	ModuleConfig                   = "CONFIG"
 	ModuleConstellation            = "CONSTELLATION"
 	ModuleTopology                 = "TOPOLOGY"
@@ -20,7 +21,7 @@ const (
 	ModuleFabricPrepare            = "FABRIC_PREPARE"
 	ModuleRaspberrypiConfigure     = "RASPBERRYPI_CONFIGURE"
 	ModuleFiscoBcosPrepare         = "FISCO_BCOS_PREPARE"
-	ModuleOnlineSecurestPath       = "MODULE_ONLINE_SECUREST_PATH"
+	ModuleSimulator                = "MODULE_SIMULATOR"
 )
 
 func init() {

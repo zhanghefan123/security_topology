@@ -3,13 +3,14 @@ package entities
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"sort"
+	"strings"
+	"zhanghefan123/security_topology/modules/entities/real_entities/online/params"
+	"zhanghefan123/security_topology/modules/entities/real_entities/online/types"
+
 	"gonum.org/v1/gonum/graph/path"
 	"gonum.org/v1/gonum/graph/simple"
-	"os"
-	"strings"
-	"zhanghefan123/security_topology/modules/entities/real_entities/online/corrupt_decider"
-	"zhanghefan123/security_topology/modules/entities/real_entities/online/params"
-	"zhanghefan123/security_topology/modules/entities/types"
 )
 
 type SimGraph struct {
@@ -21,27 +22,28 @@ type SimGraph struct {
 	SimDirectedNormalLinks        []*SimDirectedNormalLink
 	SimDirectedPvLinks            []*SimDirectedPvLink
 	SimAbstractNodesMapping       map[string]*SimAbstractNode
-	SimDirectedNormalLinksMapping map[string]map[string]*SimDirectedNormalLink
-	SimDirectedPvLinksMapping     map[string]map[string]*SimDirectedPvLink
+	SimDirectedNormalLinksMapping map[string]*SimDirectedNormalLink
+	SimDirectedPvLinksMapping     map[string]*SimDirectedPvLink
 
 	AvailablePaths       []*SimPath
 	CoveragePaths        []*SimPath          // 覆盖这张图所有边的路径
 	AvailablePathMapping map[string]*SimPath // 从描述到实际对象的 mapping
 	CoveragePathMapping  map[string]*SimPath // 从描述到实际对象的 mapping
 
-	TotalPathWeights float64 // 所有路径的总的权重
+	TotalPathWeights float64    // 所有路径的总的权重
+	SelectedPaths    []*SimPath // 整个模拟过程选择的路径序列
 }
 
 func NewSimGraph() *SimGraph {
 	return &SimGraph{
-		DirectedGraph:                 &simple.DirectedGraph{},
+		DirectedGraph:                 simple.NewDirectedGraph(),
 		GraphParams:                   &params.GraphParams{},
 		SimAbstractNodes:              make([]*SimAbstractNode, 0),
 		SimDirectedNormalLinks:        make([]*SimDirectedNormalLink, 0),
 		SimDirectedPvLinks:            make([]*SimDirectedPvLink, 0),
 		SimAbstractNodesMapping:       make(map[string]*SimAbstractNode),
-		SimDirectedNormalLinksMapping: make(map[string]map[string]*SimDirectedNormalLink),
-		SimDirectedPvLinksMapping:     make(map[string]map[string]*SimDirectedPvLink),
+		SimDirectedNormalLinksMapping: make(map[string]*SimDirectedNormalLink),
+		SimDirectedPvLinksMapping:     make(map[string]*SimDirectedPvLink),
 
 		AvailablePaths:       make([]*SimPath, 0),
 		CoveragePaths:        make([]*SimPath, 0),
@@ -49,22 +51,16 @@ func NewSimGraph() *SimGraph {
 		CoveragePathMapping:  make(map[string]*SimPath),
 
 		TotalPathWeights: 0,
+		SelectedPaths:    make([]*SimPath, 0),
 	}
 }
 
 // IsCoveragePath 判定某条路径是否是覆盖集之中的路径
 func (simGraph *SimGraph) IsCoveragePath(path *SimPath) bool {
-	if _, ok := simGraph.CoveragePathMapping[path.PathDescription]; ok {
+	if _, ok := simGraph.CoveragePathMapping[path.Description]; ok {
 		return true
 	} else {
 		return false
-	}
-}
-
-// ClearAllEdgesProbabilities 清除图中所有边的概率信息
-func (simGraph *SimGraph) ClearAllEdgesProbabilities() {
-	for _, directedPvLink := range simGraph.SimDirectedPvLinks {
-		directedPvLink.ExploreProbability = 0
 	}
 }
 
@@ -92,16 +88,22 @@ func (simGraph *SimGraph) LoadNodesFromNodeParams() error {
 		if err != nil {
 			return fmt.Errorf("resolve node name failed, %w", err)
 		}
-
 		if nodeType == types.SimNetworkNodeType_NormalRouter {
 			// create actual node
-			var uniformCorruptDecider *corrupt_decider.CorruptDecider
-			uniformCorruptDecider, err = corrupt_decider.CreateUniformCorruptDecider(0.1, 0.5)
-			newSimNormalRouter := NewSimNormalRouter(nodeName, nodeParam.Index, uniformCorruptDecider)
+			var newSimNormalRouter *SimNormalRouter
+			newSimNormalRouter, err = NewSimNormalRouter(nodeName, nodeParam.Index,
+				nodeParam.DropRatio.Start, nodeParam.DropRatio.End,
+				nodeParam.CorruptRatio.Start, nodeParam.CorruptRatio.End)
+			if err != nil {
+				return fmt.Errorf("create newSimNormalRouter failed, %w", err)
+			}
 			// create sim abstract node
 			graphNode := simGraph.DirectedGraph.NewNode()
 			simAbstractNode := NewSimAbstract(nodeType, newSimNormalRouter, graphNode)
+			// add to list
 			simGraph.SimAbstractNodes = append(simGraph.SimAbstractNodes, simAbstractNode)
+			// add to mapping
+			simGraph.SimAbstractNodesMapping[newSimNormalRouter.NodeName] = simAbstractNode
 			// add node to the grapha
 			simGraph.DirectedGraph.AddNode(simAbstractNode)
 		} else if nodeType == types.SimNetworkNodeType_PathValidationRouter {
@@ -110,7 +112,10 @@ func (simGraph *SimGraph) LoadNodesFromNodeParams() error {
 			// create sim abstract node
 			graphNode := simGraph.DirectedGraph.NewNode()
 			simAbstractNode := NewSimAbstract(nodeType, newSimPathValidationRouter, graphNode)
+			// add to list
 			simGraph.SimAbstractNodes = append(simGraph.SimAbstractNodes, simAbstractNode)
+			// add to mapping
+			simGraph.SimAbstractNodesMapping[newSimPathValidationRouter.NodeName] = simAbstractNode
 			// add node to the graph
 			simGraph.DirectedGraph.AddNode(simAbstractNode)
 		} else {
@@ -131,6 +136,52 @@ func (simGraph *SimGraph) LoadSourceAndDest() error {
 		return fmt.Errorf("load destination failed")
 	} else {
 		simGraph.DestinationNode = destinationNode
+	}
+	return nil
+}
+
+// LoadPvLinksFromPvLinkParams 从 GraphParams 中的 pv 链路参数信息中加载图中的 pv 链路
+func (simGraph *SimGraph) LoadPvLinksFromPvLinkParams() error {
+	for _, pvLinkParam := range simGraph.GraphParams.PvLinks {
+		// get source name
+		sourceNodeName, err := params.ResolveSimNodeName(&pvLinkParam.SourceNode)
+		if err != nil {
+			return fmt.Errorf("resolve source node name failed, %w", err)
+		}
+		intermediateNodeName, err := params.ResolveSimNodeName(&pvLinkParam.IntermediateNode)
+		if err != nil {
+			return fmt.Errorf("resolve intermediate node name failed, %w", err)
+		}
+		targetNodeName, err := params.ResolveSimNodeName(&pvLinkParam.TargetNode)
+		if err != nil {
+			return fmt.Errorf("resolve target node name failed, %w", err)
+		}
+		// get abstract sim node
+		sourceSimAbstractNode, ok := simGraph.SimAbstractNodesMapping[sourceNodeName]
+		if !ok {
+			return fmt.Errorf("cannot find source sim abstract node, name: %s", sourceNodeName)
+		}
+		intermediateSimAbstractNode, ok := simGraph.SimAbstractNodesMapping[intermediateNodeName]
+		if !ok {
+			return fmt.Errorf("cannot find intermediate sim abstract node, name: %s", intermediateNodeName)
+		}
+		targetSimAbstractNode, ok := simGraph.SimAbstractNodesMapping[targetNodeName]
+		if !ok {
+			return fmt.Errorf("cannot find target sim abstract node, name: %s", targetNodeName)
+		}
+		// get description
+		pvLinkDescription := fmt.Sprintf("%s->%s->%s", sourceNodeName, intermediateNodeName, targetNodeName)
+		// create pv link
+		directedPvLink := NewSimDirectedPvLink(pvLinkDescription, sourceSimAbstractNode, intermediateSimAbstractNode, targetSimAbstractNode)
+		// update pv link list
+		simGraph.SimDirectedPvLinks = append(simGraph.SimDirectedPvLinks, directedPvLink)
+		//fmt.Println(directedPvLink.Description)
+		// update pv link mapping
+		if _, ok = simGraph.SimDirectedPvLinksMapping[pvLinkDescription]; !ok {
+			simGraph.SimDirectedPvLinksMapping[pvLinkDescription] = directedPvLink
+		} else {
+			return fmt.Errorf("duplicate sim abstract node name: %s", pvLinkDescription)
+		}
 	}
 	return nil
 }
@@ -156,89 +207,31 @@ func (simGraph *SimGraph) LoadLinksFromLinkParams() error {
 		if !ok {
 			return fmt.Errorf("cannot find target sim abstract node, name: %s", targetNodeName)
 		}
-		// construct edges
-		isPvLink := (sourceSimAbstractNode.Type == types.SimNetworkNodeType_PathValidationRouter) || (targetSimAbstractNode.Type == types.SimNetworkNodeType_PathValidationRouter)
-		if isPvLink {
-			pvLink := NewSimDirectedPvLink(sourceSimAbstractNode, targetSimAbstractNode)
-			directGraphEdge := simGraph.DirectedGraph.NewEdge(sourceSimAbstractNode, targetSimAbstractNode)
-			simGraph.DirectedGraph.SetEdge(directGraphEdge)
-			simGraph.SimDirectedPvLinks = append(simGraph.SimDirectedPvLinks, pvLink)
-			// update mapping
-			if _, ok = simGraph.SimDirectedPvLinksMapping[sourceNodeName]; !ok {
-				simGraph.SimDirectedPvLinksMapping[sourceNodeName] = make(map[string]*SimDirectedPvLink)
-			} else {
-				simGraph.SimDirectedPvLinksMapping[sourceNodeName][targetNodeName] = pvLink
-			}
+		// get description
+		normalLinkDescription := fmt.Sprintf("%s->%s", sourceNodeName, targetNodeName)
+		// create normal link
+		normalLink := NewSimDirectedNormalLink(sourceSimAbstractNode, targetSimAbstractNode)
+		directGraphEdge := simGraph.DirectedGraph.NewEdge(sourceSimAbstractNode, targetSimAbstractNode)
+		simGraph.DirectedGraph.SetEdge(directGraphEdge)
+		// append
+		simGraph.SimDirectedNormalLinks = append(simGraph.SimDirectedNormalLinks, normalLink)
+		// update mapping
+		if _, ok = simGraph.SimDirectedNormalLinksMapping[sourceNodeName]; !ok {
+			simGraph.SimDirectedNormalLinksMapping[normalLinkDescription] = normalLink
 		} else {
-			normalLink := NewSimDirectedNormalLink(sourceSimAbstractNode, targetSimAbstractNode)
-			directGraphEdge := simGraph.DirectedGraph.NewEdge(sourceSimAbstractNode, targetSimAbstractNode)
-			simGraph.DirectedGraph.SetEdge(directGraphEdge)
-			simGraph.SimDirectedNormalLinks = append(simGraph.SimDirectedNormalLinks, normalLink)
-			// update mapping
-			if _, ok = simGraph.SimDirectedNormalLinksMapping[sourceNodeName]; !ok {
-				simGraph.SimDirectedNormalLinksMapping[sourceNodeName] = make(map[string]*SimDirectedNormalLink)
-			} else {
-				simGraph.SimDirectedNormalLinksMapping[sourceNodeName][targetNodeName] = normalLink
-			}
+			return fmt.Errorf("duplicate normal link description: %s", normalLinkDescription)
 		}
 	}
 	return nil
 }
 
-func FindNextPvRouterAndIndex(simPath *SimPath, startIndex int) (*SimAbstractNode, int) {
-	for index := startIndex + 1; index < len(simPath.NodeList); index++ {
-		if simPath.NodeList[index].Type == types.SimNetworkNodeType_PathValidationRouter {
-			return simPath.NodeList[index], index
-		}
-	}
-	return nil, -1
-}
-
-func (simGraph *SimGraph) LoadCoveragePathsFromParams() error {
-	for _, coveragePathString := range simGraph.GraphParams.CoveragePaths {
-		// fill node list in coverage path
-		coveragePath := NewSimPath()
-		routerListString := strings.Split(coveragePathString, ",")
-		for _, routerName := range routerListString {
-			if router, ok := simGraph.SimAbstractNodesMapping[routerName]; !ok {
-				return fmt.Errorf("cannot find sim abstract node for router name: %s", routerName)
-			} else {
-				coveragePath.NodeList = append(coveragePath.NodeList, router)
-			}
-		}
-		// fill directedPvLinks and directedPvLinksMapping in coverage path
-		var startIndex = 0
-		var sourceNode, targetNode *SimAbstractNode
-		for {
-			sourceNode = coveragePath.NodeList[startIndex]
-			targetNode, startIndex = FindNextPvRouterAndIndex(coveragePath, startIndex)
-			if targetNode == nil {
-				break
-			} else {
-				sourceNodeName, err := sourceNode.GetSimNodeName()
-				if err != nil {
-					return fmt.Errorf("get directed pv links failed due to: %v", err)
-				}
-				targetNodeName, err := targetNode.GetSimNodeName()
-				if err != nil {
-					return fmt.Errorf("get directed pv links failed due to: %v", err)
-				}
-				directedPvLink := simGraph.SimDirectedPvLinksMapping[sourceNodeName][targetNodeName]
-				coveragePath.DirectedPvLinks = append(coveragePath.DirectedPvLinks, directedPvLink)
-				if _, ok := coveragePath.DirectedPvLinksMapping[sourceNodeName]; !ok {
-					coveragePath.DirectedPvLinksMapping[sourceNodeName] = make(map[string]*SimDirectedPvLink)
-				}
-				coveragePath.DirectedPvLinksMapping[sourceNodeName][targetNodeName] = directedPvLink
-			}
-		}
-	}
-	return nil
-}
-
+// CalculateKShortestPaths 计算图中从源节点到目的节点的 k 条最短路径，并更新 AvailablePaths 和 AvailablePathMapping
 func (simGraph *SimGraph) CalculateKShortestPaths() error {
-	paths := path.YenKShortestPaths(simGraph.DirectedGraph, simGraph.GraphParams.KShortestPathParmas.NumberOfPaths, simGraph.GraphParams.KShortestPathParmas.LimitOfCost, simGraph.SourceNode, simGraph.DestinationNode)
+	paths := path.YenKShortestPaths(simGraph.DirectedGraph, simGraph.GraphParams.KShortestPathParamas.NumberOfPaths, simGraph.GraphParams.KShortestPathParamas.LimitOfCost, simGraph.SourceNode, simGraph.DestinationNode)
+
 	for _, graphNodeList := range paths {
 		singleSimPath := NewSimPath()
+		// fill node list in this path
 		for _, abstractSimNode := range graphNodeList {
 			singleModifiedNode, ok := abstractSimNode.(*SimAbstractNode)
 			if ok {
@@ -247,13 +240,72 @@ func (simGraph *SimGraph) CalculateKShortestPaths() error {
 				return fmt.Errorf("type assertion failed when calculating k shortest path")
 			}
 		}
+		// fill directedPvLinks and directedPvLinksMapping in this path
+		err := singleSimPath.UpdateInfo(simGraph.SimDirectedPvLinksMapping)
+		if err != nil {
+			return fmt.Errorf("fill directed pv links failed due to: %w", err)
+		}
+
+		// get path description for this path
 		simPathDesc, err := singleSimPath.GetPathDescription()
 		if err != nil {
 			return err
 		} else {
-			singleSimPath.PathDescription = simPathDesc
+			singleSimPath.Description = simPathDesc
 		}
+		// update available path list
 		simGraph.AvailablePaths = append(simGraph.AvailablePaths, singleSimPath)
+		// update available path mapping
+		simGraph.AvailablePathMapping[simPathDesc] = singleSimPath
+		// calculate link score (link score 是用来进行排序的)
+		singleSimPath.CalculateScore()
+	}
+
+	// 进行排序
+	sort.Slice(simGraph.AvailablePaths, func(i, j int) bool {
+		return simGraph.AvailablePaths[i].Score < simGraph.AvailablePaths[j].Score
+	})
+
+	// 给路径进行 id 的分配
+	for index, simPath := range simGraph.AvailablePaths {
+		simPath.PathId = index + 1
+	}
+
+	return nil
+}
+
+// LoadCoveragePathsFromParams 从 GraphParams 中的覆盖路径参数信息中加载图中的覆盖路径，并更新 CoveragePaths 和 CoveragePathMapping
+func (simGraph *SimGraph) LoadCoveragePathsFromParams() error {
+	// for each coverage path string, construct the coverage path and update the coverage path list and mapping
+	for _, coveragePathString := range simGraph.GraphParams.CoveragePaths {
+		pathDescription := ""
+		routerListString := strings.Split(coveragePathString, ",")
+		for index, routerName := range routerListString {
+			if index != (len(routerListString) - 1) {
+				pathDescription += fmt.Sprintf("%s->", routerName)
+			} else {
+				pathDescription += fmt.Sprintf("%s", routerName)
+			}
+		}
+		// get the coverage path in mapping via description
+		if coveragePath, ok := simGraph.AvailablePathMapping[pathDescription]; ok {
+			// update the coverage paths
+			simGraph.CoveragePaths = append(simGraph.CoveragePaths, coveragePath)
+			// update the coverage path mapping
+			simGraph.CoveragePathMapping[pathDescription] = coveragePath
+		} else {
+			return fmt.Errorf("k shortest paths have no path: %s", pathDescription)
+		}
 	}
 	return nil
+}
+
+func (simGraph *SimGraph) RemovePathContainingTheLink(pvLink *SimDirectedPvLink) {
+	result := make([]*SimPath, 0)
+	for _, simPath := range simGraph.AvailablePaths {
+		if _, ok := simPath.DirectedPvLinksMapping[pvLink.Description]; !ok {
+			result = append(result, simPath)
+		}
+	}
+	simGraph.AvailablePaths = result
 }

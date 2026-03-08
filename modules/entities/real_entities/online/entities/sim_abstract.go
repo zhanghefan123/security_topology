@@ -3,7 +3,7 @@ package entities
 import (
 	"fmt"
 	"gonum.org/v1/gonum/graph"
-	"zhanghefan123/security_topology/modules/entities/types"
+	"zhanghefan123/security_topology/modules/entities/real_entities/online/types"
 )
 
 type SimAbstractNode struct {
