@@ -23,7 +23,7 @@ func (s *Simulator) GetStatistics(destinationDir string) error {
 		}
 	}
 
-	err := s.GetPvLinksIllegalRatios(destinationDir)
+	err := s.GetPvLinksLegalRatios(destinationDir)
 	if err != nil {
 		return err
 	}
@@ -61,6 +61,11 @@ func (s *Simulator) GetStatistics(destinationDir string) error {
 	if err != nil {
 		return err
 	}
+
+	err = s.GetRegrets(destinationDir)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -88,23 +93,23 @@ func (s *Simulator) writeStatisticsToFile(destinationDir, filename string, descA
 	return nil
 }
 
-// GetPvLinksIllegalRatios 获取每条 directed pv link 在每个 epoch 的 illegal ratio
-func (s *Simulator) GetPvLinksIllegalRatios(destinationDir string) error {
+// GetPvLinksLegalRatios 获取每条 directed pv link 在每个 epoch 的 legal ratio
+func (s *Simulator) GetPvLinksLegalRatios(destinationDir string) error {
 	resultList := make([]DescriptionAndData, 0)
-	for _, pvLink := range s.SimGraph.SimDirectedPvLinks {
+	for _, absLink := range s.SimGraph.SimDirectedAbsLinks {
 		descAndData := DescriptionAndData{
-			Description: pvLink.Description,
-			Datas:       s.formatFloatSlice(pvLink.IllegalRatios),
+			Description: absLink.Description,
+			Datas:       s.formatFloatSlice(absLink.LegalRatios),
 		}
 		resultList = append(resultList, descAndData)
 	}
-	return s.writeStatisticsToFile(destinationDir, "pv_links_illegal_ratio.txt", resultList)
+	return s.writeStatisticsToFile(destinationDir, "pv_links_legal_ratio.txt", resultList)
 }
 
 // GetPvLinksGains 获取每条 directed pv link 在每个 epoch 的 gains
 func (s *Simulator) GetPvLinksGains(destinationDir string) error {
 	resultList := make([]DescriptionAndData, 0)
-	for _, pvLink := range s.SimGraph.SimDirectedPvLinks {
+	for _, pvLink := range s.SimGraph.SimDirectedAbsLinks {
 		descAndData := DescriptionAndData{
 			Description: pvLink.Description,
 			Datas:       s.formatFloatSlice(pvLink.RectifiedGains),
@@ -117,7 +122,7 @@ func (s *Simulator) GetPvLinksGains(destinationDir string) error {
 // GetPvLinksWeights 获取每条 directed pv link 在每个 epoch 的 weights
 func (s *Simulator) GetPvLinksWeights(destinationDir string) error {
 	resultList := make([]DescriptionAndData, 0)
-	for _, pvLink := range s.SimGraph.SimDirectedPvLinks {
+	for _, pvLink := range s.SimGraph.SimDirectedAbsLinks {
 		descAndData := DescriptionAndData{
 			Description: pvLink.Description,
 			Datas:       s.formatFloatSlice(pvLink.Weights),
@@ -130,7 +135,7 @@ func (s *Simulator) GetPvLinksWeights(destinationDir string) error {
 // GetPvLinksExploreProbabilities 获取每条 directed pv link 在每个 epoch 的 explore probability
 func (s *Simulator) GetPvLinksExploreProbabilities(destinationDir string) error {
 	resultList := make([]DescriptionAndData, 0)
-	for _, pvLink := range s.SimGraph.SimDirectedPvLinks {
+	for _, pvLink := range s.SimGraph.SimDirectedAbsLinks {
 		descAndData := DescriptionAndData{
 			Description: pvLink.Description,
 			Datas:       s.formatFloatSlice(pvLink.ExploreProbabilities),
@@ -196,4 +201,14 @@ func (s *Simulator) GetSelectedPath(destinationDir string) error {
 	}
 	resultList = append(resultList, descAndData)
 	return s.writeStatisticsToFile(destinationDir, "selected_paths.txt", resultList)
+}
+
+func (s *Simulator) GetRegrets(destinationDir string) error {
+	resultList := make([]DescriptionAndData, 0)
+	descAndData := DescriptionAndData{
+		Description: "regrets",
+		Datas:       s.formatFloatSlice(s.SimGraph.Regrets),
+	}
+	resultList = append(resultList, descAndData)
+	return s.writeStatisticsToFile(destinationDir, "regrets.txt", resultList)
 }

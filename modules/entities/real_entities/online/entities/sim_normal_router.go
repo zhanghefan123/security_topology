@@ -7,19 +7,24 @@ import (
 
 type SimNormalRouter struct {
 	*SimNodeBase
-	StartDropRatio    float64
-	EndDropRatio      float64
-	StartCorruptRatio float64
-	EndCorruptRatio   float64
-	DropDecider       *decider.ActionDecider // 可以是任何形式的丢包分布
-	CorruptDecider    *decider.ActionDecider // 可以是任何形式的丢包分布
+	StartDropRatio                 float64
+	EndDropRatio                   float64
+	StartCorruptRatio              float64
+	EndCorruptRatio                float64
+	StartCorruptSpecialPacketRatio float64
+	EndCorruptSpecialPacketRatio   float64
+	DropDecider                    *decider.ActionDecider // 可以是任何形式的丢包分布
+	CorruptDecider                 *decider.ActionDecider // 可以是任何形式的丢包分布
+	CorruptSpecialPacketDecider    *decider.ActionDecider // 可以是任何形式的丢包分布
 }
 
 // NewSimNormalRouter 创建新的路由器
-func NewSimNormalRouter(nodeName string, nodeIndex int, startDropRatio, endDropRatio, startCorruptRatio, endCorruptRatio float64) (*SimNormalRouter, error) {
+func NewSimNormalRouter(nodeName string, nodeIndex int, startDropRatio, endDropRatio,
+	startCorruptRatio, endCorruptRatio, startCorruptSpecialPacketRatio, endCorruptSpecialPacketRatio float64) (*SimNormalRouter, error) {
 	simNodeBase := CreateSimNodeBase(nodeName, nodeIndex)
 	var corruptDecider *decider.ActionDecider
 	var dropDecider *decider.ActionDecider
+	var corruptSpecialPacketDecider *decider.ActionDecider
 	var err error
 	dropDecider, err = decider.CreateUniformDecider(startDropRatio, endDropRatio, nodeIndex)
 	if err != nil {
@@ -29,15 +34,18 @@ func NewSimNormalRouter(nodeName string, nodeIndex int, startDropRatio, endDropR
 	if err != nil {
 		return nil, fmt.Errorf("create uniform corrupt decider failed: %v", err)
 	}
+	corruptSpecialPacketDecider, err = decider.CreateUniformDecider(startCorruptSpecialPacketRatio, endCorruptSpecialPacketRatio, nodeIndex)
 	return &SimNormalRouter{
-		SimNodeBase:       simNodeBase,
-		StartDropRatio:    startDropRatio,
-		EndDropRatio:      endDropRatio,
-		StartCorruptRatio: startCorruptRatio,
-		EndCorruptRatio:   endCorruptRatio,
-		DropDecider:       dropDecider,
-		CorruptDecider:    corruptDecider,
+		SimNodeBase:                 simNodeBase,
+		StartDropRatio:              startDropRatio,
+		EndDropRatio:                endDropRatio,
+		StartCorruptRatio:           startCorruptRatio,
+		EndCorruptRatio:             endCorruptRatio,
+		DropDecider:                 dropDecider,
+		CorruptDecider:              corruptDecider,
+		CorruptSpecialPacketDecider: corruptSpecialPacketDecider,
 	}, nil
+	// the purpose of the attacker is to let the source select the path and they manipulate the delay
 }
 
 func (router *SimNormalRouter) Reset(startDropRatio, endDropRatio, startCorruptRatio, endCorruptRatio float64) error {

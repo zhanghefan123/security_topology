@@ -28,34 +28,35 @@ func NewSimDirectedLinkBase(linkType types.SimDirectedLinkType, source *SimAbstr
 	}
 }
 
-type SimDirectedNormalLink struct {
+type SimDirectedRealLink struct {
 	*SimDirectedLinkBase
 }
 
-func NewSimDirectedNormalLink(source *SimAbstractNode, target *SimAbstractNode) *SimDirectedNormalLink {
-	return &SimDirectedNormalLink{
+func NewSimDirectedRealLink(source *SimAbstractNode, target *SimAbstractNode) *SimDirectedRealLink {
+	return &SimDirectedRealLink{
 		SimDirectedLinkBase: NewSimDirectedLinkBase(types.SimDirectedLinkType_SimDirectedNormalLink, source, target),
 	}
 }
 
-type SimDirectedPvLink struct {
+type SimDirectedAbsLink struct {
 	*SimDirectedLinkBase
-	Intermediate         *SimAbstractNode // pvlink 的中间节点
-	Weights              []float64        // 随时间 t 变化
-	IllegalRatios        []float64        // 随时间 t 变化
-	DropRatios           []float64        // 随时间 t 变化
-	ExploreProbabilities []float64        // 探索概率
-	RectifiedGains       []float64        // 修正增益
-	Description          string           // 对这个 directed pv link 的唯一描述
+	LinkType             types.SimDirectedLinkType // 链路的类型
+	Intermediate         *SimAbstractNode          // pvlink 的中间节点
+	Weights              []float64                 // 随时间 t 变化
+	LegalRatios          []float64                 // 随时间 t 变化
+	ExploreProbabilities []float64                 // 探索概率
+	RectifiedGains       []float64                 // 修正增益
+	Description          string                    // 对这个 directed pv link 的唯一描述
 }
 
-func NewSimDirectedPvLink(pvLinkDescription string, source *SimAbstractNode, intermediate *SimAbstractNode, target *SimAbstractNode) *SimDirectedPvLink {
-	return &SimDirectedPvLink{
+// NewSimDirectedAbsLink 进行新的抽象链路的创建
+func NewSimDirectedAbsLink(linkType types.SimDirectedLinkType, pvLinkDescription string, source *SimAbstractNode, intermediate *SimAbstractNode, target *SimAbstractNode) *SimDirectedAbsLink {
+	return &SimDirectedAbsLink{
+		LinkType:             linkType,
 		SimDirectedLinkBase:  NewSimDirectedLinkBase(types.SimDirectedLinkType_SimDirectedPvLink, source, target),
 		Intermediate:         intermediate,
 		Weights:              make([]float64, 0),
-		IllegalRatios:        make([]float64, 0),
-		DropRatios:           make([]float64, 0),
+		LegalRatios:          make([]float64, 0),
 		ExploreProbabilities: make([]float64, 0),
 		RectifiedGains:       make([]float64, 0),
 		Description:          pvLinkDescription,

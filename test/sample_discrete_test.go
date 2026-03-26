@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"testing"
 	"time"
-	"zhanghefan123/security_topology/modules/entities/real_entities/online/steps"
+	"zhanghefan123/security_topology/utils/probs"
 )
 
 // 初始化随机种子（保证每次运行随机结果不同）
@@ -16,19 +16,19 @@ func init() {
 func TestSampleDiscrete_Basic(t *testing.T) {
 	// 测试用例1：只有1个概率，必须返回0
 	prob1 := []float64{1.0}
-	if res := steps.SampleDiscrete(prob1); res != 0 {
+	if res := probs.SampleDiscrete(prob1); res != 0 {
 		t.Errorf("单一概率应返回0，实际返回%d", res)
 	}
 
 	// 测试用例2：第一个概率=1，永远返回0
 	prob2 := []float64{1.0, 0.0, 0.0}
-	if res := steps.SampleDiscrete(prob2); res != 0 {
+	if res := probs.SampleDiscrete(prob2); res != 0 {
 		t.Errorf("100%%概率应返回0，实际返回%d", res)
 	}
 
 	// 测试用例3：最后一个概率=1，永远返回最后一个下标
 	prob3 := []float64{0.0, 0.0, 1.0}
-	if res := steps.SampleDiscrete(prob3); res != 2 {
+	if res := probs.SampleDiscrete(prob3); res != 2 {
 		t.Errorf("100%%概率应返回2，实际返回%d", res)
 	}
 }
@@ -36,7 +36,7 @@ func TestSampleDiscrete_Basic(t *testing.T) {
 // TestSampleDiscrete_Distribution 统计测试：概率分布符合预期
 func TestSampleDiscrete_Distribution(t *testing.T) {
 	// 测试分布 [0.2, 0.5, 0.3]
-	probs := []float64{0.2, 0.5, 0.3}
+	probabilities := []float64{0.2, 0.5, 0.3}
 	const times = 100000 // 采样10万次
 
 	count0 := 0
@@ -44,7 +44,7 @@ func TestSampleDiscrete_Distribution(t *testing.T) {
 	count2 := 0
 
 	for i := 0; i < times; i++ {
-		switch steps.SampleDiscrete(probs) {
+		switch probs.SampleDiscrete(probabilities) {
 		case 0:
 			count0++
 		case 1:
@@ -75,12 +75,12 @@ func TestSampleDiscrete_Distribution(t *testing.T) {
 // TestSampleDiscrete_FloatError 测试浮点误差兜底逻辑
 func TestSampleDiscrete_FloatError(t *testing.T) {
 	// 总和接近1，但因为浮点精度可能进不去循环内return
-	probs := []float64{0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1}
+	probabilities := []float64{0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1}
 
 	// 多次调用，确保不会崩溃，永远返回合法下标
 	for i := 0; i < 1000; i++ {
-		res := steps.SampleDiscrete(probs)
-		if res < 0 || res >= len(probs) {
+		res := probs.SampleDiscrete(probabilities)
+		if res < 0 || res >= len(probabilities) {
 			t.Errorf("下标越界：%d", res)
 		}
 	}

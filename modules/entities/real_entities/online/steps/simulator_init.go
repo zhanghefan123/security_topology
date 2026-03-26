@@ -80,22 +80,22 @@ func (s *Simulator) InitGraphFromConfigurationFile() error {
 	if err != nil {
 		return fmt.Errorf("load source and destination from configuration file failed, %s", err)
 	}
-	// step3: load pv links
-	err = s.SimGraph.LoadPvLinksFromPvLinkParams()
+	// step4 : load access links and pv links
+	err = s.SimGraph.LoadAccessLinksAndPvLinksParams()
 	if err != nil {
 		return fmt.Errorf("load pvLinks from configuration file failed, %s", err)
 	}
-	// step4: load links
-	err = s.SimGraph.LoadLinksFromLinkParams()
+	// step5: load real links
+	err = s.SimGraph.LoadRealLinksFromLinkParams()
 	if err != nil {
 		return fmt.Errorf("init graph links from configuration file failed, %s", err)
 	}
-	// step5: calculate k shortest paths
+	// step6: calculate k shortest paths
 	err = s.SimGraph.CalculateKShortestPaths()
 	if err != nil {
 		return fmt.Errorf("calculate k shortest paths failed, %s", err)
 	}
-	// step6: load coverage paths
+	// step7: load coverage paths
 	err = s.SimGraph.LoadCoveragePathsFromParams()
 	if err != nil {
 		return fmt.Errorf("load coverage paths from configuration file failed, %s", err)

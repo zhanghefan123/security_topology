@@ -53,7 +53,8 @@ require (
 	github.com/Rican7/retry v0.1.0 // indirect
 	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/TarsCloud/TarsGo v1.4.5 // indirect
-	github.com/bits-and-blooms/bitset v1.13.0 // indirect
+	github.com/bits-and-blooms/bitset v1.24.2 // indirect
+	github.com/bits-and-blooms/bloom/v3 v3.7.1 //
 	github.com/btcsuite/btcd v0.21.0-beta // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
 	github.com/bytedance/sonic v1.12.3 // indirect

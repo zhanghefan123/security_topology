@@ -12,7 +12,7 @@ func ResolveSimNodeType(typeString string) (types.SimNetworkNodeType, error) {
 		result = types.SimNetworkNodeType(value)
 		return result, nil
 	}
-	return types.SimNetworkNodeType_NormalRouter, fmt.Errorf("cannot resolve node type")
+	return types.SimNetworkNodeType_NormalRouter, fmt.Errorf("cannot resolve node type %s\n", typeString)
 }
 
 // ResolveSimNodeName 进行节点类型的解析

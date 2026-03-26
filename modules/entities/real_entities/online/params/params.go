@@ -4,7 +4,8 @@ type GraphParams struct {
 	SourceDestParams     *SourceDestParams    `json:"source_dest_params"`
 	KShortestPathParamas *KShortestPathParmas `json:"k_shortest_path_params"`
 	Nodes                []SimNodeParam       `json:"nodes"`
-	PvLinks              []SimPvLinkParam     `json:"pv_links"`
+	AccessLinks          []SimAbsLinkParam    `json:"access_links"`
+	PvLinks              []SimAbsLinkParam    `json:"pv_links"`
 	Links                []SimLinkParam       `json:"links"`
 	CoveragePaths        []string             `json:"coverage_paths"`
 }
@@ -23,10 +24,11 @@ type KShortestPathParmas struct {
 
 // SimNodeParam 模拟节点的参数
 type SimNodeParam struct {
-	Index        int               `json:"index"`
-	Type         string            `json:"type"`
-	DropRatio    RatioDistribution `json:"drop_ratio"`
-	CorruptRatio RatioDistribution `json:"corrupt_ratio"`
+	Index                     int               `json:"index"`
+	Type                      string            `json:"type"`
+	DropRatio                 RatioDistribution `json:"drop_ratio"`
+	CorruptRatio              RatioDistribution `json:"corrupt_ratio"`
+	CorruptSpecialPacketRatio RatioDistribution `json:"corrupt_special_packet_ratio"`
 }
 
 // RatioDistribution 丢包/篡改包的概率分布
@@ -35,7 +37,7 @@ type RatioDistribution struct {
 	End   float64 `json:"end"`   // 结束值
 }
 
-type SimPvLinkParam struct {
+type SimAbsLinkParam struct {
 	SourceNode       SimNodeParam `json:"source_node"`       // 链路的源节点
 	TargetNode       SimNodeParam `json:"target_node"`       // 链路的目的节点
 	IntermediateNode SimNodeParam `json:"intermediate_node"` // pvlink 的中间节点

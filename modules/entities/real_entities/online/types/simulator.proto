@@ -8,11 +8,23 @@ enum NodeMaliciousActionType {
 }
 
 enum SimNetworkNodeType {
-  NormalRouter = 0;
-  PathValidationRouter = 1;
+  EndHost = 0;
+  NormalRouter = 1;
+  PathValidationRouter = 2;
 }
 
 enum SimDirectedLinkType {
-  SimDirectedPvLink = 0;
-  SimDirectedNormalLink = 1;
+  SimDirectedNormalLink = 0;
+  SimDirectedPvLink = 1;
+  SimDirectedAccessLink = 2;
+}
+
+enum SimRecorderType {
+  BloomFilterRecorder = 0;
+  CountRecorder = 1;
+}
+
+enum GainCalculationMode {
+  SumEdgeGains = 0;
+  SumEdgeAndRouterGains = 1;
 }

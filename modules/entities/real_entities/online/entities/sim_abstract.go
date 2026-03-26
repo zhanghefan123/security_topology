@@ -22,6 +22,10 @@ func NewSimAbstract(nodeType types.SimNetworkNodeType, actualNode interface{}, g
 
 func (simAbstractNode *SimAbstractNode) GetSimNodeBaseFromAbstract() (*SimNodeBase, error) {
 	switch simAbstractNode.Type {
+	case types.SimNetworkNodeType_EndHost:
+		if endHost, ok := simAbstractNode.ActualNode.(*SimEndHost); ok {
+			return endHost.SimNodeBase, nil
+		}
 	case types.SimNetworkNodeType_NormalRouter:
 		if simNormalRouter, ok := simAbstractNode.ActualNode.(*SimNormalRouter); ok {
 			return simNormalRouter.SimNodeBase, nil

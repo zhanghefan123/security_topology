@@ -1,7 +1,7 @@
 {
   "source_dest_params": {
-    "source": "EndHost-0",
-    "destination": "EndHost-13"
+    "source": "PathValidationRouter-1",
+    "destination": "PathValidationRouter-10"
   },
   "k_shortest_path_params": {
     "number_of_paths": 8,
@@ -14,10 +14,14 @@
     },
     {
       "index": 1,
+      "type": "PathValidationRouter"
+    },
+    {
+      "index": 2,
       "type": "NormalRouter",
       "corrupt_ratio": {
-        "start": 0.0,
-        "end": 0.0
+        "start": 0.01,
+        "end": 0.1
       },
       "drop_ratio": {
         "start": 0,
@@ -25,15 +29,11 @@
       }
     },
     {
-      "index": 2,
-      "type": "PathValidationRouter"
-    },
-    {
       "index": 3,
       "type": "NormalRouter",
       "corrupt_ratio": {
-        "start": 0.01,
-        "end": 0.1
+        "start": 0.3,
+        "end": 1
       },
       "drop_ratio": {
         "start": 0,
@@ -42,10 +42,14 @@
     },
     {
       "index": 4,
+      "type": "PathValidationRouter"
+    },
+    {
+      "index": 5,
       "type": "NormalRouter",
       "corrupt_ratio": {
-        "start": 0.3,
-        "end": 1
+        "start": 0.01,
+        "end": 0.1
       },
       "drop_ratio": {
         "start": 0,
@@ -53,15 +57,11 @@
       }
     },
     {
-      "index": 5,
-      "type": "PathValidationRouter"
-    },
-    {
       "index": 6,
       "type": "NormalRouter",
       "corrupt_ratio": {
-        "start": 0.01,
-        "end": 0.1
+        "start": 0.3,
+        "end": 1
       },
       "drop_ratio": {
         "start": 0,
@@ -70,22 +70,10 @@
     },
     {
       "index": 7,
-      "type": "NormalRouter",
-      "corrupt_ratio": {
-        "start": 0.3,
-        "end": 1
-      },
-      "drop_ratio": {
-        "start": 0,
-        "end": 0
-      }
-    },
-    {
-      "index": 8,
       "type": "PathValidationRouter"
     },
     {
-      "index": 9,
+      "index": 8,
       "type": "NormalRouter",
       "corrupt_ratio": {
         "start": 0.01,
@@ -97,7 +85,7 @@
       }
     },
     {
-      "index": 10,
+      "index": 9,
       "type": "NormalRouter",
       "corrupt_ratio": {
         "start": 0.3,
@@ -109,80 +97,32 @@
       }
     },
     {
-      "index": 11,
+      "index": 10,
       "type": "PathValidationRouter"
-    },
-    {
-      "index": 12,
-      "type": "NormalRouter",
-      "corrupt_ratio": {
-        "start": 0,
-        "end": 0
-      },
-      "drop_ratio": {
-        "start": 0,
-        "end": 0
-      }
-    },
-    {
-      "index": 13,
-      "type": "EndHost"
-    }
-  ],
-  "access_links": [
-    {
-      "source_node": {
-        "index": 0,
-        "type": "EndHost"
-      },
-      "target_node": {
-        "index": 2,
-        "type": "PathValidationRouter"
-      },
-      "intermediate_node": {
-        "index": 1,
-        "type": "NormalRouter",
-        "corrupt_ratio": {
-          "start": 0,
-          "end": 0
-        },
-        "drop_ratio": {
-          "start": 0,
-          "end": 0
-        }
-      }
-    },
-    {
-      "source_node": {
-        "index": 11,
-        "type": "PathValidationRouter"
-      },
-      "target_node": {
-        "index": 13,
-        "type": "EndHost"
-      },
-      "intermediate_node": {
-        "index": 12,
-        "type": "NormalRouter",
-        "corrupt_ratio": {
-          "start": 0,
-          "end": 0
-        },
-        "drop_ratio": {
-          "start": 0,
-          "end": 0
-        }
-      }
     }
   ],
   "pv_links": [
     {
       "source_node": {
-        "index": 2,
+        "index": 1,
         "type": "PathValidationRouter"
       },
       "target_node": {
-        "index": 5,
+        "index": 4,
+        "type": "PathValidationRouter"
+      },
+      "intermediate_node": {
+        "index": 2,
+        "type": "NormalRouter"
+      }
+    },
+    {
+      "source_node": {
+        "index": 1,
+        "type": "PathValidationRouter"
+      },
+      "target_node": {
+        "index": 4,
         "type": "PathValidationRouter"
       },
       "intermediate_node": {
@@ -192,25 +132,25 @@
     },
     {
       "source_node": {
-        "index": 2,
+        "index": 4,
         "type": "PathValidationRouter"
       },
       "target_node": {
-        "index": 5,
+        "index": 7,
         "type": "PathValidationRouter"
       },
       "intermediate_node": {
-        "index": 4,
+        "index": 5,
         "type": "NormalRouter"
       }
     },
     {
       "source_node": {
-        "index": 5,
+        "index": 4,
         "type": "PathValidationRouter"
       },
       "target_node": {
-        "index": 8,
+        "index": 7,
         "type": "PathValidationRouter"
       },
       "intermediate_node": {
@@ -220,43 +160,29 @@
     },
     {
       "source_node": {
-        "index": 5,
+        "index": 7,
         "type": "PathValidationRouter"
       },
       "target_node": {
-        "index": 8,
+        "index": 10,
         "type": "PathValidationRouter"
       },
       "intermediate_node": {
-        "index": 7,
+        "index": 8,
         "type": "NormalRouter"
       }
     },
     {
       "source_node": {
-        "index": 8,
+        "index": 7,
         "type": "PathValidationRouter"
       },
       "target_node": {
-        "index": 11,
+        "index": 10,
         "type": "PathValidationRouter"
       },
       "intermediate_node": {
         "index": 9,
-        "type": "NormalRouter"
-      }
-    },
-    {
-      "source_node": {
-        "index": 8,
-        "type": "PathValidationRouter"
-      },
-      "target_node": {
-        "index": 11,
-        "type": "PathValidationRouter"
-      },
-      "intermediate_node": {
-        "index": 10,
         "type": "NormalRouter"
       }
     }
@@ -264,27 +190,27 @@
   "links": [
     {
       "source_node": {
-        "index": 0,
-        "type": "EndHost"
+        "index": 1,
+        "type": "PathValidationRouter"
       },
       "target_node": {
-        "index": 1,
+        "index": 2,
         "type": "NormalRouter"
       }
     },
     {
       "source_node": {
-        "index": 1,
+        "index": 2,
         "type": "NormalRouter"
       },
       "target_node": {
-        "index": 2,
+        "index": 4,
         "type": "PathValidationRouter"
       }
     },
     {
       "source_node": {
-        "index": 2,
+        "index": 1,
         "type": "PathValidationRouter"
       },
       "target_node": {
@@ -298,13 +224,34 @@
         "type": "NormalRouter"
       },
       "target_node": {
-        "index": 5,
+        "index": 4,
         "type": "PathValidationRouter"
+      }
+    },
+
+    {
+      "source_node": {
+        "index": 4,
+        "type": "PathValidationRouter"
+      },
+      "target_node": {
+        "index": 5,
+        "type": "NormalRouter"
       }
     },
     {
       "source_node": {
         "index": 5,
+        "type": "NormalRouter"
+      },
+      "target_node": {
+        "index": 7,
+        "type": "PathValidationRouter"
+      }
+    },
+    {
+      "source_node": {
+        "index": 4,
         "type": "PathValidationRouter"
       },
       "target_node": {
@@ -318,13 +265,34 @@
         "type": "NormalRouter"
       },
       "target_node": {
-        "index": 8,
+        "index": 7,
         "type": "PathValidationRouter"
+      }
+    },
+
+    {
+      "source_node": {
+        "index": 7,
+        "type": "PathValidationRouter"
+      },
+      "target_node": {
+        "index": 8,
+        "type": "NormalRouter"
       }
     },
     {
       "source_node": {
         "index": 8,
+        "type": "NormalRouter"
+      },
+      "target_node": {
+        "index": 10,
+        "type": "PathValidationRouter"
+      }
+    },
+    {
+      "source_node": {
+        "index": 7,
         "type": "PathValidationRouter"
       },
       "target_node": {
@@ -338,93 +306,13 @@
         "type": "NormalRouter"
       },
       "target_node": {
-        "index": 11,
-        "type": "PathValidationRouter"
-      }
-    },
-    {
-      "source_node": {
-        "index": 11,
-        "type": "PathValidationRouter"
-      },
-      "target_node": {
-        "index": 12,
-        "type": "NormalRouter"
-      }
-    },
-    {
-      "source_node": {
-        "index": 12,
-        "type": "NormalRouter"
-      },
-      "target_node": {
-        "index": 13,
-        "type": "EndHost"
-      }
-    },
-    {
-      "source_node": {
-        "index": 2,
-        "type": "PathValidationRouter"
-      },
-      "target_node": {
-        "index": 4,
-        "type": "NormalRouter"
-      }
-    },
-    {
-      "source_node": {
-        "index": 4,
-        "type": "NormalRouter"
-      },
-      "target_node": {
-        "index": 5,
-        "type": "PathValidationRouter"
-      }
-    },
-    {
-      "source_node": {
-        "index": 5,
-        "type": "PathValidationRouter"
-      },
-      "target_node": {
-        "index": 7,
-        "type": "NormalRouter"
-      }
-    },
-    {
-      "source_node": {
-        "index": 7,
-        "type": "NormalRouter"
-      },
-      "target_node": {
-        "index": 8,
-        "type": "PathValidationRouter"
-      }
-    },
-    {
-      "source_node": {
-        "index": 8,
-        "type": "PathValidationRouter"
-      },
-      "target_node": {
         "index": 10,
-        "type": "NormalRouter"
-      }
-    },
-    {
-      "source_node": {
-        "index": 10,
-        "type": "NormalRouter"
-      },
-      "target_node": {
-        "index": 11,
         "type": "PathValidationRouter"
       }
     }
   ],
   "coverage_paths": [
-    "EndHost-0,NormalRouter-1,PathValidationRouter-2,NormalRouter-3,PathValidationRouter-5,NormalRouter-6,PathValidationRouter-8,NormalRouter-9,PathValidationRouter-11,NormalRouter-12,EndHost-13",
-    "EndHost-0,NormalRouter-1,PathValidationRouter-2,NormalRouter-4,PathValidationRouter-5,NormalRouter-7,PathValidationRouter-8,NormalRouter-10,PathValidationRouter-11,NormalRouter-12,EndHost-13"
+    "PathValidationRouter-1,NormalRouter-2,PathValidationRouter-4,NormalRouter-5,PathValidationRouter-7,NormalRouter-8,PathValidationRouter-10",
+    "PathValidationRouter-1,NormalRouter-3,PathValidationRouter-4,NormalRouter-6,PathValidationRouter-7,NormalRouter-9,PathValidationRouter-10"
   ]
 }
