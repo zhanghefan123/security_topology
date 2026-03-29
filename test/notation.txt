@@ -1,0 +1,23 @@
+path: EndHost-0->NormalRouter-1->PathValidationRouter-2->NormalRouter-4->PathValidationRouter-5->NormalRouter-7->PathValidationRouter-8->NormalRouter-10->PathValidationRouter-11->NormalRouter-12->EndHost-13 epoch: 162
+ack counter: 400->311->202->165->176->
+estimated legal ratio: 1.000000
+estimated legal ratio: 0.777500
+estimated legal ratio: 0.649518
+estimated legal ratio: 0.816832
+estimated legal ratio: 1.000000
+
+pv1   pv2    pv3    pv4
+400   311    202    165
+100% 77.75% 64.95%
+
+pv1 -> pv3 总共丢50%的包，那么即便丢弃了50%的包，剩下50%的包之中
+
+pv2 发送过来的之中有 64.95% 到达了 pv3
+
+pv3 发送过来的之中有 81.68% 到达了 pv4
+
+但是他们的丢包率其实都是一样的 (0.2, 0.3)
+
+legal ratio 出现了反向增加的情况，是因为只有 64% 的包到达了pv3
+
+是不是越到下游越是测不准

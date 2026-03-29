@@ -2,8 +2,9 @@ package entities
 
 import (
 	"fmt"
-	"gonum.org/v1/gonum/graph"
 	"zhanghefan123/security_topology/modules/entities/real_entities/online/types"
+
+	"gonum.org/v1/gonum/graph"
 )
 
 type SimAbstractNode struct {
@@ -36,6 +37,22 @@ func (simAbstractNode *SimAbstractNode) GetSimNodeBaseFromAbstract() (*SimNodeBa
 		}
 	}
 	return nil, fmt.Errorf("cannot get simNoedBase from abstract")
+}
+
+func (simAbstractNode *SimAbstractNode) GetPotentialFromAbstract() (float64, error) {
+	switch simAbstractNode.Type {
+	case types.SimNetworkNodeType_EndHost:
+		if endHost, ok := simAbstractNode.ActualNode.(*SimEndHost); ok {
+			return endHost.Potential, nil
+		}
+	case types.SimNetworkNodeType_NormalRouter:
+		return -1, fmt.Errorf("cannot get potential from normal router")
+	case types.SimNetworkNodeType_PathValidationRouter:
+		if simPathValidationRouter, ok := simAbstractNode.ActualNode.(*SimPathValidationRouter); ok {
+			return simPathValidationRouter.Potential, nil
+		}
+	}
+	return -1, fmt.Errorf("cannot get simNoedBase from abstract")
 }
 
 func (simAbstractNode *SimAbstractNode) GetSimNodeName() (string, error) {

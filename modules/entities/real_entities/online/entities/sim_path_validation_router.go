@@ -2,8 +2,9 @@ package entities
 
 import (
 	"fmt"
-	"github.com/bits-and-blooms/bloom/v3"
 	"zhanghefan123/security_topology/modules/entities/real_entities/online/types"
+
+	"github.com/bits-and-blooms/bloom/v3"
 )
 
 type SimPathValidationRouter struct {
@@ -12,6 +13,7 @@ type SimPathValidationRouter struct {
 	Weights                []float64
 	ExploreProbabilities   []float64
 	RectifiedGains         []float64
+	Potential              float64
 }
 
 func NewSimPathValidationRouter(NodeName string, NodeIndex int) *SimPathValidationRouter {
@@ -22,27 +24,49 @@ func NewSimPathValidationRouter(NodeName string, NodeIndex int) *SimPathValidati
 		Weights:                make([]float64, 0),
 		ExploreProbabilities:   make([]float64, 0),
 		RectifiedGains:         make([]float64, 0),
+		Potential:              0,
 	}
 }
 
 // ProcessPacket 进行数据包的处理
-func (pathValidationRouter *SimPathValidationRouter) ProcessPacket(simPacket *SimPacket) (bool, error) {
+func (pathValidationRouter *SimPathValidationRouter) ProcessPacket(simPacket *SimPacket, simulationStrategy types.SimStrategy) (bool, *SimPacket, error) {
+	var ackPacket *SimPacket = nil
+	var dropPacket = false
 	// find corresponding counter
 	if bloomFilter, ok := pathValidationRouter.SessionToFilterMapping[simPacket.SessionId]; ok {
-		var dropPacket bool
-		if simPacket.IsCorrupted {
-			dropPacket = true
-		} else {
-			// judge need to sample
-			if simPacket.SamplePvRouter.NodeName == pathValidationRouter.NodeName {
-				uuidBytes := []byte(simPacket.Uuid)
-				bloomFilter.Add(uuidBytes)
+		if simPacket.Type == types.SimPacketType_DataPacket {
+			if simPacket.IsCorrupted {
+				dropPacket = true
+			} else {
+				dropPacket = false
+				if simulationStrategy == types.SimStrategy_PerBatchBloomFilter {
+					// judge need to sample
+					sampleNodeName, _ := simPacket.SampleNode.GetSimNodeName()
+					if sampleNodeName == pathValidationRouter.NodeName {
+						uuidBytes := []byte(simPacket.Uuid)
+						bloomFilter.Add(uuidBytes)
+					}
+				} else if simulationStrategy == types.SimStrategy_PerPacketAck {
+					if simPacket.Type == types.SimPacketType_DataPacket {
+						// judge need to sample
+						sampleNodeName, _ := simPacket.SampleNode.GetSimNodeName()
+						if sampleNodeName == pathValidationRouter.NodeName {
+							ackPacket = CreateSimPacket(types.SimPacketType_AckPacket, simPacket.SessionId, simPacket.SampleNode)
+						}
+					}
+				} else {
+					return true, nil, fmt.Errorf("unsupported ")
+				}
 			}
-			dropPacket = false
+			return dropPacket, ackPacket, nil
+		} else if simPacket.Type == types.SimPacketType_AckPacket { // 对于 ack packet 检测不了, 直接放行
+			return false, nil, nil
+		} else {
+			return true, nil, fmt.Errorf("unsupported packet type")
 		}
-		return dropPacket, nil
+
 	} else {
-		return true, fmt.Errorf("process packet failed due to cannot find sessionid %s corresponding bloom filter", simPacket.SessionId)
+		return true, nil, fmt.Errorf("process packet failed due to cannot find sessionid %s corresponding bloom filter", simPacket.SessionId)
 	}
 }
 

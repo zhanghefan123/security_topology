@@ -2,6 +2,11 @@ syntax = "proto3";
 
 option go_package = "../types";
 
+enum SimPacketType {
+  DataPacket = 0;
+  AckPacket = 1;
+}
+
 enum NodeMaliciousActionType {
   CorruptPacket = 0;
   DropPacket = 1;
@@ -27,4 +32,9 @@ enum SimRecorderType {
 enum GainCalculationMode {
   SumEdgeGains = 0;
   SumEdgeAndRouterGains = 1;
+}
+
+enum SimStrategy {
+  PerBatchBloomFilter = 0;
+  PerPacketAck = 1;
 }

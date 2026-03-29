@@ -44,8 +44,8 @@
       "index": 4,
       "type": "NormalRouter",
       "corrupt_ratio": {
-        "start": 0.3,
-        "end": 1
+        "start": 0.2,
+        "end": 0.2
       },
       "drop_ratio": {
         "start": 0,
@@ -72,8 +72,8 @@
       "index": 7,
       "type": "NormalRouter",
       "corrupt_ratio": {
-        "start": 0.3,
-        "end": 1
+        "start": 0.2,
+        "end": 0.2
       },
       "drop_ratio": {
         "start": 0,
@@ -100,8 +100,8 @@
       "index": 10,
       "type": "NormalRouter",
       "corrupt_ratio": {
-        "start": 0.3,
-        "end": 1
+        "start": 0.2,
+        "end": 0.2
       },
       "drop_ratio": {
         "start": 0,

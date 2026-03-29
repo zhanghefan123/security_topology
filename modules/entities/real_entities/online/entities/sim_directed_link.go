@@ -40,13 +40,14 @@ func NewSimDirectedRealLink(source *SimAbstractNode, target *SimAbstractNode) *S
 
 type SimDirectedAbsLink struct {
 	*SimDirectedLinkBase
-	LinkType             types.SimDirectedLinkType // 链路的类型
-	Intermediate         *SimAbstractNode          // pvlink 的中间节点
-	Weights              []float64                 // 随时间 t 变化
-	LegalRatios          []float64                 // 随时间 t 变化
-	ExploreProbabilities []float64                 // 探索概率
-	RectifiedGains       []float64                 // 修正增益
-	Description          string                    // 对这个 directed pv link 的唯一描述
+	LinkType               types.SimDirectedLinkType // 链路的类型
+	Intermediate           *SimAbstractNode          // pvlink 的中间节点
+	Weights                []float64                 // 随时间 t 变化
+	LegalRatios            []float64                 // 随时间 t 变化
+	ExploreProbabilities   []float64                 // 探索概率
+	RectifiedGains         []float64                 // 修正增益
+	CurrentEdgeProbability float64                   // 为了 decomposition 而设置的一个临时变量
+	Description            string                    // 对这个 directed pv link 的唯一描述
 }
 
 // NewSimDirectedAbsLink 进行新的抽象链路的创建

@@ -14,7 +14,7 @@ import (
 )
 
 type SimGraph struct {
-	DirectedGraph               *simple.DirectedGraph
+	RealGraph                   *simple.DirectedGraph
 	GraphParams                 *params.GraphParams
 	SourceNode                  *SimAbstractNode
 	DestinationNode             *SimAbstractNode
@@ -38,7 +38,7 @@ type SimGraph struct {
 
 func NewSimGraph() *SimGraph {
 	return &SimGraph{
-		DirectedGraph:               simple.NewDirectedGraph(),
+		RealGraph:                   simple.NewDirectedGraph(),
 		GraphParams:                 &params.GraphParams{},
 		SimAbstractNodes:            make([]*SimAbstractNode, 0),
 		SimDirectedRealLinks:        make([]*SimDirectedRealLink, 0),
@@ -102,39 +102,44 @@ func (simGraph *SimGraph) LoadNodesFromNodeParams() error {
 			if err != nil {
 				return fmt.Errorf("create newSimNormalRouter failed, %w", err)
 			}
-			// create sim abstract node
-			graphNode := simGraph.DirectedGraph.NewNode()
+			// create sim abstract node in real graph
+			// -----------------------------------------------------------------------------
+			graphNode := simGraph.RealGraph.NewNode()
 			simAbstractNode := NewSimAbstract(nodeType, newSimNormalRouter, graphNode)
 			// add to list
 			simGraph.SimAbstractNodes = append(simGraph.SimAbstractNodes, simAbstractNode)
 			// add to mapping
 			simGraph.SimAbstractNodesMapping[newSimNormalRouter.NodeName] = simAbstractNode
 			// add node to the graph
-			simGraph.DirectedGraph.AddNode(simAbstractNode)
+			simGraph.RealGraph.AddNode(simAbstractNode)
+			// -----------------------------------------------------------------------------
 		} else if nodeType == types.SimNetworkNodeType_PathValidationRouter {
+			// create sim abstract node in real graph
+			// -----------------------------------------------------------------------------
 			// create actual node
 			newSimPathValidationRouter := NewSimPathValidationRouter(nodeName, nodeParam.Index)
 			// create sim abstract node
-			graphNode := simGraph.DirectedGraph.NewNode()
+			graphNode := simGraph.RealGraph.NewNode()
 			simAbstractNode := NewSimAbstract(nodeType, newSimPathValidationRouter, graphNode)
 			// add to list
 			simGraph.SimAbstractNodes = append(simGraph.SimAbstractNodes, simAbstractNode)
 			// add to mapping
 			simGraph.SimAbstractNodesMapping[newSimPathValidationRouter.NodeName] = simAbstractNode
 			// add node to the graph
-			simGraph.DirectedGraph.AddNode(simAbstractNode)
+			simGraph.RealGraph.AddNode(simAbstractNode)
+			// -----------------------------------------------------------------------------
 		} else if nodeType == types.SimNetworkNodeType_EndHost {
 			// create actual node
 			newEndHost := NewEndHost(nodeName, nodeParam.Index)
 			// create sim abstract node
-			graphNode := simGraph.DirectedGraph.NewNode()
+			graphNode := simGraph.RealGraph.NewNode()
 			simAbstractNode := NewSimAbstract(nodeType, newEndHost, graphNode)
 			// add to list
 			simGraph.SimAbstractNodes = append(simGraph.SimAbstractNodes, simAbstractNode)
 			// add to mapping
 			simGraph.SimAbstractNodesMapping[newEndHost.NodeName] = simAbstractNode
 			// add to graph
-			simGraph.DirectedGraph.AddNode(simAbstractNode)
+			simGraph.RealGraph.AddNode(simAbstractNode)
 		} else {
 			return fmt.Errorf("unsupported node type: %s", nodeType.String())
 		}
@@ -242,8 +247,8 @@ func (simGraph *SimGraph) LoadRealLinksFromLinkParams() error {
 		realLinkDesc := fmt.Sprintf("%s->%s", sourceNodeName, targetNodeName)
 		// create real link
 		realLink := NewSimDirectedRealLink(sourceSimAbstractNode, targetSimAbstractNode)
-		directGraphEdge := simGraph.DirectedGraph.NewEdge(sourceSimAbstractNode, targetSimAbstractNode)
-		simGraph.DirectedGraph.SetEdge(directGraphEdge)
+		directGraphEdge := simGraph.RealGraph.NewEdge(sourceSimAbstractNode, targetSimAbstractNode)
+		simGraph.RealGraph.SetEdge(directGraphEdge)
 		// append
 		simGraph.SimDirectedRealLinks = append(simGraph.SimDirectedRealLinks, realLink)
 		// update mapping
@@ -258,7 +263,7 @@ func (simGraph *SimGraph) LoadRealLinksFromLinkParams() error {
 
 // CalculateKShortestPaths 计算图中从源节点到目的节点的 k 条最短路径，并更新 AvailablePaths 和 AvailablePathMapping
 func (simGraph *SimGraph) CalculateKShortestPaths() error {
-	paths := path.YenKShortestPaths(simGraph.DirectedGraph, simGraph.GraphParams.KShortestPathParamas.NumberOfPaths, simGraph.GraphParams.KShortestPathParamas.LimitOfCost, simGraph.SourceNode, simGraph.DestinationNode)
+	paths := path.YenKShortestPaths(simGraph.RealGraph, simGraph.GraphParams.KShortestPathParamas.NumberOfPaths, simGraph.GraphParams.KShortestPathParamas.LimitOfCost, simGraph.SourceNode, simGraph.DestinationNode)
 
 	for _, graphNodeList := range paths {
 		singleSimPath := NewSimPath()
@@ -340,4 +345,32 @@ func (simGraph *SimGraph) RemovePathContainingTheLink(pvLink *SimDirectedAbsLink
 		}
 	}
 	simGraph.AvailablePaths = result
+}
+
+// FindAllOutputEdges 给定一个 endhost 和 pv router 找到所有的出边
+func (simGraph *SimGraph) FindAllOutputEdges(pvRouterOrEndHost *SimAbstractNode) ([]*SimDirectedAbsLink, error) {
+	var startNodeName, normalNodeName, destNodeName string
+	allOutputLinks := make([]*SimDirectedAbsLink, 0)
+	startNodeName, err := pvRouterOrEndHost.GetSimNodeName()
+	if err != nil {
+		return nil, fmt.Errorf("could not get start sim node name due to %w", err)
+	}
+	outputs := simGraph.RealGraph.From(pvRouterOrEndHost.ID())
+	for outputs.Next() {
+		currentNormal := outputs.Node()
+		normalNodeName, err = currentNormal.(*SimAbstractNode).GetSimNodeName()
+		if err != nil {
+			return nil, fmt.Errorf("could not get intermediate sim node name due to %w", err)
+		}
+		outputNormal := simGraph.RealGraph.From(currentNormal.ID())
+		outputNormal.Next()
+		nextPvRouterOrEndHost := outputNormal.Node()
+		destNodeName, err = nextPvRouterOrEndHost.(*SimAbstractNode).GetSimNodeName()
+		if err != nil {
+			return nil, fmt.Errorf("could not get dest sim node name due to %w", err)
+		}
+		outputLink := simGraph.SimDirectedAbsLinksMapping[fmt.Sprintf("%s->%s->%s", startNodeName, normalNodeName, destNodeName)]
+		allOutputLinks = append(allOutputLinks, outputLink)
+	}
+	return allOutputLinks, nil
 }

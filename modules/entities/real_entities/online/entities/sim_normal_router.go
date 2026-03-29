@@ -3,6 +3,7 @@ package entities
 import (
 	"fmt"
 	"zhanghefan123/security_topology/modules/entities/real_entities/online/decider"
+	"zhanghefan123/security_topology/modules/entities/real_entities/online/types"
 )
 
 type SimNormalRouter struct {
@@ -86,11 +87,24 @@ func (router *SimNormalRouter) TakeActionOnPacket(pkt *SimPacket) {
 
 // ProcessPacket 进行数据包的处理
 func (router *SimNormalRouter) ProcessPacket(pkt *SimPacket) error {
-	if pkt.IsDropped || pkt.IsCorrupted {
-		return fmt.Errorf("the packet is already dropped or corrupted")
+	if pkt.Type == types.SimPacketType_DataPacket {
+		if pkt.IsDropped || pkt.IsCorrupted {
+			return fmt.Errorf("the packet is already dropped or corrupted")
+		} else {
+			// 1. 首先决定是否丢包
+			router.TakeActionOnPacket(pkt)
+		}
+	} else if pkt.Type == types.SimPacketType_AckPacket {
+		if pkt.IsDropped {
+			return fmt.Errorf("the packet is already dropped or corrupted")
+		} else {
+			// 1. 首先决定是否丢包
+			// router.TakeActionOnPacket(pkt)
+			return nil
+		}
 	} else {
-		// 1. 首先决定是否丢包
-		router.TakeActionOnPacket(pkt)
+		return fmt.Errorf("unsupported packet type")
 	}
+
 	return nil
 }

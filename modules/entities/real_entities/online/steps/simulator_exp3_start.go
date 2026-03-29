@@ -10,8 +10,8 @@ import (
 	"chainmaker.org/chainmaker/common/v2/random/uuid"
 )
 
-// Start 进行 simulator 的运行
-func (s *Simulator) Start() error {
+// StartExp3 进行 simulator 的运行
+func (s *Simulator) StartExp3() error {
 	// Phase 1: Initialization
 	// Phase 1.1 initialize the weights, illegal ratios, and gains for each simDirectedPvLink,
 	for _, simDirectedPvLink := range s.SimGraph.SimDirectedAbsLinks {
@@ -111,6 +111,15 @@ func (s *Simulator) Start() error {
 		}
 		selectedPathIndex := probs.SampleDiscrete(pathProbabilities)
 		currentEpochSelectedPath := s.SimGraph.AvailablePaths[selectedPathIndex]
+		var sourceAbs *entities.SimAbstractNode
+		var source *entities.SimEndHost
+		var ok bool
+		if sourceAbs, ok = s.SimGraph.SimAbstractNodesMapping[s.SimGraph.GraphParams.SourceDestParams.Source]; ok {
+			source = sourceAbs.ActualNode.(*entities.SimEndHost)
+			source.SetCurrentEpochSelectedPath(currentEpochSelectedPath)
+		} else {
+			return fmt.Errorf("cannot retrieve source")
+		}
 
 		// Phase 2.5 pull the arm and observe the gain
 		// Phase 2.5.1 establish new session and remove the old session
@@ -153,106 +162,167 @@ func (s *Simulator) Start() error {
 		}
 
 		// Phase 2.5.2 send a batch of packets
-		sequence := currentEpochSelectedPath.GenerateSampleSequence(s.SimulatorParams.NumberOfPktsPerBatch)
-		counts := make([]float64, len(currentEpochSelectedPath.PvRouters))
+		sequence, err := currentEpochSelectedPath.GenerateSampleSequence(s.SimulatorParams.NumberOfPktsPerBatch, s.SimulatorParams.SimulationStrategy)
+		if err != nil {
+			return fmt.Errorf("generate sample sequence failed due to %w", err)
+		}
+		var counts []float64
+		if s.SimulatorParams.SimulationStrategy == types.SimStrategy_PerBatchBloomFilter {
+			counts = make([]float64, len(currentEpochSelectedPath.PvRouters))
+		} else {
+			counts = make([]float64, len(currentEpochSelectedPath.NodeNameToIndexMapping))
+		}
 		for j := 0; j < s.SimulatorParams.NumberOfPktsPerBatch; j++ {
 			// choose one node among the currentEpochSelectedPath
 			idx := sequence[j]
 			// create simpacket, 创建包的时候就需要知道采样哪个路由器
-			simPacket := entities.CreateSimPacket(currentEpochSelectedPath, currentEpochSessionId, currentEpochSelectedPath.PvRouters[idx])
+			var dataPacket *entities.SimPacket
+			if idx != len(currentEpochSelectedPath.PvRouters) {
+				dataPacket = entities.CreateSimPacket(types.SimPacketType_DataPacket, currentEpochSessionId, s.SimGraph.SimAbstractNodesMapping[currentEpochSelectedPath.PvRouters[idx].NodeName])
+			} else {
+				dataPacket = entities.CreateSimPacket(types.SimPacketType_DataPacket, currentEpochSessionId, currentEpochSelectedPath.NodeList[len(currentEpochSelectedPath.NodeList)-1])
+			}
 			// forward packet in all on-path routers
-			err := s.ForwardPacket(simPacket, currentEpochSelectedPath)
+			err = s.ForwardPacket(dataPacket, currentEpochSelectedPath, s.SimulatorParams.SimulationStrategy)
 			if err != nil {
 				return fmt.Errorf("forward packet failed due to %v", err)
 			}
 			counts[idx]++
 		}
 		finalString := ""
-		for index := range len(currentEpochSelectedPath.PvRouters) {
+		for index := range len(counts) {
 			finalString += fmt.Sprintf("%f->", counts[index])
 		}
 		fmt.Printf("counts: %s\n", finalString)
 
-		// Phase 2.5.3 retrieve information after sending a batch of packets
-		// 1. retrieve counters 首先需要发送 request, 我们需要计算 request 到达后续路由器的 prob, 可以到达 1,2,3,D
-		// 2. when prepare to transmit back, 如果从3返回, 那么可能携带了 3的信息, 然后到2丢弃, 然后1携带自己的信息返回
-		// 3. if we cannot get the information of counters, it means the link or pv router on link drops the packet. we should lower down the prob of selecting these links
-		recorders, err := s.RetrieveRecorders(currentEpochSessionId, currentEpochSelectedPath)
-		if err != nil {
-			return fmt.Errorf("failed to retrieve counters for sessionId %s", currentEpochSessionId)
-		}
-
-		// Phase 2.5.4 update current loss
-		packetReceivedByDest, err := recorders[len(recorders)-1].GetValidatedPacketsCount()
-		if err != nil {
-			return fmt.Errorf("get validated packet count failed due to %w", err)
-		}
-		s.SimGraph.CurrentLoss += float64(s.SimulatorParams.NumberOfPktsPerBatch) - float64(packetReceivedByDest) // 这个 batch 发送了多少个 - 目的节点最终接收了多少个
-
-		// Phase 2.5.5 update regret
-		_, bestPathloss, err := s.FindBestSimPathFromGodPerspective(epoch)
-		if err != nil {
-			return fmt.Errorf("failed to find best sim path: %w", err)
-		}
-
-		// Phase 2.5.6 calculate average regret
-		regret := s.CalculateRegret(bestPathloss, s.SimGraph.CurrentLoss, epoch)
-		s.SimGraph.Regrets = append(s.SimGraph.Regrets, regret)
-
-		// Phase 2.5.7 retrieve directed pv links
 		directedAbsLinks, directedAbsLinksMapping := currentEpochSelectedPath.GetDirectedAbsLinks() // 注意这个 abs links 既包括开头的 access link 还包括结尾的 access link
 		_, pvRoutersMapping := currentEpochSelectedPath.GetPvRouters()
 
-		// Phase 2.6 calculate legal ratio (recorders 包含最后的 EndHost 的 counter)
-		fmt.Printf("path desc: %s\n", currentEpochSelectedPath.Description)
-		finalString = ""
-		for index, recorder := range recorders {
-			if index != (len(recorders) - 1) {
-				validatedPacketCnt, _ := recorder.GetValidatedPacketsCount()
-				finalString += fmt.Sprintf("%d->", validatedPacketCnt)
+		if s.SimulatorParams.SimulationStrategy == types.SimStrategy_PerBatchBloomFilter {
+			// Phase 2.5.3 retrieve information after sending a batch of packets
+			// 1. retrieve counters 首先需要发送 request, 我们需要计算 request 到达后续路由器的 prob, 可以到达 1,2,3,D
+			// 2. when prepare to transmit back, 如果从3返回, 那么可能携带了 3的信息, 然后到2丢弃, 然后1携带自己的信息返回
+			// 3. if we cannot get the information of counters, it means the link or pv router on link drops the packet. we should lower down the prob of selecting these links
+			var recorders []*entities.SimRecorder
+			recorders, err = s.RetrieveRecorders(currentEpochSessionId, currentEpochSelectedPath)
+			if err != nil {
+				return fmt.Errorf("failed to retrieve counters for sessionId %s", currentEpochSessionId)
 			}
-		}
-		fmt.Printf("%s\n", finalString)
-		for index, recorder := range recorders {
-			var estimatedLegalRatio float64
-			var validatedPacketCnt int
-			var validatedPacketCntBefore int
-			var validatedPacketCntCurrent int
-			if index == 0 { // the first is the source
-				validatedPacketCnt, err = recorder.GetValidatedPacketsCount()
-				if err != nil {
-					return fmt.Errorf("get validated packet count failed due to: %w", err)
-				}
-				estimatedLegalRatio = math.Min((float64(validatedPacketCnt))/counts[0], 1.00) // packet cnt 之所以会不准, 因为使用的是布隆过滤器
-				fmt.Printf("estimated legal raito: %f\n", estimatedLegalRatio)
-			} else if index == (len(recorders) - 1) { // the final access link
-				validatedPacketCntBefore, err = recorders[index-1].GetValidatedPacketsCount()
-				if err != nil {
-					return fmt.Errorf("get validated packet count failed due to: %w", err)
-				}
-				estimatedLegalPacketCntBefore := float64(validatedPacketCntBefore) / counts[index-1] * float64(s.SimulatorParams.NumberOfPktsPerBatch)
-				validatedPacketCntCurrent, err = recorders[index].GetValidatedPacketsCount()
-				if err != nil {
-					return fmt.Errorf("get validated packet count failed due to: %w", err)
-				}
-				estimatedLegalRatio = math.Min(float64(validatedPacketCntCurrent)/estimatedLegalPacketCntBefore, 1.00)
-			} else { // the first is not the source
-				validatedPacketCntBefore, err = recorders[index-1].GetValidatedPacketsCount()
-				if err != nil {
-					return fmt.Errorf("get validated packet count failed due to: %w", err)
-				}
-				validatedPacketCntCurrent, err = recorders[index].GetValidatedPacketsCount()
-				if err != nil {
-					return fmt.Errorf("get validated packet count failed due to: %w", err)
-				}
-				estimatedLegalRatio = (float64(validatedPacketCntCurrent) + float64(s.SimulatorParams.NumberOfPktsPerBatch)*s.SimulatorParams.LaplaceSmoothingFactor) / (float64(validatedPacketCntBefore) + 2*float64(s.SimulatorParams.NumberOfPktsPerBatch)*s.SimulatorParams.LaplaceSmoothingFactor)
-				fmt.Printf("estimated legal raito: %f\n", estimatedLegalRatio)
+			// Phase 2.5.4 update current loss
+			var packetReceivedByDest int
+			packetReceivedByDest, err = recorders[len(recorders)-1].GetValidatedPacketsCount()
+			if err != nil {
+				return fmt.Errorf("get validated packet count failed due to %w", err)
 			}
-			directedAbsLinks[index].LegalRatios = append(directedAbsLinks[index].LegalRatios, estimatedLegalRatio) // if we not receive counter, we cannot calculate the illegal ratio
+			s.SimGraph.CurrentLoss += float64(s.SimulatorParams.NumberOfPktsPerBatch) - float64(packetReceivedByDest) // 这个 batch 发送了多少个 - 目的节点最终接收了多少个
+
+			// Phase 2.5.5 update regret
+			var bestPathloss float64
+			_, bestPathloss, err = s.FindBestSimPathFromGodPerspective(epoch)
+			if err != nil {
+				return fmt.Errorf("failed to find best sim path: %w", err)
+			}
+
+			// Phase 2.5.6 calculate average regret
+			regret := s.CalculateRegret(bestPathloss, s.SimGraph.CurrentLoss, epoch)
+			s.SimGraph.Regrets = append(s.SimGraph.Regrets, regret)
+
+			// Phase 2.6 calculate legal ratio (recorders 包含最后的 EndHost 的 counter)
+			fmt.Printf("path desc: %s\n", currentEpochSelectedPath.Description)
+			finalString = ""
+			for index, recorder := range recorders {
+				if index != (len(recorders) - 1) {
+					validatedPacketCnt, _ := recorder.GetValidatedPacketsCount()
+					finalString += fmt.Sprintf("%d->", validatedPacketCnt)
+				}
+			}
+			for index, recorder := range recorders {
+				var estimatedLegalRatio float64
+				var validatedPacketCnt int
+				var validatedPacketCntBefore int
+				var validatedPacketCntCurrent int
+				if index == 0 { // the first is the source
+					validatedPacketCnt, err = recorder.GetValidatedPacketsCount()
+					if err != nil {
+						return fmt.Errorf("get validated packet count failed due to: %w", err)
+					}
+					estimatedLegalRatio = math.Min((float64(validatedPacketCnt))/counts[0], 1.00) // packet cnt 之所以会不准, 因为使用的是布隆过滤器
+					fmt.Printf("estimated legal ratio: %f\n", estimatedLegalRatio)
+				} else if index == (len(recorders) - 1) { // the final access link
+					validatedPacketCntBefore, err = recorders[index-1].GetValidatedPacketsCount()
+					if err != nil {
+						return fmt.Errorf("get validated packet count failed due to: %w", err)
+					}
+					estimatedLegalPacketCntBefore := float64(validatedPacketCntBefore) / counts[index-1] * float64(s.SimulatorParams.NumberOfPktsPerBatch)
+					validatedPacketCntCurrent, err = recorders[index].GetValidatedPacketsCount()
+					if err != nil {
+						return fmt.Errorf("get validated packet count failed due to: %w", err)
+					}
+					estimatedLegalRatio = math.Min(float64(validatedPacketCntCurrent)/estimatedLegalPacketCntBefore, 1.00)
+				} else { // the first is not the source
+					validatedPacketCntBefore, err = recorders[index-1].GetValidatedPacketsCount()
+					if err != nil {
+						return fmt.Errorf("get validated packet count failed due to: %w", err)
+					}
+					validatedPacketCntCurrent, err = recorders[index].GetValidatedPacketsCount()
+					if err != nil {
+						return fmt.Errorf("get validated packet count failed due to: %w", err)
+					}
+					estimatedLegalRatio = (float64(validatedPacketCntCurrent) + float64(s.SimulatorParams.NumberOfPktsPerBatch)*s.SimulatorParams.LaplaceSmoothingFactor) / (float64(validatedPacketCntBefore) + 2*float64(s.SimulatorParams.NumberOfPktsPerBatch)*s.SimulatorParams.LaplaceSmoothingFactor)
+					fmt.Printf("estimated legal raito: %f\n", estimatedLegalRatio)
+				}
+				directedAbsLinks[index].LegalRatios = append(directedAbsLinks[index].LegalRatios, estimatedLegalRatio) // if we not receive counter, we cannot calculate the illegal ratio
+			}
+		} else if s.SimulatorParams.SimulationStrategy == types.SimStrategy_PerPacketAck {
+			finalString = ""
+			for _, ackCounter := range source.AckCounters {
+				finalString += fmt.Sprintf("%d->", ackCounter)
+			}
+			fmt.Printf("path: %s epoch: %d ack counter: %s\n", currentEpochSelectedPath.Description, epoch, finalString)
+
+			// 2.5.4 update current loss
+			var ackReceivedByDest int
+			var packetReceivedByDest float64
+			ackReceivedByDest = source.AckCounters[len(source.AckCounters)-1]
+			packetReceivedByDest = float64(ackReceivedByDest) / counts[len(counts)-1] * float64(s.SimulatorParams.NumberOfPktsPerBatch)
+			s.SimGraph.CurrentLoss += float64(s.SimulatorParams.NumberOfPktsPerBatch) - packetReceivedByDest // 这个 batch 发送了多少个 - 目的节点最终接收了多少个
+
+			// 2.5.5  update regret
+			var bestPathloss float64
+			_, bestPathloss, err = s.FindBestSimPathFromGodPerspective(epoch)
+			if err != nil {
+				return fmt.Errorf("failed to find best sim path: %w", err)
+			}
+
+			// Phase 2.5.6 calculate average regret
+			regret := s.CalculateRegret(bestPathloss, s.SimGraph.CurrentLoss, epoch)
+			s.SimGraph.Regrets = append(s.SimGraph.Regrets, regret)
+
+			// 2.6 calculate delivery ratio
+			for index, ackCount := range source.AckCounters {
+				var estimatedLegalRatio float64
+				var validatedPacketCntBefore int
+				var validatedPacketCntCurrent int
+				if index == 0 { // the first is the source
+					estimatedLegalRatio = math.Min((float64(ackCount))/counts[0], 1.00) // packet cnt 之所以会不准, 因为使用的是布隆过滤器
+					fmt.Printf("estimated legal ratio: %f\n", estimatedLegalRatio)
+				} else { // the first is not the source
+					validatedPacketCntBefore = source.AckCounters[index-1]
+					validatedPacketCntCurrent = source.AckCounters[index]
+					estimatedLegalRatio = (float64(validatedPacketCntCurrent) + float64(s.SimulatorParams.NumberOfPktsPerBatch)*s.SimulatorParams.LaplaceSmoothingFactor) / (float64(validatedPacketCntBefore) + 2*float64(s.SimulatorParams.NumberOfPktsPerBatch)*s.SimulatorParams.LaplaceSmoothingFactor)
+					estimatedLegalRatio = math.Min(estimatedLegalRatio, 1.00)
+					fmt.Printf("estimated legal ratio: %f\n", estimatedLegalRatio)
+				}
+				directedAbsLinks[index].LegalRatios = append(directedAbsLinks[index].LegalRatios, estimatedLegalRatio) // if we not receive counter, we cannot calculate the illegal ratio
+			}
+		} else {
+			return fmt.Errorf("unsupported strategy type")
 		}
+
 		// for the undetected link the legal ratio should be set to 1
-		for _, directedAbsLink := range s.SimGraph.SimDirectedAbsLinks {
-			if _, ok := directedAbsLinksMapping[directedAbsLink.Description]; !ok {
+		var directedAbsLink *entities.SimDirectedAbsLink
+		for _, directedAbsLink = range s.SimGraph.SimDirectedAbsLinks {
+			if _, ok = directedAbsLinksMapping[directedAbsLink.Description]; !ok {
 				directedAbsLink.LegalRatios = append(directedAbsLink.LegalRatios, 0)
 			}
 		}
@@ -261,15 +331,19 @@ func (s *Simulator) Start() error {
 		// traverse each edge
 		for _, directedPvLink := range s.SimGraph.SimDirectedAbsLinks {
 			// 如果是选中的链路
-			if _, ok := directedAbsLinksMapping[directedPvLink.Description]; ok {
+			if _, ok = directedAbsLinksMapping[directedPvLink.Description]; ok {
 				// calculate the legal ratio
 				legalRatio := directedPvLink.LegalRatios[epoch]
 				// calculate the estimated gain
 				// estimatedGain := math.Pow(legalRatio, s.SimulatorParams.Lambda) // 假设 legal ratio = 90%，那么 estimated gain 在 lambda = 2 的时候是 81%
-				estimatedGain := s.GetRectifiedGain(legalRatio)
+				estimatedGain := s.GetEstimatedGain(legalRatio)
+				fmt.Printf("estimated gain: %f\n", estimatedGain)
 				//fmt.Printf("legal ratio: %f, rectified gain: %f\n", legalRatio, estimatedGain)
 				// calculate the rectified gain by dividing the estimated gain by the probability of choosing this edge
-				rectifiedGain := (estimatedGain + s.SimulatorParams.Bias) / directedPvLink.ExploreProbabilities[epoch-1]
+				// 1 / 0.25
+				rectifiedGain := (estimatedGain + s.SimulatorParams.Bias) / (directedPvLink.ExploreProbabilities[epoch-1])
+				fmt.Printf("link %s | explore prob: %f\n", directedPvLink.Description, directedPvLink.ExploreProbabilities[epoch-1])
+				fmt.Printf("rectified gain: %f\n", rectifiedGain)
 				// update the gain of this edge
 				directedPvLink.RectifiedGains = append(directedPvLink.RectifiedGains, rectifiedGain)
 				// set the rectified gains of the router
@@ -297,7 +371,8 @@ func (s *Simulator) Start() error {
 				if err != nil {
 					return fmt.Errorf("get sim node failed due to: %w", err)
 				}
-				if unselectedPvRouter, ok := pvRoutersMapping[nodeName]; !ok {
+				var unselectedPvRouter *entities.SimPathValidationRouter
+				if unselectedPvRouter, ok = pvRoutersMapping[nodeName]; !ok {
 					// calculate the estimated gain
 					rectifiedGain := s.SimulatorParams.Bias / unselectedPvRouter.ExploreProbabilities[epoch-1]
 					// update the gain of this edge
@@ -315,7 +390,8 @@ func (s *Simulator) Start() error {
 		// 2.8.2 update the router weights
 		for _, absNode := range s.SimGraph.SimAbstractNodes {
 			if absNode.Type == types.SimNetworkNodeType_PathValidationRouter {
-				if pvRouter, ok := absNode.ActualNode.(*entities.SimPathValidationRouter); ok {
+				var pvRouter *entities.SimPathValidationRouter
+				if pvRouter, ok = absNode.ActualNode.(*entities.SimPathValidationRouter); ok {
 					currentEpochWeight := pvRouter.Weights[epoch-1] * math.Exp(s.SimulatorParams.LearningRate*pvRouter.RectifiedGains[epoch])
 					pvRouter.Weights = append(pvRouter.Weights, currentEpochWeight)
 				} else {
@@ -349,8 +425,8 @@ func (s *Simulator) Start() error {
 	return nil
 }
 
-// GetRectifiedGain 将 legal ratio 作为输入, 进行修正
-func (s *Simulator) GetRectifiedGain(deliveryRatio float64) float64 {
+// GetEstimatedGain 将 legal ratio 作为输入, 进行修正
+func (s *Simulator) GetEstimatedGain(deliveryRatio float64) float64 {
 	minDR := s.SimulatorParams.MinimumDeliveryRatio
 
 	// 1. 处理边界：防止 deliveryRatio 为 0 或负数导致 NaN/Inf
@@ -423,7 +499,8 @@ func (s *Simulator) DestroySession(sessionId string, simPath *entities.SimPath) 
 }
 
 // ForwardPacket 将数据包在路径上进行转发
-func (s *Simulator) ForwardPacket(packet *entities.SimPacket, selectedPath *entities.SimPath) error {
+func (s *Simulator) ForwardPacket(packet *entities.SimPacket, selectedPath *entities.SimPath, simulationStrategy types.SimStrategy) error {
+	reversePath := make([]*entities.SimAbstractNode, 0)
 	for index, abstractSimNode := range selectedPath.NodeList {
 		if index != 0 { // 源节点不进行处理
 			// 1. 进行 normal router 的转发
@@ -434,28 +511,79 @@ func (s *Simulator) ForwardPacket(packet *entities.SimPacket, selectedPath *enti
 						return fmt.Errorf("process packet failed: %w", err)
 					}
 					if packet.IsDropped {
+						fmt.Printf("packet being dropped at %s\n", router.NodeName)
 						break
 					}
 				}
 			} else if abstractSimNode.Type == types.SimNetworkNodeType_PathValidationRouter { // 2. 进行 pv router 的转发
 				if pvRouter, ok := abstractSimNode.ActualNode.(*entities.SimPathValidationRouter); ok {
-					dropPacket, err := pvRouter.ProcessPacket(packet)
+					dropPacket, ackPacket, err := pvRouter.ProcessPacket(packet, simulationStrategy)
 					if err != nil {
 						return fmt.Errorf("pv router process packet failed due to: %v", err)
 					}
 					if dropPacket {
 						break
 					}
+					// 如果采样的节点是路径验证节点，则沿着反向路径进行 ack 的发送
+					if ackPacket != nil {
+						err = s.ForwardAck(reversePath, ackPacket, simulationStrategy)
+						if err != nil {
+							return fmt.Errorf("forward ack failed due to: %w", err)
+						}
+					}
 				}
 			} else if abstractSimNode.Type == types.SimNetworkNodeType_EndHost { // 3. 进行 endhost 的处理
 				if endHost, ok := abstractSimNode.ActualNode.(*entities.SimEndHost); ok {
-					err := endHost.ProcessPacket(packet)
+					ackPacket, err := endHost.ProcessPacket(packet, simulationStrategy)
 					if err != nil {
 						return fmt.Errorf("end host process packet failed due to: %v", err)
+					}
+					// 如果采样的节点是目的节点，沿着反向路径进行 ack 的发送
+					if ackPacket != nil {
+						err = s.ForwardAck(reversePath, ackPacket, simulationStrategy)
+						if err != nil {
+							return fmt.Errorf("forward ack failed due to %v", err)
+						}
 					}
 				}
 			} else {
 				return fmt.Errorf("unsupported path node type")
+			}
+		}
+		reversePath = append([]*entities.SimAbstractNode{abstractSimNode}, reversePath...)
+	}
+	return nil
+}
+
+// ForwardAck 沿着反向路径进行 ack 的发送
+func (s *Simulator) ForwardAck(reversePath []*entities.SimAbstractNode, ackPacket *entities.SimPacket, simulationStrategy types.SimStrategy) error {
+	for _, abstractSimNode := range reversePath {
+		if abstractSimNode.Type == types.SimNetworkNodeType_NormalRouter { // 1. 进行 normal router 的处理
+			if router, ok := abstractSimNode.ActualNode.(*entities.SimNormalRouter); ok {
+				err := router.ProcessPacket(ackPacket)
+				if err != nil {
+					return fmt.Errorf("process packet failed: %w", err)
+				}
+				if ackPacket.IsDropped {
+					break
+				}
+			}
+		} else if abstractSimNode.Type == types.SimNetworkNodeType_PathValidationRouter { // 2. 进行 path validation router 的处理
+			if pvRouter, ok := abstractSimNode.ActualNode.(*entities.SimPathValidationRouter); ok {
+				dropPacket, _, err := pvRouter.ProcessPacket(ackPacket, simulationStrategy)
+				if err != nil {
+					return fmt.Errorf("pv router process packet failed due to: %v", err)
+				}
+				if dropPacket {
+					break
+				}
+			}
+		} else if abstractSimNode.Type == types.SimNetworkNodeType_EndHost { // 3. 进行 endhost 的处理
+			if endHost, ok := abstractSimNode.ActualNode.(*entities.SimEndHost); ok {
+				_, err := endHost.ProcessPacket(ackPacket, simulationStrategy)
+				if err != nil {
+					return fmt.Errorf("end host process packet failed due to: %v", err)
+				}
 			}
 		}
 	}

@@ -29,7 +29,7 @@ func Test() {
 		// 6. 打印 edges
 
 		graph.HierarchyDivision(atlasComplexGraph.KShortestPaths, 0, &finalSegmentsTmp)
-		//edgeIterator := atlasComplexGraph.DirectedGraph.Edges()
+		//edgeIterator := atlasComplexGraph.RealGraph.Edges()
 		//for {
 		//	if !(edgeIterator.Next()) {
 		//		break

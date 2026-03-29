@@ -14,6 +14,7 @@ type SimPath struct {
 	PvRoutersMapping        map[string]*SimPathValidationRouter // 这条路径上所有的 pv router 的 mapping
 	DirectedAbsLinks        []*SimDirectedAbsLink               // 这条路径上所有的 directed pv link
 	DirectedAbsLinksMapping map[string]*SimDirectedAbsLink      // 从 description 到 directed pv link 的 mapping
+	NodeNameToIndexMapping  map[string]int                      // 从节点的名称到对应索引
 	Weights                 []float64                           // 这条路径的历史权重
 	ExploreProbabilities    []float64                           // 根据 weight 算出来的当前应该选的路径的概率
 	Gains                   []float64                           // 这条路径的增益，增益是根据这条路径上所有 directed pv link 的 gain 算出来的
@@ -30,6 +31,7 @@ func NewSimPath() *SimPath {
 		PvRoutersMapping:        make(map[string]*SimPathValidationRouter),
 		DirectedAbsLinks:        make([]*SimDirectedAbsLink, 0),
 		DirectedAbsLinksMapping: make(map[string]*SimDirectedAbsLink),
+		NodeNameToIndexMapping:  make(map[string]int),
 		Weights:                 make([]float64, 0),
 		ExploreProbabilities:    make([]float64, 0),
 		Gains:                   make([]float64, 0),
@@ -110,6 +112,7 @@ func (simPath *SimPath) UpdateInfo(nameToPvLinkMapping map[string]*SimDirectedAb
 	directedPvLinksMapping := make(map[string]*SimDirectedAbsLink)
 
 	startIndex := 0
+	currentNodeIndex := 0
 	var sourceNode, targetNode, intermediateNode *SimAbstractNode
 	var sourceNodeName, intermediateNodeName, targetNodeName string
 	var err error
@@ -136,7 +139,9 @@ func (simPath *SimPath) UpdateInfo(nameToPvLinkMapping map[string]*SimDirectedAb
 			}
 			// get description of the directed pv link
 			pvLinkDescription := fmt.Sprintf("%s->%s->%s", sourceNodeName, intermediateNodeName, targetNodeName)
-
+			// record mapping
+			simPath.NodeNameToIndexMapping[targetNodeName] = currentNodeIndex
+			currentNodeIndex++
 			// get pv link from mapping
 			directedPvLink := nameToPvLinkMapping[pvLinkDescription]
 			// update pv router list
@@ -187,22 +192,39 @@ func (simPath *SimPath) CalculateScore() {
 //	return simPath.PvRouters[idx], idx
 //}
 
-func (simPath *SimPath) GenerateSampleSequence(batchSize int) []int {
-	numRouters := len(simPath.PvRouters)
+func (simPath *SimPath) GenerateSampleSequence(batchSize int, simlulationStrategy types.SimStrategy) ([]int, error) {
 	sequence := make([]int, batchSize)
+	if simlulationStrategy == types.SimStrategy_PerBatchBloomFilter {
+		numRouters := len(simPath.PvRouters)
+		// 1. 确定性分配：确保每个 Router 分配到的次数尽可能相等
+		for i := 0; i < batchSize; i++ {
+			sequence[i] = i % numRouters
+		}
 
-	// 1. 确定性分配：确保每个 Router 分配到的次数尽可能相等
-	for i := 0; i < batchSize; i++ {
-		sequence[i] = i % numRouters
+		// 2. 随机洗牌：打乱顺序，让攻击者无法预测
+		// 使用加密安全的随机数种子更佳
+		rand.Shuffle(len(sequence), func(i, j int) {
+			sequence[i], sequence[j] = sequence[j], sequence[i]
+		})
+
+		return sequence, nil
+	} else if simlulationStrategy == types.SimStrategy_PerPacketAck {
+		numNodes := len(simPath.PvRouters) + 1 // +1 是最后的目的节点也可能是采样的节点
+		// 1. 确定性分配：确保每个 Router 分配到的次数尽可能相等
+		for i := 0; i < batchSize; i++ {
+			sequence[i] = i % numNodes
+		}
+
+		// 2. 随机洗牌：打乱顺序，让攻击者无法预测
+		// 使用加密安全的随机数种子更佳
+		rand.Shuffle(len(sequence), func(i, j int) {
+			sequence[i], sequence[j] = sequence[j], sequence[i]
+		})
+
+		return sequence, nil
+	} else {
+		return sequence, fmt.Errorf("not supported simulation type")
 	}
-
-	// 2. 随机洗牌：打乱顺序，让攻击者无法预测
-	// 使用加密安全的随机数种子更佳
-	rand.Shuffle(len(sequence), func(i, j int) {
-		sequence[i], sequence[j] = sequence[j], sequence[i]
-	})
-
-	return sequence
 }
 
 func SamePath(pathA, pathB *SimPath) bool {

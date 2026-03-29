@@ -222,7 +222,7 @@ func FindVirtualEdgesInHighLevelPath(segment *entities.Segment, multipathGraph *
 }
 
 //// FindEdgeWithinSegmentButNotInGraph 找到存在于 Segment 但是不在 Graph 之中的
-//func FindEdgeWithinSegmentButNotInGraph(segment *entities.Segment, multipathGraph *simple.DirectedGraph) []*entities.DirectedEdge {
+//func FindEdgeWithinSegmentButNotInGraph(segment *entities.Segment, multipathGraph *simple.RealGraph) []*entities.DirectedEdge {
 //	// 找到的虚链路
 //	var virtualEdges []*entities.DirectedEdge
 //	// segment 之中的高层节点的顺序可能是不对的, 我们需要通过最短路径算法算一遍得到应该的顺序是什么样的
