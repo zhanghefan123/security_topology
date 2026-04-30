@@ -33,7 +33,7 @@ func GenerateMultipathSelirMultipaths(numberOfPath int) ([]*entities.Path, map[s
 func GenerateAtlasPathsAndSegments(numberOfPath int) ([]*entities.Path, []*entities.Segment, map[string][]*entities.Segment, *Params) {
 	// 1. 创建图
 	resourcesPath := configs.TopConfiguration.PathConfig.ResourcesPath
-	topologyFilePath := filepath.Join(resourcesPath, fmt.Sprintf("./multipath/%s.json", configs.TopConfiguration.PathValidationConfig.ValidationTopology))
+	topologyFilePath := filepath.Join(resourcesPath, fmt.Sprintf("./multipath/%s.json", configs.TopConfiguration.PathValidationConfig.MultipathConfig.ValidationTopology))
 	atlasComplexGraph := CreateGraph(topologyFilePath, "")
 	// 2. 图初始化
 	err := atlasComplexGraph.Init()

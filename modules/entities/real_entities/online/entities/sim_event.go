@@ -6,9 +6,9 @@ type SimEvent struct {
 }
 
 type UpdateNormalRouter struct {
-	NormalRouterName  string  // 普通节点名称
-	StartDropRatio    float64 // 起始丢包率
-	EndDropRatio      float64 // 结束丢包率
-	StartIllegalRatio float64 // 非法率起始值
-	EndIllegalRatio   float64 // 非法率终止值
+	NormalRouterName         string  // 普通节点名称
+	StartCorruptRatio        float64 // 起始破坏率
+	EndCorruptRatio          float64 // 结束破坏率
+	StartCorruptSpecialRatio float64 // 起始ack破坏率
+	EndCorruptSpecialRatio   float64 // 结束ack破坏率
 }

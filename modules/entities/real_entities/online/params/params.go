@@ -8,6 +8,7 @@ type GraphParams struct {
 	PvLinks              []SimAbsLinkParam    `json:"pv_links"`
 	Links                []SimLinkParam       `json:"links"`
 	CoveragePaths        []string             `json:"coverage_paths"`
+	AvailablePaths       []string             `json:"available_paths"` // 可行的路径
 }
 
 // SourceDestParams 图的源节点和目的节点的参数
@@ -26,7 +27,6 @@ type KShortestPathParmas struct {
 type SimNodeParam struct {
 	Index                     int               `json:"index"`
 	Type                      string            `json:"type"`
-	DropRatio                 RatioDistribution `json:"drop_ratio"`
 	CorruptRatio              RatioDistribution `json:"corrupt_ratio"`
 	CorruptSpecialPacketRatio RatioDistribution `json:"corrupt_special_packet_ratio"`
 }

@@ -8,5 +8,14 @@ const (
 	FlagNameShortHandOfOperationType = "o"
 
 	FlagNameOfExperimentNumber          = "experiment-number"
-	FlagNameShortHandOfExperimentNUmber = "e"
+	FlagNameShortHandOfExperimentNumber = "e"
+
+	FlagNameOfSecPathMabHops          = "sec-path-mab-hops"
+	FlagNameShortHandOfSecPathMabHops = "s"
+
+	FlagNameOfLowRatio          = "low-ratio"
+	FlagNameShortHandOfLowRatio = "l"
+
+	FlagNameOfHighRatio          = "high-ratio"
+	FlagNameShortHandOfHighRatio = "r"
 )

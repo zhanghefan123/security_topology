@@ -102,7 +102,7 @@ func SetInterfacesDelay(containerPid int, interfaces []string, delays []float64)
 }
 
 // SetInterfaceDelay 设置接口的延迟
-func SetInterfaceDelay(containerInterface *intf.NetworkInterface, containerPid int, delayMs int) error {
+func SetInterfaceDelay(containerInterface *intf.NetworkInterface, containerPid int, delayMs float64) error {
 	// 1. 获取环境的 namespace
 	hostNetNs, err := netns.Get()
 	if err != nil {

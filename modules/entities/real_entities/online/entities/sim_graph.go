@@ -8,6 +8,7 @@ import (
 	"strings"
 	"zhanghefan123/security_topology/modules/entities/real_entities/online/params"
 	"zhanghefan123/security_topology/modules/entities/real_entities/online/types"
+	"zhanghefan123/security_topology/utils/file"
 
 	"gonum.org/v1/gonum/graph/path"
 	"gonum.org/v1/gonum/graph/simple"
@@ -96,7 +97,6 @@ func (simGraph *SimGraph) LoadNodesFromNodeParams() error {
 			// create actual node
 			var newSimNormalRouter *SimNormalRouter
 			newSimNormalRouter, err = NewSimNormalRouter(nodeName, nodeParam.Index,
-				nodeParam.DropRatio.Start, nodeParam.DropRatio.End,
 				nodeParam.CorruptRatio.Start, nodeParam.CorruptRatio.End,
 				nodeParam.CorruptSpecialPacketRatio.Start, nodeParam.CorruptSpecialPacketRatio.End)
 			if err != nil {
@@ -192,7 +192,7 @@ func (simGraph *SimGraph) LoadLinkParams(linkType types.SimDirectedLinkType, lin
 			return fmt.Errorf("cannot find target sim abstract node, name: %s", targetNodeName)
 		}
 		// get description
-		linkDesc := fmt.Sprintf("%s->%s->%s", sourceNodeName, intermediateNodeName, targetNodeName)
+		linkDesc := fmt.Sprintf("%s,%s,%s", sourceNodeName, intermediateNodeName, targetNodeName)
 		// create pv link
 		link := NewSimDirectedAbsLink(linkType, linkDesc, sourceSimAbstractNode, intermediateSimAbstractNode, targetSimAbstractNode)
 		// update pv link list
@@ -244,7 +244,7 @@ func (simGraph *SimGraph) LoadRealLinksFromLinkParams() error {
 			return fmt.Errorf("cannot find target sim abstract node, name: %s", targetNodeName)
 		}
 		// get description
-		realLinkDesc := fmt.Sprintf("%s->%s", sourceNodeName, targetNodeName)
+		realLinkDesc := fmt.Sprintf("%s,%s", sourceNodeName, targetNodeName)
 		// create real link
 		realLink := NewSimDirectedRealLink(sourceSimAbstractNode, targetSimAbstractNode)
 		directGraphEdge := simGraph.RealGraph.NewEdge(sourceSimAbstractNode, targetSimAbstractNode)
@@ -307,6 +307,11 @@ func (simGraph *SimGraph) CalculateKShortestPaths() error {
 		simPath.PathId = index + 1
 	}
 
+	// 放到 simGraph 的 availablePaths 之中
+	for _, simPath := range simGraph.AvailablePaths {
+		simGraph.GraphParams.AvailablePaths = append(simGraph.GraphParams.AvailablePaths, simPath.Description)
+	}
+
 	return nil
 }
 
@@ -318,7 +323,7 @@ func (simGraph *SimGraph) LoadCoveragePathsFromParams() error {
 		routerListString := strings.Split(coveragePathString, ",")
 		for index, routerName := range routerListString {
 			if index != (len(routerListString) - 1) {
-				pathDescription += fmt.Sprintf("%s->", routerName)
+				pathDescription += fmt.Sprintf("%s,", routerName)
 			} else {
 				pathDescription += fmt.Sprintf("%s", routerName)
 			}
@@ -369,8 +374,20 @@ func (simGraph *SimGraph) FindAllOutputEdges(pvRouterOrEndHost *SimAbstractNode)
 		if err != nil {
 			return nil, fmt.Errorf("could not get dest sim node name due to %w", err)
 		}
-		outputLink := simGraph.SimDirectedAbsLinksMapping[fmt.Sprintf("%s->%s->%s", startNodeName, normalNodeName, destNodeName)]
+		outputLink := simGraph.SimDirectedAbsLinksMapping[fmt.Sprintf("%s,%s,%s", startNodeName, normalNodeName, destNodeName)]
 		allOutputLinks = append(allOutputLinks, outputLink)
 	}
 	return allOutputLinks, nil
+}
+
+func (simGraph *SimGraph) MarshalParamsWithPathsIntoFile(filePath string) error {
+	result, err := json.Marshal(simGraph.GraphParams)
+	if err != nil {
+		return fmt.Errorf("marshal failed due to: %w", err)
+	}
+	err = file.WriteStringIntoFile(filePath, string(result))
+	if err != nil {
+		return fmt.Errorf("write string into file failed due to %w", err)
+	}
+	return nil
 }

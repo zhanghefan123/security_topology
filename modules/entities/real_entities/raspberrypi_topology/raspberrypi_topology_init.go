@@ -98,7 +98,7 @@ func (rpt *RaspberrypiTopology) GenerateNodes() error {
 			rpt.AllAbstractNodes = append(rpt.AllAbstractNodes, abstractRouter)
 			rpt.AbstractNodesMap[routerTmp.ContainerName] = abstractRouter
 		case types.NetworkNodeType_LirNode:
-			lirNodeTmp := nodes.NewLiRNode(nodeId, 0, 0)
+			lirNodeTmp := nodes.NewLiRNode(nodeId, 0, 0, params.SpecialParams{})
 			rpt.LirNodes = append(rpt.LirNodes, lirNodeTmp)
 			// 注意只能唯一创建一次
 			abstractLirNode := node.NewAbstractNode(types.NetworkNodeType_LirNode, lirNodeTmp, rpt.TopologyGraph)

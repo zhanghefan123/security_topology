@@ -6,10 +6,12 @@ import (
 	"github.com/docker/docker/api/types/container"
 	docker "github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+	"os"
 	"path/filepath"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/entities/real_entities/nodes"
 	"zhanghefan123/security_topology/modules/entities/types"
+	"zhanghefan123/security_topology/utils/file"
 )
 
 // CreateLirNode 创建 LiRNode
@@ -24,6 +26,10 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode, graphNodeId in
 		// ipv4 的相关网络配置
 		"net.ipv4.ip_forward":          "1",
 		"net.ipv4.conf.all.forwarding": "1",
+
+		// 进行设置
+		//"net.core.rmem_max":     "1073741824", // 1GB
+		//"net.core.rmem_default": "1073741824",
 
 		// ipv6 的相关网络配置
 		"net.ipv6.conf.default.disable_ipv6":     "0",
@@ -68,6 +74,20 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode, graphNodeId in
 	numberOfHashFunctions := configs.TopConfiguration.PathValidationConfig.NumberOfHashFunctions
 	// 4.3 获取路由表类型
 	routingTableType := configs.TopConfiguration.PathValidationConfig.RoutingTableType
+	// 4.4 判断自己是否是源节点并且开启了 sec_path_mab
+	if lirNode.Id == 1 && configs.TopConfiguration.PathValidationConfig.TransmissionType == (int)(types.TransmissionType_MAB) {
+		topologyDir := fmt.Sprintf("%s/%s/topology", configs.TopConfiguration.PathConfig.ConfigGeneratePath, lirNode.ContainerName)
+		err := os.MkdirAll(topologyDir, os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("make topology dir failed due to: %v", err)
+		}
+		sourceFile := fmt.Sprintf("%s/online_topologies/sec_path_mab_topology.json", configs.TopConfiguration.PathConfig.ResourcesPath)
+		targetFile := fmt.Sprintf("%s/sec_path_mab_topology.json", topologyDir)
+		err = file.CopyFileSmall(sourceFile, targetFile)
+		if err != nil {
+			return fmt.Errorf("copy sec path mab topology file failed due to: %v", err)
+		}
+	}
 
 	// 5. 创建容器卷映射
 	volumes := []string{
@@ -91,8 +111,21 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode, graphNodeId in
 		fmt.Sprintf("%s=%d", "LIR_SINGLE_TIME_ENCODING_COUNT", configs.TopConfiguration.PathValidationConfig.LiRSingleTimeEncodingCount),
 		fmt.Sprintf("%s=%t", "ENABLE_SRV6", configs.TopConfiguration.NetworkConfig.EnableSRv6),
 		fmt.Sprintf("%s=%d", "NUMBER_OF_NODES", numberOfLirNodes),
-		fmt.Sprintf("%s=%d", "MULTIPATH_ROUTING_TYPE", configs.TopConfiguration.PathValidationConfig.MultipathRoutingType),
+		fmt.Sprintf("%s=%d", "MULTIPATH_ROUTING_TYPE", configs.TopConfiguration.PathValidationConfig.MultipathConfig.MultipathRoutingType),
+		fmt.Sprintf("%s=%d", "TRANSMISSION_TYPE", configs.TopConfiguration.PathValidationConfig.TransmissionType),
+
+		// 进行 malicious params 的添加
+		fmt.Sprintf("%s=%d", "CORRUPT_RATIO_START", lirNode.SpecialParams.MaliciousParams.CorruptRatio.Start),
+		fmt.Sprintf("%s=%d", "CORRUPT_RATIO_END", lirNode.SpecialParams.MaliciousParams.CorruptRatio.End),
+		fmt.Sprintf("%s=%d", "CORRUPT_SPECIAL_PACKET_RATIO_START", lirNode.SpecialParams.MaliciousParams.CorruptSpecialPacketRatio.Start),
+		fmt.Sprintf("%s=%d", "CORRUPT_SPECIAL_PACKET_RATIO_END", lirNode.SpecialParams.MaliciousParams.CorruptSpecialPacketRatio.End),
+
+		// 进行 router_type 的添加
+		fmt.Sprintf("%s=%d", "ROUTER_TYPE", lirNode.SpecialParams.InnerRouterType),
+		fmt.Sprintf("%s=%d", "SEC_PATH_MAB_TYPE", configs.TopConfiguration.PathValidationConfig.SecPathMabType),
 	}
+
+	fmt.Printf("%s=%d\n", "SEC_PATH_MAB_TYPE", configs.TopConfiguration.PathValidationConfig.SecPathMabType)
 
 	// 7. 容器配置
 	containerConfig := &container.Config{
@@ -106,7 +139,7 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode, graphNodeId in
 	hostConfig := &container.HostConfig{
 		// 容器数据卷映射
 		Binds:        volumes,
-		CapAdd:       []string{"NET_ADMIN"},
+		CapAdd:       []string{"NET_ADMIN", "SYS_ADMIN"},
 		Privileged:   true,
 		Sysctls:      sysctls,
 		PortBindings: portBindings,

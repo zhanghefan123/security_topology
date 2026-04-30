@@ -336,7 +336,6 @@ func (absLink *AbstractLink) SetLinkParams() error {
 			if err != nil {
 				return fmt.Errorf("failed to set link params: %w", err)
 			}
-			fmt.Println("hello1")
 		}
 		fmt.Println("set link params")
 	} else {
@@ -352,6 +351,17 @@ func (absLink *AbstractLink) SetLinkParams() error {
 		//		return fmt.Errorf("failed to set link params: %w", err)
 		//	}
 		//}
+		//fmt.Printf("set delay\n")
+		delayInMs := configs.TopConfiguration.PathValidationConfig.PerLinkDelay
+		fmt.Printf("delay in ms: %f\n", delayInMs)
+		err = linux_tc_api.SetInterfaceDelay(absLink.SourceInterface, sourceNode.Pid, delayInMs)
+		if err != nil {
+			return fmt.Errorf("failed to set backbone link params: %v", err)
+		}
+		err = linux_tc_api.SetInterfaceDelay(absLink.TargetInterface, targetNode.Pid, delayInMs)
+		if err != nil {
+			return fmt.Errorf("failed to set backbone link params: %v", err)
+		}
 	}
 	//else {
 	//	if absLink.Type == types.NetworkLinkType_BackboneLink {

@@ -5,5 +5,5 @@ import (
 )
 
 type PacketProcessor interface {
-	ProcessPacket(packet *entities.Packet)
+	ProcessPacket(packet *entities.SimPacket)
 }

@@ -6,7 +6,8 @@ import (
 )
 
 const (
-	InitGraphFromConfigurationFile = "InitGraphFromConfigurationFile"
+	InitGraphFromConfigurationFile       = "InitGraphFromConfigurationFile"
+	TurnComplexTopologyFileIntoSimpleOne = "TurnComplexTopologyFileIntoSimpleOne"
 )
 
 type InitFunction func() error
@@ -100,8 +101,14 @@ func (s *Simulator) InitGraphFromConfigurationFile() error {
 	if err != nil {
 		return fmt.Errorf("load coverage paths from configuration file failed, %s", err)
 	}
-
-	SimulatorLogger.Infof("init graph success")
 	s.SimulatorInitSteps[InitGraphFromConfigurationFile] = struct{}{}
+	return nil
+}
+
+func (s *Simulator) GenerateFileForSecPathMabSourceNode(filePath string) error {
+	err := s.SimGraph.MarshalParamsWithPathsIntoFile(filePath)
+	if err != nil {
+		return fmt.Errorf("marshal failed due to :%w", err)
+	}
 	return nil
 }

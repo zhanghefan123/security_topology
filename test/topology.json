@@ -1,0 +1,920 @@
+{
+  "source_dest_params": {
+    "source": "EndHost-1",
+    "destination": "EndHost-14"
+  },
+  "k_shortest_path_params": {
+    "number_of_paths": 8,
+    "limit_of_cost": 10
+  },
+  "nodes": [
+    {
+      "index": 1,
+      "type": "EndHost",
+      "corrupt_ratio": {
+        "start": 0,
+        "end": 0
+      },
+      "corrupt_special_packet_ratio": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "index": 2,
+      "type": "NormalRouter",
+      "corrupt_ratio": {
+        "start": 0,
+        "end": 0
+      },
+      "corrupt_special_packet_ratio": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "index": 3,
+      "type": "PathValidationRouter",
+      "corrupt_ratio": {
+        "start": 0,
+        "end": 0
+      },
+      "corrupt_special_packet_ratio": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "index": 4,
+      "type": "NormalRouter",
+      "corrupt_ratio": {
+        "start": 0,
+        "end": 0
+      },
+      "corrupt_special_packet_ratio": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "index": 5,
+      "type": "NormalRouter",
+      "corrupt_ratio": {
+        "start": 0,
+        "end": 0
+      },
+      "corrupt_special_packet_ratio": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "index": 6,
+      "type": "PathValidationRouter",
+      "corrupt_ratio": {
+        "start": 0,
+        "end": 0
+      },
+      "corrupt_special_packet_ratio": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "index": 7,
+      "type": "NormalRouter",
+      "corrupt_ratio": {
+        "start": 0,
+        "end": 0
+      },
+      "corrupt_special_packet_ratio": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "index": 8,
+      "type": "NormalRouter",
+      "corrupt_ratio": {
+        "start": 0,
+        "end": 0
+      },
+      "corrupt_special_packet_ratio": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "index": 9,
+      "type": "PathValidationRouter",
+      "corrupt_ratio": {
+        "start": 0,
+        "end": 0
+      },
+      "corrupt_special_packet_ratio": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "index": 10,
+      "type": "NormalRouter",
+      "corrupt_ratio": {
+        "start": 0,
+        "end": 0
+      },
+      "corrupt_special_packet_ratio": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "index": 11,
+      "type": "NormalRouter",
+      "corrupt_ratio": {
+        "start": 0,
+        "end": 0
+      },
+      "corrupt_special_packet_ratio": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "index": 12,
+      "type": "PathValidationRouter",
+      "corrupt_ratio": {
+        "start": 0,
+        "end": 0
+      },
+      "corrupt_special_packet_ratio": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "index": 13,
+      "type": "NormalRouter",
+      "corrupt_ratio": {
+        "start": 0,
+        "end": 0
+      },
+      "corrupt_special_packet_ratio": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "index": 14,
+      "type": "EndHost",
+      "corrupt_ratio": {
+        "start": 0,
+        "end": 0
+      },
+      "corrupt_special_packet_ratio": {
+        "start": 0,
+        "end": 0
+      }
+    }
+  ],
+  "access_links": [
+    {
+      "source_node": {
+        "index": 1,
+        "type": "EndHost",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "target_node": {
+        "index": 3,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "intermediate_node": {
+        "index": 2,
+        "type": "NormalRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      }
+    },
+    {
+      "source_node": {
+        "index": 12,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "target_node": {
+        "index": 14,
+        "type": "EndHost",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "intermediate_node": {
+        "index": 13,
+        "type": "NormalRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      }
+    }
+  ],
+  "pv_links": [
+    {
+      "source_node": {
+        "index": 3,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "target_node": {
+        "index": 6,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "intermediate_node": {
+        "index": 4,
+        "type": "NormalRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      }
+    },
+    {
+      "source_node": {
+        "index": 3,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "target_node": {
+        "index": 6,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "intermediate_node": {
+        "index": 5,
+        "type": "NormalRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      }
+    },
+    {
+      "source_node": {
+        "index": 6,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "target_node": {
+        "index": 9,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "intermediate_node": {
+        "index": 7,
+        "type": "NormalRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      }
+    },
+    {
+      "source_node": {
+        "index": 6,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "target_node": {
+        "index": 9,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "intermediate_node": {
+        "index": 8,
+        "type": "NormalRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      }
+    },
+    {
+      "source_node": {
+        "index": 9,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "target_node": {
+        "index": 12,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "intermediate_node": {
+        "index": 10,
+        "type": "NormalRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      }
+    },
+    {
+      "source_node": {
+        "index": 9,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "target_node": {
+        "index": 12,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "intermediate_node": {
+        "index": 11,
+        "type": "NormalRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      }
+    }
+  ],
+  "links": [
+    {
+      "source_node": {
+        "index": 1,
+        "type": "EndHost",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "target_node": {
+        "index": 2,
+        "type": "NormalRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      }
+    },
+    {
+      "source_node": {
+        "index": 2,
+        "type": "NormalRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "target_node": {
+        "index": 3,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      }
+    },
+    {
+      "source_node": {
+        "index": 3,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "target_node": {
+        "index": 4,
+        "type": "NormalRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      }
+    },
+    {
+      "source_node": {
+        "index": 4,
+        "type": "NormalRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "target_node": {
+        "index": 6,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      }
+    },
+    {
+      "source_node": {
+        "index": 6,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "target_node": {
+        "index": 7,
+        "type": "NormalRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      }
+    },
+    {
+      "source_node": {
+        "index": 7,
+        "type": "NormalRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "target_node": {
+        "index": 9,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      }
+    },
+    {
+      "source_node": {
+        "index": 9,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "target_node": {
+        "index": 10,
+        "type": "NormalRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      }
+    },
+    {
+      "source_node": {
+        "index": 10,
+        "type": "NormalRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "target_node": {
+        "index": 12,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      }
+    },
+    {
+      "source_node": {
+        "index": 12,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "target_node": {
+        "index": 13,
+        "type": "NormalRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      }
+    },
+    {
+      "source_node": {
+        "index": 13,
+        "type": "NormalRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "target_node": {
+        "index": 14,
+        "type": "EndHost",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      }
+    },
+    {
+      "source_node": {
+        "index": 3,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "target_node": {
+        "index": 5,
+        "type": "NormalRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      }
+    },
+    {
+      "source_node": {
+        "index": 5,
+        "type": "NormalRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "target_node": {
+        "index": 6,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      }
+    },
+    {
+      "source_node": {
+        "index": 6,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "target_node": {
+        "index": 8,
+        "type": "NormalRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      }
+    },
+    {
+      "source_node": {
+        "index": 8,
+        "type": "NormalRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "target_node": {
+        "index": 9,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      }
+    },
+    {
+      "source_node": {
+        "index": 9,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "target_node": {
+        "index": 11,
+        "type": "NormalRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      }
+    },
+    {
+      "source_node": {
+        "index": 11,
+        "type": "NormalRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      },
+      "target_node": {
+        "index": 12,
+        "type": "PathValidationRouter",
+        "corrupt_ratio": {
+          "start": 0,
+          "end": 0
+        },
+        "corrupt_special_packet_ratio": {
+          "start": 0,
+          "end": 0
+        }
+      }
+    }
+  ],
+  "coverage_paths": [
+    "EndHost-1,NormalRouter-2,PathValidationRouter-3,NormalRouter-4,PathValidationRouter-6,NormalRouter-7,PathValidationRouter-9,NormalRouter-10,PathValidationRouter-12,NormalRouter-13,EndHost-14",
+    "EndHost-1,NormalRouter-2,PathValidationRouter-3,NormalRouter-5,PathValidationRouter-6,NormalRouter-8,PathValidationRouter-9,NormalRouter-11,PathValidationRouter-12,NormalRouter-13,EndHost-14"
+  ],
+  "available_paths": [
+    "EndHost-1,NormalRouter-2,PathValidationRouter-3,NormalRouter-5,PathValidationRouter-6,NormalRouter-7,PathValidationRouter-9,NormalRouter-10,PathValidationRouter-12,NormalRouter-13,EndHost-14",
+    "EndHost-1,NormalRouter-2,PathValidationRouter-3,NormalRouter-4,PathValidationRouter-6,NormalRouter-7,PathValidationRouter-9,NormalRouter-10,PathValidationRouter-12,NormalRouter-13,EndHost-14",
+    "EndHost-1,NormalRouter-2,PathValidationRouter-3,NormalRouter-5,PathValidationRouter-6,NormalRouter-8,PathValidationRouter-9,NormalRouter-10,PathValidationRouter-12,NormalRouter-13,EndHost-14",
+    "EndHost-1,NormalRouter-2,PathValidationRouter-3,NormalRouter-5,PathValidationRouter-6,NormalRouter-7,PathValidationRouter-9,NormalRouter-11,PathValidationRouter-12,NormalRouter-13,EndHost-14",
+    "EndHost-1,NormalRouter-2,PathValidationRouter-3,NormalRouter-4,PathValidationRouter-6,NormalRouter-8,PathValidationRouter-9,NormalRouter-11,PathValidationRouter-12,NormalRouter-13,EndHost-14",
+    "EndHost-1,NormalRouter-2,PathValidationRouter-3,NormalRouter-4,PathValidationRouter-6,NormalRouter-7,PathValidationRouter-9,NormalRouter-11,PathValidationRouter-12,NormalRouter-13,EndHost-14",
+    "EndHost-1,NormalRouter-2,PathValidationRouter-3,NormalRouter-5,PathValidationRouter-6,NormalRouter-8,PathValidationRouter-9,NormalRouter-11,PathValidationRouter-12,NormalRouter-13,EndHost-14",
+    "EndHost-1,NormalRouter-2,PathValidationRouter-3,NormalRouter-4,PathValidationRouter-6,NormalRouter-8,PathValidationRouter-9,NormalRouter-10,PathValidationRouter-12,NormalRouter-13,EndHost-14"
+  ]
+}

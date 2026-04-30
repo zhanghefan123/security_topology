@@ -8,10 +8,10 @@ import (
 const (
 	ModuleMainCmdRaspberrypiClient = "MAIN_CMD_RASPBERRYPI_CLIENT"
 	ModuleMainCmdFabric            = "MAIN_CMD_FABRIC"
-	ModuleMainFabricApi            = "MAIN_CMD_FABRIC_API"
 	ModuleMainCmdHttpService       = "MAIN_CMD_HTTP_SERVICE"
 	ModuleMainCmdImages            = "MAIN_CMD_IMAGES"
 	ModuleMainCmdTest              = "MAIN_CMD_TEST"
+	ModuleMainCmdSecPathTopology   = "MAIN_CMD_SEC_PATH_TOPOLOGY"
 	ModuleCmdOnlineSecurestPath    = "MODULE_CMD_ONLINE_SECUREST_PATH"
 	ModuleConfig                   = "CONFIG"
 	ModuleConstellation            = "CONSTELLATION"

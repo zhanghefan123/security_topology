@@ -47,8 +47,8 @@ func (s *Simulator) StartExp3() error {
 					if selectedAbstractNormalRouter, ok := s.SimGraph.SimAbstractNodesMapping[updateRouter.NormalRouterName]; ok {
 						var selectedNormalRouter *entities.SimNormalRouter
 						if selectedNormalRouter, ok = selectedAbstractNormalRouter.ActualNode.(*entities.SimNormalRouter); ok {
-							err := selectedNormalRouter.Reset(updateRouter.StartDropRatio, updateRouter.EndDropRatio,
-								updateRouter.StartIllegalRatio, updateRouter.EndIllegalRatio)
+							err := selectedNormalRouter.Reset(updateRouter.StartCorruptRatio, updateRouter.EndCorruptRatio,
+								updateRouter.StartCorruptSpecialRatio, updateRouter.EndCorruptSpecialRatio)
 							if err != nil {
 								return fmt.Errorf("reset router %s err due to %w", updateRouter.NormalRouterName, err)
 							}
@@ -510,10 +510,6 @@ func (s *Simulator) ForwardPacket(packet *entities.SimPacket, selectedPath *enti
 					if err != nil {
 						return fmt.Errorf("process packet failed: %w", err)
 					}
-					if packet.IsDropped {
-						fmt.Printf("packet being dropped at %s\n", router.NodeName)
-						break
-					}
 				}
 			} else if abstractSimNode.Type == types.SimNetworkNodeType_PathValidationRouter { // 2. 进行 pv router 的转发
 				if pvRouter, ok := abstractSimNode.ActualNode.(*entities.SimPathValidationRouter); ok {
@@ -563,9 +559,6 @@ func (s *Simulator) ForwardAck(reversePath []*entities.SimAbstractNode, ackPacke
 				err := router.ProcessPacket(ackPacket)
 				if err != nil {
 					return fmt.Errorf("process packet failed: %w", err)
-				}
-				if ackPacket.IsDropped {
-					break
 				}
 			}
 		} else if abstractSimNode.Type == types.SimNetworkNodeType_PathValidationRouter { // 2. 进行 path validation router 的处理

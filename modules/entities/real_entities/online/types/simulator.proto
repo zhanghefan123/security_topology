@@ -38,3 +38,8 @@ enum SimStrategy {
   PerBatchBloomFilter = 0;
   PerPacketAck = 1;
 }
+
+enum SimAlgorithm {
+  Exp3 = 0;
+  OSMD = 1;
+}

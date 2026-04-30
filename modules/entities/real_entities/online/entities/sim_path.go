@@ -51,7 +51,7 @@ func (simPath *SimPath) GetPathDescription() (string, error) {
 			return "", fmt.Errorf("get path description failed due to: %v", err)
 		}
 		if index != (len(simPath.NodeList) - 1) {
-			finalString += fmt.Sprintf("%s->", simNodeName)
+			finalString += fmt.Sprintf("%s,", simNodeName)
 		} else {
 			finalString += simNodeName
 		}
@@ -138,7 +138,7 @@ func (simPath *SimPath) UpdateInfo(nameToPvLinkMapping map[string]*SimDirectedAb
 				return fmt.Errorf("get directed pv links failed due to: %v", err)
 			}
 			// get description of the directed pv link
-			pvLinkDescription := fmt.Sprintf("%s->%s->%s", sourceNodeName, intermediateNodeName, targetNodeName)
+			pvLinkDescription := fmt.Sprintf("%s,%s,%s", sourceNodeName, intermediateNodeName, targetNodeName)
 			// record mapping
 			simPath.NodeNameToIndexMapping[targetNodeName] = currentNodeIndex
 			currentNodeIndex++
@@ -181,16 +181,6 @@ func (simPath *SimPath) CalculateScore() {
 	//fmt.Printf("path desc: %s, score: %f\n", simPath.Description, score)
 	simPath.Score = score
 }
-
-//func (simPath *SimPath) ChooseSamplePvRouter() (*SimPathValidationRouter, int) {
-//	equalProbability := 1.0 / float64(len(simPath.PvRouters))
-//	sampleProbabilities := make([]float64, 0)
-//	for _ = range len(simPath.PvRouters) {
-//		sampleProbabilities = append(sampleProbabilities, equalProbability)
-//	}
-//	idx := probs.SampleDiscrete(sampleProbabilities)
-//	return simPath.PvRouters[idx], idx
-//}
 
 func (simPath *SimPath) GenerateSampleSequence(batchSize int, simlulationStrategy types.SimStrategy) ([]int, error) {
 	sequence := make([]int, batchSize)

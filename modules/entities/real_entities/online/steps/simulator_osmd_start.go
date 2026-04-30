@@ -12,34 +12,56 @@ import (
 )
 
 func (s *Simulator) StartOsmd() error {
-	// 1. initialize all the edges probability
+	// 1. 让所有的路径的概率相同 (并计算出每条边的概率)
 	s.InitAllEdgesProbabilities()
 
-	// 2. enter iteration
+	// 2. 进入循环
 	var previousEpochSelectedPath *entities.SimPath = nil
 	var previousEpochSessionId = ""
 	for epoch := 1; epoch <= s.SimulatorParams.NumberOfEpochs; epoch++ {
+		// 2.0 execute events
+		for index, simEvent := range s.SimEvents {
+			if epoch == simEvent.StartEpoch {
+				for _, updateRouter := range simEvent.UpdateRouters {
+					if selectedAbstractNormalRouter, ok := s.SimGraph.SimAbstractNodesMapping[updateRouter.NormalRouterName]; ok {
+						var selectedNormalRouter *entities.SimNormalRouter
+						if selectedNormalRouter, ok = selectedAbstractNormalRouter.ActualNode.(*entities.SimNormalRouter); ok {
+							err := selectedNormalRouter.Reset(updateRouter.StartCorruptRatio, updateRouter.EndCorruptRatio,
+								updateRouter.StartCorruptSpecialRatio, updateRouter.EndCorruptSpecialRatio)
+							if err != nil {
+								return fmt.Errorf("reset router %s err due to %w", updateRouter.NormalRouterName, err)
+							}
+						}
+					} else {
+						return fmt.Errorf("cannot find the normal router with description: %s\n", updateRouter.NormalRouterName)
+					}
+				}
+				// delete the event
+				s.SimEvents = append(s.SimEvents[:index], s.SimEvents[index+1:]...)
+			} else {
+				continue
+			}
+		}
+
+		// 2.1 设置每条边的当前的概率
 		s.SetCurrentEdgesProbability(epoch)
 
-		// 2.1 decompose
-		pathMapping, err := s.DecomposeToGetPathProbabilities()
+		// 2.2 根据边的概率进行流分解
+		pathMapping, err := s.DecomposeToGetPathProbabilities() // 第一轮运行的结果是正确的
 		if err != nil {
 			return fmt.Errorf("DecomposeToGetPathProbabilities() failed: %v", err)
 		}
-
-		// 2.2 sample discrete
-		pathProbabilities := make([]float64, 0)
-		for _, simPath := range s.SimGraph.AvailablePaths {
-			if probability, ok := pathMapping[simPath.Description]; ok {
-				pathProbabilities = append(pathProbabilities, probability)
-			} else {
-				pathProbabilities = append(pathProbabilities, 0)
-			}
+		fmt.Println("--------------------------------------")
+		for pathDesc, probability := range pathMapping {
+			fmt.Println(pathDesc)
+			fmt.Printf("path id: %d, probability: %f\n", s.SimGraph.AvailablePathMapping[pathDesc].PathId, probability)
 		}
-		selectedPathIndex := probs.SampleDiscrete(pathProbabilities)
-		currentEpochSelectedPath := s.SimGraph.AvailablePaths[selectedPathIndex]
+		fmt.Println("--------------------------------------")
 
-		// 2.3 set current epoch selected path
+		// 2.2 决策当前路径
+		currentEpochSelectedPath := s.DetermineCurrentEpochSelectedPath(pathMapping)
+
+		// 2.3 设置当前所选路径
 		var sourceAbs *entities.SimAbstractNode
 		var source *entities.SimEndHost
 		var ok bool
@@ -50,8 +72,8 @@ func (s *Simulator) StartOsmd() error {
 			return fmt.Errorf("cannot retrieve source")
 		}
 
-		// 2.4 pull the arm and get responses (send a batch of packets on the current epoch selected path)
-		// 2.4.1 establish new session and remove the old session
+		// 2.4 拉杆操作
+		// 2.4.1 建立新 session, 移除旧 session
 		var currentEpochSessionId = ""
 		if previousEpochSelectedPath == nil {
 			// 如果是第一次, 需要建立新的 session
@@ -89,7 +111,8 @@ func (s *Simulator) StartOsmd() error {
 			// 更新选择的路径
 			s.SimGraph.SelectedPaths = append(s.SimGraph.SelectedPaths, currentEpochSelectedPath)
 		}
-		// 2.4.2 send a batch of packets
+
+		// 2.4.2 发送一批数据包
 		sequence, err := currentEpochSelectedPath.GenerateSampleSequence(s.SimulatorParams.NumberOfPktsPerBatch, s.SimulatorParams.SimulationStrategy)
 		if err != nil {
 			return fmt.Errorf("generate sample sequence failed due to %w", err)
@@ -101,96 +124,95 @@ func (s *Simulator) StartOsmd() error {
 			counts = make([]float64, len(currentEpochSelectedPath.NodeNameToIndexMapping))
 		}
 		for j := 0; j < s.SimulatorParams.NumberOfPktsPerBatch; j++ {
-			// choose one node among the currentEpochSelectedPath
+			// 选择抽样的路由器
 			idx := sequence[j]
-			// create simpacket, 创建包的时候就需要知道采样哪个路由器
+			// 创建包的时候就需要知道采样哪个路由器
 			var dataPacket *entities.SimPacket
 			if idx != len(currentEpochSelectedPath.PvRouters) {
 				dataPacket = entities.CreateSimPacket(types.SimPacketType_DataPacket, currentEpochSessionId, s.SimGraph.SimAbstractNodesMapping[currentEpochSelectedPath.PvRouters[idx].NodeName])
 			} else {
 				dataPacket = entities.CreateSimPacket(types.SimPacketType_DataPacket, currentEpochSessionId, currentEpochSelectedPath.NodeList[len(currentEpochSelectedPath.NodeList)-1])
 			}
-			// forward packet in all on-path routers
+			// 进行数据包的转发
 			err = s.ForwardPacket(dataPacket, currentEpochSelectedPath, s.SimulatorParams.SimulationStrategy)
 			if err != nil {
 				return fmt.Errorf("forward packet failed due to %v", err)
 			}
 			counts[idx]++
 		}
-		finalString := ""
-		for index := range len(counts) {
-			finalString += fmt.Sprintf("%f->", counts[index])
-		}
-		fmt.Printf("counts: %s\n", finalString)
 
-		directedAbsLinks, directedAbsLinksMapping := currentEpochSelectedPath.GetDirectedAbsLinks() // 注意这个 abs links 既包括开头的 access link 还包括结尾的 access link
-
-		finalString = ""
-		for _, ackCounter := range source.AckCounters {
-			finalString += fmt.Sprintf("%d->", ackCounter)
-		}
-		fmt.Printf("path: %s epoch: %d ack counter: %s\n", currentEpochSelectedPath.Description, epoch, finalString)
-
-		// 2.4.3 update current loss
+		// 2.4.3 更新当前的损失 - 用来计算悔值
 		var ackReceivedByDest int
 		var packetReceivedByDest float64
 		ackReceivedByDest = source.AckCounters[len(source.AckCounters)-1]
 		packetReceivedByDest = float64(ackReceivedByDest) / counts[len(counts)-1] * float64(s.SimulatorParams.NumberOfPktsPerBatch)
 		s.SimGraph.CurrentLoss += float64(s.SimulatorParams.NumberOfPktsPerBatch) - packetReceivedByDest // 这个 batch 发送了多少个 - 目的节点最终接收了多少个
 
-		// 2.4.4  update regret
+		// 2.4.4  计算悔值
 		var bestPathloss float64
 		_, bestPathloss, err = s.FindBestSimPathFromGodPerspective(epoch)
 		if err != nil {
 			return fmt.Errorf("failed to find best sim path: %w", err)
 		}
 
-		// 2.4.5 calculate average regret
+		// 2.4.5 计算平均悔值
 		regret := s.CalculateRegret(bestPathloss, s.SimGraph.CurrentLoss, epoch)
 		s.SimGraph.Regrets = append(s.SimGraph.Regrets, regret)
 
-		// 2.4.6 calculate delivery ratio
+		// 2.4.6 计算传输失败率
+		directedAbsLinks, directedAbsLinksMapping := currentEpochSelectedPath.GetDirectedAbsLinks() // 注意这个 abs links 既包括开头的 access link 还包括结尾的 access link
+
 		for index, ackCount := range source.AckCounters {
 			var estimatedLegalRatio float64
 			var validatedPacketCntBefore int
 			var validatedPacketCntCurrent int
 			if index == 0 { // the first is the source
 				estimatedLegalRatio = math.Min((float64(ackCount))/counts[0], 1.00) // packet cnt 之所以会不准, 因为使用的是布隆过滤器
-				fmt.Printf("estimated legal ratio: %f\n", estimatedLegalRatio)
+
 			} else { // the first is not the source
 				validatedPacketCntBefore = source.AckCounters[index-1]
 				validatedPacketCntCurrent = source.AckCounters[index]
 				estimatedLegalRatio = (float64(validatedPacketCntCurrent) + float64(s.SimulatorParams.NumberOfPktsPerBatch)*s.SimulatorParams.LaplaceSmoothingFactor) / (float64(validatedPacketCntBefore) + 2*float64(s.SimulatorParams.NumberOfPktsPerBatch)*s.SimulatorParams.LaplaceSmoothingFactor)
 				estimatedLegalRatio = math.Min(estimatedLegalRatio, 1.00)
-				fmt.Printf("estimated legal ratio: %f\n", estimatedLegalRatio)
 			}
-			directedAbsLinks[index].LegalRatios = append(directedAbsLinks[index].LegalRatios, estimatedLegalRatio) // if we not receive counter, we cannot calculate the illegal ratio
+			directedAbsLinks[index].IllegalRatios = append(directedAbsLinks[index].IllegalRatios, 1-estimatedLegalRatio)
 		}
 
-		// for the undetected link the legal ratio should be set to 1
+		// 未进行探测的链路的非法率为 0
 		var directedAbsLink *entities.SimDirectedAbsLink
 		for _, directedAbsLink = range s.SimGraph.SimDirectedAbsLinks {
 			if _, ok = directedAbsLinksMapping[directedAbsLink.Description]; !ok {
-				directedAbsLink.LegalRatios = append(directedAbsLink.LegalRatios, 0)
+				directedAbsLink.IllegalRatios = append(directedAbsLink.IllegalRatios, 0)
 			}
 		}
 
-		// 2.4.7 calculate unbiased gain
+		// 2.4.7 计算无偏估计
 		for _, directedPvLink := range s.SimGraph.SimDirectedAbsLinks {
 			// if the link is picked up
 			if _, ok = directedAbsLinksMapping[directedPvLink.Description]; ok {
-				legalRatio := directedPvLink.LegalRatios[epoch]
-				rectifiedGain := legalRatio / directedPvLink.ExploreProbabilities[epoch-1]
-				directedPvLink.RectifiedGains = append(directedPvLink.RectifiedGains, rectifiedGain)
+				illegalRatio := directedPvLink.IllegalRatios[epoch-1]
+				estimatedLoss := 1 - s.GetEstimatedGain(1-illegalRatio)
+				rectifiedLoss := estimatedLoss / directedPvLink.ExploreProbabilities[epoch-1]
+				directedPvLink.RectifiedLosses = append(directedPvLink.RectifiedLosses, rectifiedLoss)
 			} else {
-				directedPvLink.RectifiedGains = append(directedPvLink.RectifiedGains, 0)
+				directedPvLink.RectifiedLosses = append(directedPvLink.RectifiedLosses, 0)
 			}
 		}
 
-		// 2.4.8 update weight
+		// 2.4.8 更新各个节点的权重
 		for _, directedPvLink := range s.SimGraph.SimDirectedAbsLinks {
-			currentEpochWeight := directedPvLink.Weights[epoch-1] * math.Exp(s.SimulatorParams.LearningRate*directedPvLink.RectifiedGains[epoch])
+			// rectified loss 最大为   probability * exp(-1 * learning rate)
+			currentEpochWeight := directedPvLink.ExploreProbabilities[epoch-1] * math.Exp(-s.SimulatorParams.LearningRate*directedPvLink.RectifiedLosses[epoch-1])
 			directedPvLink.Weights = append(directedPvLink.Weights, currentEpochWeight)
+		}
+
+		// 2.4.9 将权重重新进行投影
+		err = s.ProjectionBackToLegalPlane(
+			s.SimGraph.SimAbstractNodesMapping[s.SimGraph.GraphParams.SourceDestParams.Source],
+			s.SimGraph.SimAbstractNodesMapping[s.SimGraph.GraphParams.SourceDestParams.Destination],
+			epoch)
+		if err != nil {
+			return fmt.Errorf("project back to legal plane failed due to: %w", err)
 		}
 	}
 
@@ -213,6 +235,20 @@ func (s *Simulator) InitAllEdgesProbabilities() {
 	}
 }
 
+func (s *Simulator) DetermineCurrentEpochSelectedPath(pathMapping map[string]float64) *entities.SimPath {
+	pathProbabilities := make([]float64, 0)
+	for _, simPath := range s.SimGraph.AvailablePaths {
+		if probability, ok := pathMapping[simPath.Description]; ok {
+			pathProbabilities = append(pathProbabilities, probability)
+		} else {
+			pathProbabilities = append(pathProbabilities, 0)
+		}
+	}
+	selectedPathIndex := probs.SampleDiscrete(pathProbabilities)
+	currentEpochSelectedPath := s.SimGraph.AvailablePaths[selectedPathIndex]
+	return currentEpochSelectedPath
+}
+
 func (s *Simulator) SetCurrentEdgesProbability(epoch int) {
 	for _, simAbsLink := range s.SimGraph.SimDirectedAbsLinks {
 		simAbsLink.CurrentEdgeProbability = simAbsLink.ExploreProbabilities[epoch-1]
@@ -220,8 +256,10 @@ func (s *Simulator) SetCurrentEdgesProbability(epoch int) {
 }
 
 func (s *Simulator) DecomposeToGetPathProbabilities() (map[string]float64, error) {
+	epsilon := 1e-9
 	pathMapping := make(map[string]float64)
-	// -------------------------------------- 寻找很多路 --------------------------------------
+	// -------------------------------------- 寻找很多路 --------------------------------------\
+OutLoop:
 	for {
 		startPoint := s.SimGraph.SimAbstractNodesMapping[s.SimGraph.GraphParams.SourceDestParams.Source] // 拿到起始节点
 		currentPathDesc := ""                                                                            // 当前路径的描述
@@ -231,51 +269,49 @@ func (s *Simulator) DecomposeToGetPathProbabilities() (map[string]float64, error
 		// -------------------------------------- 寻找一条路 --------------------------------------
 	FindPathLoop:
 		for {
-			// 获取起始节点的名称
-			startNodeName, _ := startPoint.GetSimNodeName()
-			// 寻找所有的出节点
-			pvRouterOrEndHostOutNodes := s.SimGraph.RealGraph.From(startPoint.ID())
-			// -------------------------------------- 寻找一条边 (概率大于0的边) --------------------------------------
-			// 遍历所有的出节点找到一个概率大于 0 的边
-			for pvRouterOrEndHostOutNodes.Next() {
-				// 获取出节点
-				normalGraphNode := pvRouterOrEndHostOutNodes.Node()
-				// 获取当前节点和出节点对应的边
-				if absToNormalNode, ok := normalGraphNode.(*entities.SimAbstractNode); ok {
-					// 获取普通节点名称
-					normalNodeName, _ := absToNormalNode.GetSimNodeName()
-					normalOutNodes := s.SimGraph.RealGraph.From(normalGraphNode.ID())
-					normalOutNodes.Next()
-					pvRouterOrEndHostGraphNode := normalOutNodes.Node()
-					var absPvRouterOrEndHost *entities.SimAbstractNode
-					if absPvRouterOrEndHost, ok = pvRouterOrEndHostGraphNode.(*entities.SimAbstractNode); ok {
-						pvRouterOrEndHostName, _ := absPvRouterOrEndHost.GetSimNodeName()
-						// 获取当前的 link
-						absLink := s.SimGraph.SimDirectedAbsLinksMapping[fmt.Sprintf("%s->%s->%s", startNodeName, normalNodeName, pvRouterOrEndHostName)]
-						// 判断链路的概率是否大于 0
-						if absLink.CurrentEdgeProbability > 0 {
-							currentPathDesc += fmt.Sprintf("%s->%s->%s", startNodeName, normalNodeName, pvRouterOrEndHostName)
-							pathProbabilitiesList = append(pathProbabilitiesList, absLink.CurrentEdgeProbability)
-							currentPath = append(currentPath, absLink)
-							if absLink.CurrentEdgeProbability < minimumEdgeProbability {
-								minimumEdgeProbability = absLink.CurrentEdgeProbability
-							}
-							startPoint = absPvRouterOrEndHost
-							if startNodeName == s.SimGraph.GraphParams.SourceDestParams.Destination {
-								pathMapping[currentPathDesc[:len(currentPathDesc)-2]] = minimumEdgeProbability
-								// 进行所选的这条路的遍历, 将所有边的概率减去这条路径上的边的概率的最小值
-								for _, inPathLink := range currentPath {
-									inPathLink.CurrentEdgeProbability -= minimumEdgeProbability
-								}
-								break FindPathLoop
-							}
-						}
-					} else {
-						return nil, fmt.Errorf("pvRouterOrEndHostGraphNode cannot transformed into SimAbstractNode")
+			// 获取节点所有的出边
+			allOutputEdges, err := s.SimGraph.FindAllOutputEdges(startPoint)
+			if err != nil {
+				return nil, fmt.Errorf("cannot find all output edges due to %w", err)
+			}
+			// 进行所有的抽象边的遍历
+			moved := false
+			for _, outputEdge := range allOutputEdges {
+				if outputEdge.CurrentEdgeProbability > epsilon {
+					var sourceName, normalRouterName string
+					sourceName, _ = outputEdge.Source.GetSimNodeName()
+					normalRouterName, _ = outputEdge.Intermediate.GetSimNodeName()
+					currentPathDesc += fmt.Sprintf("%s,%s,", sourceName, normalRouterName)
+					pathProbabilitiesList = append(pathProbabilitiesList, outputEdge.CurrentEdgeProbability)
+					currentPath = append(currentPath, outputEdge)
+					startPoint = outputEdge.Target
+					// 更新最小的概率
+					if outputEdge.CurrentEdgeProbability < minimumEdgeProbability {
+						minimumEdgeProbability = outputEdge.CurrentEdgeProbability
 					}
-				} else {
-					return nil, fmt.Errorf("cannot find the node")
+					moved = true
+					break
 				}
+			}
+
+			// 如果没有找到任何可用出边（遇到死胡同或残渣），强制退出寻找，防止死循环
+			if !moved {
+				break OutLoop
+			}
+
+			var startNodeName string
+			startNodeName, err = startPoint.GetSimNodeName()
+			if err != nil {
+				return nil, fmt.Errorf("get start node name failed due to: %w", err)
+			}
+			if startNodeName == s.SimGraph.GraphParams.SourceDestParams.Destination {
+				currentPathDesc += startNodeName
+				pathMapping[currentPathDesc] += minimumEdgeProbability
+				// 进行所选的这条路的遍历, 将所有边的概率减去这条路径上的边的概率的最小值
+				for _, inPathLink := range currentPath {
+					inPathLink.CurrentEdgeProbability -= minimumEdgeProbability
+				}
+				break FindPathLoop
 			}
 			// -------------------------------------- 寻找一条边 (概率大于0的边) --------------------------------------
 		}
@@ -284,7 +320,7 @@ func (s *Simulator) DecomposeToGetPathProbabilities() (map[string]float64, error
 		// 判断当前是否还有链路的概率大于 0
 		allZero := true
 		for _, simAbsLink := range s.SimGraph.SimDirectedAbsLinks {
-			if simAbsLink.CurrentEdgeProbability > 0 {
+			if simAbsLink.CurrentEdgeProbability > epsilon {
 				allZero = false
 				break
 			}
@@ -297,12 +333,19 @@ func (s *Simulator) DecomposeToGetPathProbabilities() (map[string]float64, error
 	return pathMapping, nil
 }
 
-func (s *Simulator) ProjectionBackToLegalPlane(source, destination *entities.SimEndHost, epoch int) error {
+func (s *Simulator) ProjectionBackToLegalPlane(source, destination *entities.SimAbstractNode, epoch int) error {
+	// 0. 获取目的节点的名称
+	destinationNodeName, err := destination.GetSimNodeName()
+	if err != nil {
+		return fmt.Errorf("error to get destination node name due to: %w", err)
+	}
+
 	// 1. 首先进行拓扑排序
 	sortedNodes, err := topo.Sort(s.SimGraph.RealGraph)
 	if err != nil {
 		return fmt.Errorf("cannot sort nodes: %w", err)
 	}
+
 	// 2. 将 normal Nodes 进行删除
 	pvRouterOrEndHosts := make([]*entities.SimAbstractNode, 0)
 	for index := 0; index < len(sortedNodes); index++ {
@@ -321,9 +364,13 @@ func (s *Simulator) ProjectionBackToLegalPlane(source, destination *entities.Sim
 		currentNode := pvRouterOrEndHosts[index]
 		// 2.1 进行设置
 		if currentNode.Type == types.SimNetworkNodeType_EndHost {
-			currentEndHost := currentNode.ActualNode.(*entities.SimEndHost)
-			if destination.NodeName == currentEndHost.NodeName {
-				currentEndHost.Potential = 1.0
+			var currentNodeName string
+			currentNodeName, err = currentNode.GetSimNodeName()
+			if err != nil {
+				return fmt.Errorf("get current node name failed due to: %w", err)
+			}
+			if destinationNodeName == currentNodeName {
+				currentNode.Potential = 1.0
 			} else {
 				// 寻找所有的出边, 把他们的 w * potential 都拿过来
 				var allOutputEdges []*entities.SimDirectedAbsLink
@@ -334,18 +381,12 @@ func (s *Simulator) ProjectionBackToLegalPlane(source, destination *entities.Sim
 				// 进行 potential 的更新
 				nodePotential := 0.0
 				for _, outputEdge := range allOutputEdges {
-					var targetPotential float64
-					targetPotential, err = outputEdge.Target.GetPotentialFromAbstract()
-					if err != nil {
-						return fmt.Errorf("cannot get potential from abstract: %w", err)
-					}
-					nodePotential += outputEdge.CurrentEdgeProbability * targetPotential
+					nodePotential += outputEdge.Weights[epoch-1] * outputEdge.Target.Potential
 				}
 				// 进行节点的 potential 的更新
-				currentEndHost.Potential = nodePotential
+				currentNode.Potential = nodePotential
 			}
 		} else if currentNode.Type == types.SimNetworkNodeType_PathValidationRouter {
-			currentPathValidationRouter := currentNode.ActualNode.(*entities.SimPathValidationRouter)
 			// 寻找所有的出边, 把他们的 w * potential 都拿过来
 			var allOutputEdges []*entities.SimDirectedAbsLink
 			allOutputEdges, err = s.SimGraph.FindAllOutputEdges(currentNode)
@@ -355,37 +396,41 @@ func (s *Simulator) ProjectionBackToLegalPlane(source, destination *entities.Sim
 			// 进行 potential 的更新
 			nodePotential := 0.0
 			for _, outputEdge := range allOutputEdges {
-				var targetPotential float64
-				targetPotential, err = outputEdge.Target.GetPotentialFromAbstract()
-				if err != nil {
-					return fmt.Errorf("cannot get potential from abstract: %w", err)
-				}
-				nodePotential += outputEdge.CurrentEdgeProbability * targetPotential
+				nodePotential += outputEdge.Weights[epoch-1] * outputEdge.Target.Potential
 			}
 			// 进行节点的 potential 的更新
-			currentPathValidationRouter.Potential = nodePotential
+			currentNode.Potential = nodePotential
 		} else {
 			return fmt.Errorf("cannot turn node into abstract node")
 		}
 	}
-	// 3. 按照正向的顺序进行排序
+
+	// 3. 根据之前计算的潜力计算每条边应该分配的流量
+	// 3.1 首先将源的 flow 设置为 1
+	source.Flow = 1
+	// 3.2 按照正向的拓扑排序进行节点的遍历
 	for index := 0; index < len(pvRouterOrEndHosts); index++ {
 		currentNode := pvRouterOrEndHosts[index]
 		var allOutputEdges []*entities.SimDirectedAbsLink
 		allOutputEdges, err = s.SimGraph.FindAllOutputEdges(currentNode)
 		for _, outputEdge := range allOutputEdges {
-			var currentPotential float64
-			currentPotential, err = currentNode.GetPotentialFromAbstract()
-			if err != nil {
-				return fmt.Errorf("get current potential failed due to: %w", err)
+			// 避免分母的除0错误
+			if outputEdge.Source.Potential > 0 {
+				// 计算当前的边的概率
+				currentEdgeProbability := outputEdge.Source.Flow * outputEdge.Weights[epoch-1] * outputEdge.Target.Potential / outputEdge.Source.Potential
+				outputEdge.ExploreProbabilities = append(outputEdge.ExploreProbabilities, currentEdgeProbability)
+				// 更新流的强度
+				outputEdge.Target.Flow += currentEdgeProbability
+			} else {
+				outputEdge.ExploreProbabilities = append(outputEdge.ExploreProbabilities, 0)
 			}
-			var destPotential float64
-			destPotential, err = outputEdge.Target.GetPotentialFromAbstract()
-			if err != nil {
-				return fmt.Errorf("get destination potential failed due to: %w", err)
-			}
-			outputEdge.ExploreProbabilities = append(outputEdge.ExploreProbabilities, outputEdge.Weights[epoch]*destPotential/currentPotential)
 		}
+	}
+
+	// 4. 进行所有的 potential 和 flow 的清空
+	for _, abstractNode := range s.SimGraph.SimAbstractNodes {
+		abstractNode.Potential = 0
+		abstractNode.Flow = 0
 	}
 	return nil
 }

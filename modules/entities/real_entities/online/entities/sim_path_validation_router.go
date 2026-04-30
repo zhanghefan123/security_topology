@@ -13,7 +13,6 @@ type SimPathValidationRouter struct {
 	Weights                []float64
 	ExploreProbabilities   []float64
 	RectifiedGains         []float64
-	Potential              float64
 }
 
 func NewSimPathValidationRouter(NodeName string, NodeIndex int) *SimPathValidationRouter {
@@ -24,7 +23,6 @@ func NewSimPathValidationRouter(NodeName string, NodeIndex int) *SimPathValidati
 		Weights:                make([]float64, 0),
 		ExploreProbabilities:   make([]float64, 0),
 		RectifiedGains:         make([]float64, 0),
-		Potential:              0,
 	}
 }
 

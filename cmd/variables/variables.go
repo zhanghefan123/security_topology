@@ -38,6 +38,9 @@ var (
 	UserSelectedImage            = ImageNameEtcd
 	UserSelectedOperation        = OperationBuild
 	UserSelectedExperimentNumber = 1
+	UserSelectedNumberOfHops     = 3
+	UserSelectedLowRatio         = 50000
+	UserSelectedHighRatio        = 250000
 	ImagesInBuildOrder           = []string{
 		ImageNameEtcd,
 		ImageNameUbuntuWithSoftware,

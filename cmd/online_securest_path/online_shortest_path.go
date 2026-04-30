@@ -15,11 +15,11 @@ var (
 	CmdOnlineSecurestPathCmd = logger.GetLogger(logger.ModuleCmdOnlineSecurestPath)
 	SimulationGraphPath      = "../resources/online_topologies/simple_topology.json"
 	SimulatorParamsInstance  = &steps.SimulatorParams{
-		NumberOfEpochs:         400,
+		NumberOfEpochs:         200,
 		NumberOfPktsPerBatch:   2000,
 		Bias:                   0.01,
 		ExploreRate:            0.02, // 这个越大, 节点越不可能因为一次偶然的情况被抬高
-		LearningRate:           0.1,  // 学习率越大, 越容易因为近期表现好而大幅度的调整选择的策略 (如果一个表现差的突然变好，需要累积一段时间之后再), 但是学习率越大, 也可能导致最近一个变好的迅速抢占。
+		LearningRate:           0.2,  // 学习率越大, 越容易因为近期表现好而大幅度的调整选择的策略 (如果一个表现差的突然变好，需要累积一段时间之后再), 但是学习率越大, 也可能导致最近一个变好的迅速抢占。
 		SmoothingFactor:        0.1,
 		LaplaceSmoothingFactor: 0.00,
 		BalancingFactor:        0.01,
@@ -32,23 +32,23 @@ var (
 	}
 	SimulationEvents = []*entities.SimEvent{
 		{
-			//StartEpoch: 100,
-			//UpdateRouters: []*entities.UpdateNormalRouter{
-			//	{
-			//		NormalRouterName:  "NormalRouter-6",
-			//		StartIllegalRatio: 0.8,
-			//		EndIllegalRatio:   0.9,
-			//		StartDropRatio:    0.0,
-			//		EndDropRatio:      0.0,
-			//	},
-			//	{
-			//		NormalRouterName:  "NormalRouter-7",
-			//		StartIllegalRatio: 0.0,
-			//		EndIllegalRatio:   0.1,
-			//		StartDropRatio:    0.0,
-			//		EndDropRatio:      0.0,
-			//	},
-			//},
+			StartEpoch: 100,
+			UpdateRouters: []*entities.UpdateNormalRouter{
+				{
+					NormalRouterName:         "NormalRouter-6",
+					StartCorruptRatio:        0.8,
+					EndCorruptRatio:          0.9,
+					StartCorruptSpecialRatio: 0.0,
+					EndCorruptSpecialRatio:   0.0,
+				},
+				{
+					NormalRouterName:         "NormalRouter-7",
+					StartCorruptRatio:        0.0,
+					EndCorruptRatio:          0.1,
+					StartCorruptSpecialRatio: 0.0,
+					EndCorruptSpecialRatio:   0.0,
+				},
+			},
 		},
 	}
 )
@@ -62,13 +62,13 @@ func CreateOnlineSecurestPathCmd() *cobra.Command {
 			// 1. log
 			CmdOnlineSecurestPathCmd.Infof("start online securest path")
 			// 2. start simulation
-			StartOnlineSecurestPathSimulation(SimulationGraphPath, ExperimentResultsDir)
+			StartSimulation(SimulationGraphPath, ExperimentResultsDir, types.SimAlgorithm_OSMD)
 		},
 	}
 	return onlineSecurestPathCmd
 }
 
-func StartOnlineSecurestPathSimulation(simulationGraphPath, experimentResultsDir string) {
+func StartSimulation(simulationGraphPath, experimentResultsDir string, simAlgorithm types.SimAlgorithm) {
 	// 1. 创建实例
 	simulatorInstance := steps.NewSimulator(SimulatorParamsInstance, simulationGraphPath, SimulationEvents)
 	// 2. 进行初始化
@@ -78,11 +78,21 @@ func StartOnlineSecurestPathSimulation(simulationGraphPath, experimentResultsDir
 		return
 	}
 	// 3. 进行 simulator 的运行
-	err = simulatorInstance.StartExp3()
-	if err != nil {
-		fmt.Printf("start simulator err: %v", err)
-		return
+	if simAlgorithm == types.SimAlgorithm_Exp3 {
+		err = simulatorInstance.StartExp3()
+		if err != nil {
+			fmt.Printf("start exp3 err: %v\n", err)
+			return
+		}
+	} else if simAlgorithm == types.SimAlgorithm_OSMD {
+		err = simulatorInstance.StartOsmd()
+		if err != nil {
+			fmt.Printf("start osmd err: %v\n", err)
+		}
+	} else {
+		fmt.Printf("does not support algorithm: %s\n", simAlgorithm)
 	}
+
 	// 4. 进行结果的获取
 	err = simulatorInstance.GetStatistics(experimentResultsDir)
 	if err != nil {

@@ -10,7 +10,6 @@ type SimEndHost struct {
 	SessionToCounterMapping map[string]*Counter // 对应于 per batch bloom filter 场景
 	CurrentSelectedPath     *SimPath            // 当前源所选择的路径
 	AckCounters             []int               // 记录 ack 计数
-	Potential               float64             // 进行投影回正常平面用到的参数
 }
 
 func NewEndHost(NodeName string, NodeIndex int) *SimEndHost {
@@ -20,7 +19,6 @@ func NewEndHost(NodeName string, NodeIndex int) *SimEndHost {
 		SessionToCounterMapping: make(map[string]*Counter),
 		CurrentSelectedPath:     nil,
 		AckCounters:             nil,
-		Potential:               0,
 	}
 }
 

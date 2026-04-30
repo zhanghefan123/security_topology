@@ -244,6 +244,9 @@ func startTopologyInner(topologyParams *params.TopologyParams) error {
 	if err != nil {
 		return fmt.Errorf("init local config err: %w", err)
 	}
+	// 2. 将 topologyParams 之中的设置进去
+	configs.TopConfiguration.PathValidationConfig.SecPathMabType = topologyParams.SecPathMabType
+	configs.TopConfiguration.PathValidationConfig.PerLinkDelay = topologyParams.PerLinkDelay
 	// 2. 进行资源限制的加载
 	configs.TopConfiguration.ResourcesConfig.CpuLimit = topologyParams.ConsensusNodeCpu
 	configs.TopConfiguration.ResourcesConfig.MemoryLimit = topologyParams.ConsensusNodeMemory

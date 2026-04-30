@@ -11,6 +11,7 @@ import (
 	"zhanghefan123/security_topology/cmd/online_securest_path"
 	"zhanghefan123/security_topology/cmd/raspberrypi"
 	"zhanghefan123/security_topology/cmd/root"
+	"zhanghefan123/security_topology/cmd/sec_path_mab_topology"
 	"zhanghefan123/security_topology/cmd/test"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/utils/permission"
@@ -29,7 +30,8 @@ func main() {
 	testCmd := test.CreateTestCommand()
 	fabricCmd := fabric.CreateFabricCmd()
 	onlineSecurestPathCommand := online_securest_path.CreateOnlineSecurestPathCmd()
-	rootCmd.AddCommand()
+	createSecPathTopologyCommand := sec_path_mab_topology.CreateSecPathMabTopologyCommand()
+	rootCmd.AddCommand(createSecPathTopologyCommand)
 	rootCmd.AddCommand(httpServiceCmd)
 	rootCmd.AddCommand(raspberrypiClientCmd)
 	rootCmd.AddCommand(imagesCmd)

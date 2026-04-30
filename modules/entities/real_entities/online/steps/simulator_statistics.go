@@ -27,11 +27,14 @@ func (s *Simulator) GetStatistics(destinationDir string) error {
 	if err != nil {
 		return err
 	}
+	err = s.GetPvLinksIllegalRatios(destinationDir)
+	if err != nil {
+		return err
+	}
 	err = s.GetPvLinksGains(destinationDir)
 	if err != nil {
 		return err
 	}
-
 	err = s.GetPvLinksWeights(destinationDir)
 	if err != nil {
 		return err
@@ -104,6 +107,18 @@ func (s *Simulator) GetPvLinksLegalRatios(destinationDir string) error {
 		resultList = append(resultList, descAndData)
 	}
 	return s.writeStatisticsToFile(destinationDir, "pv_links_legal_ratio.txt", resultList)
+}
+
+func (s *Simulator) GetPvLinksIllegalRatios(destinationDir string) error {
+	resultList := make([]DescriptionAndData, 0)
+	for _, absLink := range s.SimGraph.SimDirectedAbsLinks {
+		descAndData := DescriptionAndData{
+			Description: absLink.Description,
+			Datas:       s.formatFloatSlice(absLink.IllegalRatios),
+		}
+		resultList = append(resultList, descAndData)
+	}
+	return s.writeStatisticsToFile(destinationDir, "pv_links_illegal_ratio.txt", resultList)
 }
 
 // GetPvLinksGains 获取每条 directed pv link 在每个 epoch 的 gains

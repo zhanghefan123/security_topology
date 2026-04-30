@@ -52,6 +52,7 @@ const (
 	GenerateChainMakerIDtoNameMapping                   = "GenerateChainMakerIDtoNameMapping"                   // 生成从 id 到 name 的映射
 	GenerateAtlasSegmentsAndOutputLinkIdentifiers       = "GenerateAtlasSegmentsAndOutputLinkIdentifiers"       // 生成 atlas 多路径的分段
 	GenerateMultipathSelirPathsAndOutputLinkIdentifiers = "GenerateMultipathSelirPathsAndOutputLinkIdentifiers" // 生成 multipath_selir 多路径
+	GenerateTopologyForSecPathMab                       = "GenerateTopologyForSecPathMab"                       // 生成 sec_path_mab 的拓扑配置
 )
 
 // Init 进行初始化
@@ -66,10 +67,10 @@ func (t *Topology) Init() error {
 	var enableUnicast = false
 	var enableAtlas = false
 	var enableMultipathSelir = false
-	if configs.TopConfiguration.PathValidationConfig.EnableMultipathSupport {
-		if configs.TopConfiguration.PathValidationConfig.MultipathRoutingType == (int)(types.RoutingType_Atlas) {
+	if configs.TopConfiguration.PathValidationConfig.TransmissionType == (int)(types.TransmissionType_MULTIPATH) {
+		if configs.TopConfiguration.PathValidationConfig.MultipathConfig.MultipathRoutingType == (int)(types.RoutingType_Atlas) {
 			enableAtlas = true
-		} else if configs.TopConfiguration.PathValidationConfig.MultipathRoutingType == (int)(types.RoutingType_MultipathSelir) {
+		} else if configs.TopConfiguration.PathValidationConfig.MultipathConfig.MultipathRoutingType == (int)(types.RoutingType_MultipathSelir) {
 			enableMultipathSelir = true
 		} else {
 			fmt.Printf("unsupported specific multipath protocol\n")
@@ -77,6 +78,11 @@ func (t *Topology) Init() error {
 	} else {
 		enableUnicast = true
 	}
+
+	//var enableSecPathMab = false
+	//if configs.TopConfiguration.PathValidationConfig.TransmissionType == (int)(types.TransmissionType_MAB) {
+	//	enableSecPathMab = true
+	//}
 
 	initSteps := []map[string]InitModule{
 		{GenerateSubnets: InitModule{true, t.GenerateSubnets}},
@@ -94,6 +100,7 @@ func (t *Topology) Init() error {
 		{CalculateAndWriteLiRRoutes: InitModule{enableUnicast, t.CalculateAndWriteLiRRoutes}},
 		{GenerateAtlasSegmentsAndOutputLinkIdentifiers: InitModule{enableAtlas, t.GenerateAtlasSegmentsAndOutputLinkIdentifiers}},
 		{GenerateMultipathSelirPathsAndOutputLinkIdentifiers: InitModule{enableMultipathSelir, t.GenerateMultipathSelirPathsAndOutputLinkIdentifiers}},
+		//{GenerateTopologyForSecPathMab: InitModule{enableSecPathMab, t.GenerateTopologyForSecPathMab}},
 	}
 
 	err = t.initializeSteps(initSteps)
@@ -166,7 +173,7 @@ func (t *Topology) GenerateNodes() error {
 			t.AllAbstractNodes = append(t.AllAbstractNodes, abstractNode)
 			t.AbstractNodesMap[chainmakerTmp.ContainerName] = abstractNode
 		case types.NetworkNodeType_LirNode:
-			lirNodeTmp := nodes.NewLiRNode(nodeParam.Index, nodeParam.X, nodeParam.Y)
+			lirNodeTmp := nodes.NewLiRNode(nodeParam.Index, nodeParam.X, nodeParam.Y, nodeParam.SpecialParams)
 			t.LirNodes = append(t.LirNodes, lirNodeTmp)
 			// 注意只能唯一创建一次
 			abstractNode = node.NewAbstractNode(types.NetworkNodeType_LirNode, lirNodeTmp, Instance.TopologyGraph)
@@ -766,16 +773,16 @@ func (t *Topology) CalculateAndWriteLiRRoutes() error {
 		lirRouteFilePath := filepath.Join(routeDir, "lir.txt")
 		// 所有节点路由文件的路径
 		allLiRRouteFilePath := filepath.Join(routeDir, "all_lir.txt")
-		// 写入文件
-		if !configs.TopConfiguration.PathValidationConfig.EnableMulticastSupport {
-			// 如果并不支持多播的时候才进行写入
-			err = file.WriteStringIntoFile(lirRouteFilePath, allLiRRoutes[index])
+		// 写入每个节点的 lir.txt 文件
+		if configs.TopConfiguration.PathValidationConfig.TransmissionType == (int)(types.TransmissionType_UNICAST) {
+			currentNodeString := allLiRRoutes[index]
+			err = file.WriteStringIntoFile(lirRouteFilePath, currentNodeString)
 			if err != nil {
 				return fmt.Errorf("error writing lir.txt file, %w", err)
 			}
 		}
-		// 在支持多播的时候才进行写入 ()
-		if (normalNode.Id == 1) && (configs.TopConfiguration.PathValidationConfig.EnableMulticastSupport) {
+		// 多播的时候只在源节点进行写入
+		if (normalNode.Id == 1) && (configs.TopConfiguration.PathValidationConfig.TransmissionType == (int)(types.TransmissionType_MULTICAST)) {
 			err = file.WriteStringIntoFile(allLiRRouteFilePath, allLirRoutesString)
 			if err != nil {
 				return fmt.Errorf("error writing all_lir.txt")
@@ -796,6 +803,7 @@ func (t *Topology) GenerateIfnameToLinkIdentifierMapping() (err error) {
 	}
 
 	finalMapping := map[string]string{}
+	allInterfaceList := ""
 
 	// 进行所有的链路的遍历
 	for _, abstractLink := range t.Links {
@@ -820,22 +828,26 @@ func (t *Topology) GenerateIfnameToLinkIdentifierMapping() (err error) {
 		targetNodeIdx := targetNormalNode.Id
 
 		// 更新源接口
+		sourceDesc := fmt.Sprintf("%s->%d->%d->%d->%s\n", sourceIntf.IfName, sourceIntf.LinkIdentifier, sourceNodeIdx, targetNodeIdx, sourceIntf.TargetIpv4Addr)
 		if result, ok := finalMapping[sourceNormalNode.ContainerName]; !ok {
-			result += fmt.Sprintf("%s->%d->%d->%d->%s\n", sourceIntf.IfName, sourceIntf.LinkIdentifier, sourceNodeIdx, targetNodeIdx, sourceIntf.TargetIpv4Addr)
+			result += sourceDesc
 			finalMapping[sourceNormalNode.ContainerName] = result
 		} else {
-			result = fmt.Sprintf("%s->%d->%d->%d->%s\n", sourceIntf.IfName, sourceIntf.LinkIdentifier, sourceNodeIdx, targetNodeIdx, sourceIntf.TargetIpv4Addr)
+			result = sourceDesc
 			finalMapping[sourceNormalNode.ContainerName] += result
 		}
+		allInterfaceList = allInterfaceList + sourceDesc
 
 		// 更新目的接口
+		targetDesc := fmt.Sprintf("%s->%d->%d->%d->%s\n", targetIntf.IfName, targetIntf.LinkIdentifier, targetNodeIdx, sourceNodeIdx, targetIntf.TargetIpv4Addr)
 		if result, ok := finalMapping[targetNormalNode.ContainerName]; !ok {
-			result += fmt.Sprintf("%s->%d->%d->%d->%s\n", targetIntf.IfName, targetIntf.LinkIdentifier, targetNodeIdx, sourceNodeIdx, targetIntf.TargetIpv4Addr)
+			result += targetDesc
 			finalMapping[targetNormalNode.ContainerName] = result
 		} else {
-			result = fmt.Sprintf("%s->%d->%d->%d->%s\n", targetIntf.IfName, targetIntf.LinkIdentifier, targetNodeIdx, sourceNodeIdx, targetIntf.TargetIpv4Addr)
+			result = targetDesc
 			finalMapping[targetNormalNode.ContainerName] += result
 		}
+		allInterfaceList = allInterfaceList + targetDesc
 	}
 
 	// 进行所有的节点的遍历
@@ -865,21 +877,14 @@ func (t *Topology) GenerateIfnameToLinkIdentifierMapping() (err error) {
 		if err != nil {
 			return fmt.Errorf("Error writing to file %s: %s\n", filePath, err)
 		}
-	}
-
-	// 遍历所有的节点生成 mapping
-	/*
-		for _, abstractNode := range t.AllAbstractNodes {
-			normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
+		// 如果是源节点的话则进行写入的操作
+		if normalNode.Id == 1 {
+			err = file.WriteStringIntoFile(filepath.Join(outputDir, "all_interfaces.txt"), allInterfaceList)
 			if err != nil {
-				return fmt.Errorf("generate ifname to link identifier mapping files failed, %w", err)
-			}
-			err = normalNode.GenerateIfnameToLidMapping()
-			if err != nil {
-				return fmt.Errorf("generate ifname to link identifier mapping files failed, %w", err)
+				return fmt.Errorf("create all_interfaces.txt file failed: %w", err)
 			}
 		}
-	*/
+	}
 
 	t.topologyInitSteps[GenerateIfnameToLinkIdentifierMapping] = struct{}{}
 	topologyLogger.Infof("generate ifname to link identifier")
@@ -927,9 +932,8 @@ func (t *Topology) GenerateAtlasSegmentsAndOutputLinkIdentifiers() error {
 	}
 
 	// 图配置
-	// numberOfPaths := configs.TopConfiguration.PathValidationConfig.NumberOfMultipaths
 	resourcesFilePath := configs.TopConfiguration.PathConfig.ResourcesPath
-	multipathFileName := configs.TopConfiguration.PathValidationConfig.MultipathFileName
+	multipathFileName := configs.TopConfiguration.PathValidationConfig.MultipathConfig.MultipathFileName
 	multipathFilePath := filepath.Join(resourcesFilePath, fmt.Sprintf("multipath/complex/%s", multipathFileName))
 	paths, segments, nodeSegmentsMapping, graphParams := graph.GenerateAtlasPathsAndSegmentsViaPathsFile(multipathFilePath)
 
@@ -1086,7 +1090,7 @@ func (t *Topology) GenerateMultipathSelirPathsAndOutputLinkIdentifiers() error {
 	// 图配置
 	// ----------------------------------------------------------------------------------------------------
 	resourcesFilePath := configs.TopConfiguration.PathConfig.ResourcesPath
-	multipathFileName := configs.TopConfiguration.PathValidationConfig.MultipathFileName
+	multipathFileName := configs.TopConfiguration.PathValidationConfig.MultipathConfig.MultipathFileName
 	multipathFilePath := filepath.Join(resourcesFilePath, fmt.Sprintf("multipath/complex/%s", multipathFileName))
 	multipathSelirComplexGraph, paths, nameToNodeMapping, sourceStr, destinationStr := graph.GenerateMultipathSelirMultipathsViaPathsFile(multipathFilePath)
 
@@ -1261,3 +1265,41 @@ func (t *Topology) GenerateMultipathSelirPathsAndOutputLinkIdentifiers() error {
 	t.topologyInitSteps[GenerateMultipathSelirPathsAndOutputLinkIdentifiers] = struct{}{}
 	return nil
 }
+
+//func (t *Topology) GenerateTopologyForSecPathMab() error {
+//	if _, ok := t.topologyInitSteps[GenerateTopologyForSecPathMab]; ok {
+//		topologyLogger.Infof("already generate topology for sec path mab")
+//		return nil
+//	}
+//
+//	simulatorInstance := steps.NewSimulator(online_securest_path.SimulatorParamsInstance,
+//		online_securest_path.ExperimentResultsDir,
+//		[]*online_entities.SimEvent{})
+//
+//	err := simulatorInstance.Init()
+//	if err != nil {
+//		return fmt.Errorf("init simulator failed: %v", err)
+//	}
+//
+//	normalNode, err := t.AllAbstractNodes[0].GetNormalNodeFromAbstractNode()
+//	if err != nil {
+//		return fmt.Errorf("get normal node from abstract node failed: %v", err)
+//	}
+//
+//	topologyDir := fmt.Sprintf("%s/%s/topology", configs.TopConfiguration.PathConfig.ConfigGeneratePath, normalNode.ContainerName)
+//	err = os.MkdirAll(topologyDir, os.ModePerm)
+//	if err != nil {
+//		return fmt.Errorf("mkdir failed for %s", topologyDir)
+//	}
+//
+//	// 将  sec_path_mab_topology.txt 进行写入, 主要是为了生成所有的 available paths
+//	outputFilePath := fmt.Sprintf("%s/sec_path_mab_topology.txt", topologyDir)
+//	err = simulatorInstance.GenerateFileForSecPathMabSourceNode(outputFilePath)
+//	if err != nil {
+//		return fmt.Errorf("generate file for sec path mab source node failed: %v", err)
+//	}
+//
+//	t.topologyInitSteps[GenerateTopologyForSecPathMab] = struct{}{}
+//	topologyLogger.Infof("generate topology for sec path mab")
+//	return nil
+//}

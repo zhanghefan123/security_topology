@@ -21,6 +21,58 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type TransmissionType int32
+
+const (
+	TransmissionType_UNICAST   TransmissionType = 0
+	TransmissionType_MULTIPATH TransmissionType = 1
+	TransmissionType_MULTICAST TransmissionType = 2
+	TransmissionType_MAB       TransmissionType = 3
+)
+
+// Enum value maps for TransmissionType.
+var (
+	TransmissionType_name = map[int32]string{
+		0: "UNICAST",
+		1: "MULTIPATH",
+		2: "MULTICAST",
+		3: "MAB",
+	}
+	TransmissionType_value = map[string]int32{
+		"UNICAST":   0,
+		"MULTIPATH": 1,
+		"MULTICAST": 2,
+		"MAB":       3,
+	}
+)
+
+func (x TransmissionType) Enum() *TransmissionType {
+	p := new(TransmissionType)
+	*p = x
+	return p
+}
+
+func (x TransmissionType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (TransmissionType) Descriptor() protoreflect.EnumDescriptor {
+	return file_routing_proto_enumTypes[0].Descriptor()
+}
+
+func (TransmissionType) Type() protoreflect.EnumType {
+	return &file_routing_proto_enumTypes[0]
+}
+
+func (x TransmissionType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use TransmissionType.Descriptor instead.
+func (TransmissionType) EnumDescriptor() ([]byte, []int) {
+	return file_routing_proto_rawDescGZIP(), []int{0}
+}
+
 type RoutingType int32
 
 const (
@@ -54,11 +106,11 @@ func (x RoutingType) String() string {
 }
 
 func (RoutingType) Descriptor() protoreflect.EnumDescriptor {
-	return file_routing_proto_enumTypes[0].Descriptor()
+	return file_routing_proto_enumTypes[1].Descriptor()
 }
 
 func (RoutingType) Type() protoreflect.EnumType {
-	return &file_routing_proto_enumTypes[0]
+	return &file_routing_proto_enumTypes[1]
 }
 
 func (x RoutingType) Number() protoreflect.EnumNumber {
@@ -67,14 +119,19 @@ func (x RoutingType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use RoutingType.Descriptor instead.
 func (RoutingType) EnumDescriptor() ([]byte, []int) {
-	return file_routing_proto_rawDescGZIP(), []int{0}
+	return file_routing_proto_rawDescGZIP(), []int{1}
 }
 
 var File_routing_proto protoreflect.FileDescriptor
 
 const file_routing_proto_rawDesc = "" +
 	"\n" +
-	"\rrouting.proto*?\n" +
+	"\rrouting.proto*F\n" +
+	"\x10TransmissionType\x12\v\n" +
+	"\aUNICAST\x10\x00\x12\r\n" +
+	"\tMULTIPATH\x10\x01\x12\r\n" +
+	"\tMULTICAST\x10\x02\x12\a\n" +
+	"\x03MAB\x10\x03*?\n" +
 	"\vRoutingType\x12\x11\n" +
 	"\rNOT_SPECIFIED\x10\x00\x12\t\n" +
 	"\x05Atlas\x10\x01\x12\x12\n" +
@@ -93,9 +150,10 @@ func file_routing_proto_rawDescGZIP() []byte {
 	return file_routing_proto_rawDescData
 }
 
-var file_routing_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_routing_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_routing_proto_goTypes = []any{
-	(RoutingType)(0), // 0: RoutingType
+	(TransmissionType)(0), // 0: TransmissionType
+	(RoutingType)(0),      // 1: RoutingType
 }
 var file_routing_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -115,7 +173,7 @@ func file_routing_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_routing_proto_rawDesc), len(file_routing_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      2,
 			NumMessages:   0,
 			NumExtensions: 0,
 			NumServices:   0,

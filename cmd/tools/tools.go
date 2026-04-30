@@ -24,8 +24,23 @@ func InitFlagSet() *pflag.FlagSet {
 			variables.OperationRemove))
 	flags.IntVarP(&variables.UserSelectedExperimentNumber,
 		FlagNameOfExperimentNumber,
-		FlagNameShortHandOfExperimentNUmber,
+		FlagNameShortHandOfExperimentNumber,
 		variables.UserSelectedExperimentNumber,
+		fmt.Sprintf("input an integer"))
+	flags.IntVarP(&variables.UserSelectedNumberOfHops,
+		FlagNameOfSecPathMabHops,
+		FlagNameShortHandOfSecPathMabHops,
+		variables.UserSelectedNumberOfHops,
+		fmt.Sprintf("input an integer"))
+	flags.IntVarP(&variables.UserSelectedLowRatio,
+		FlagNameOfLowRatio,
+		FlagNameShortHandOfLowRatio,
+		variables.UserSelectedLowRatio,
+		fmt.Sprintf("input an integer"))
+	flags.IntVarP(&variables.UserSelectedHighRatio,
+		FlagNameOfHighRatio,
+		FlagNameShortHandOfHighRatio,
+		variables.UserSelectedHighRatio,
 		fmt.Sprintf("input an integer"))
 	return flags
 }
@@ -35,8 +50,8 @@ func AttachFlags(cmd *cobra.Command, flagNames []string) {
 	initializedFlags := InitFlagSet()
 	cmdFlags := cmd.Flags()
 	for _, flagName := range flagNames {
-		if flag := initializedFlags.Lookup(flagName); flag != nil {
-			cmdFlags.AddFlag(flag)
+		if lookedFlag := initializedFlags.Lookup(flagName); lookedFlag != nil {
+			cmdFlags.AddFlag(lookedFlag)
 			_ = cmd.MarkFlagRequired(flagName)
 		}
 	}
