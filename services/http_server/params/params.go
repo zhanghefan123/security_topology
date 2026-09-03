@@ -36,20 +36,32 @@ type LinkParam struct {
 	LinkType            string    `json:"link_type"` // 链路的类型 - 可能是接入 access, 也可能是骨干 backbone
 }
 
-type TopologyParams struct {
-	NetworkEnv           string          `json:"network_env"`
+type BlockChainParams struct {
+	ConsensusThreadCount int             `json:"consensus_thread_count"`
 	BlockChainTypeString string          `json:"blockchain_type"`
 	BlockChainType       types.ChainType // 根据 BlockChainTypeString 计算出来的
 	ConsensusType        string          `json:"consensus_type"`
-	AccessLinkBandwidth  int             `json:"access_link_bandwidth"`
-	ConsensusNodeCpu     float64         `json:"consensus_node_cpu"`    // 单位为个
-	ConsensusNodeMemory  float64         `json:"consensus_node_memory"` // 单位为 MB
-	ConsensusThreadCount int             `json:"consensus_thread_count"`
-	Nodes                []NodeParam     `json:"nodes"`             // 所有的节点
-	Links                []LinkParam     `json:"links"`             // 所有的链路
-	StartDefence         bool            `json:"start_defence"`     // 是否开启防御
-	SecPathMabType       int             `json:"sec_path_mab_type"` // 选择的 secPathMabType 类型
-	PerLinkDelay         float64         `json:"per_link_delay"`    // per link delay
+	StartDefence         bool            `json:"start_defence"`
+}
+
+type SecPathMabParams struct {
+	TopologyType           int `json:"topology_type"`
+	ExperimentType         int `json:"experiment_type"`
+	SecPathMabType         int `json:"sec_path_mab_type"`
+	NumberOfHops           int `json:"number_of_hops"`
+	NumberOfSegmentsPerHop int `json:"number_of_segments_per_hop"`
+}
+
+type TopologyParams struct {
+	Nodes        []NodeParam `json:"nodes"`
+	Links        []LinkParam `json:"links"`
+	PerLinkDelay float64     `json:"per_link_delay"`
+}
+
+type TopologyStartParams struct {
+	BlockChainParams BlockChainParams `json:"block_chain_params"`
+	SecPathMabParams SecPathMabParams `json:"sec_path_mab_params"`
+	TopologyParams   TopologyParams   `json:"topology_params"`
 }
 
 type StartDefenceParameter struct {

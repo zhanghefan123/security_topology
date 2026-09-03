@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/entities/types"
-	"zhanghefan123/security_topology/services/http/params"
+	"zhanghefan123/security_topology/services/http_server/params"
 )
 
 type LiRNode struct {

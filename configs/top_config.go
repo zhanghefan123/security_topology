@@ -20,6 +20,7 @@ import (
 	"zhanghefan123/security_topology/configs/raspberrypi"
 	"zhanghefan123/security_topology/configs/resources"
 	"zhanghefan123/security_topology/configs/services"
+	"zhanghefan123/security_topology/configs/topology"
 	"zhanghefan123/security_topology/modules/logger"
 	networkUtils "zhanghefan123/security_topology/utils/network"
 )
@@ -43,6 +44,7 @@ type TopConfig struct {
 	FabricConfig         fabric.FabricConfig                  `mapstructure:"fabric_config"`
 	RaspberryPiConfig    raspberrypi.RaspberryPiConfig        `mapstructure:"raspberrypi_config"`
 	FiscoBcosConfig      fisco_bcos.FiscoBcosConfig           `mapstructure:"fisco_bcos_config"`
+	TopologyConfig       topology.TopologyConfig              `mapstructure:"topology_config"`
 }
 
 var availableOspfVersions = map[string]struct{}{

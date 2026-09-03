@@ -20,7 +20,7 @@ func GetTxRateTestRequest(c *gin.Context) {
 	}
 
 	// 2. 判断是否是 NonChainType
-	if topology.Instance.TopologyParams.BlockChainType == types.ChainType_NonChain {
+	if topology.Instance.TopologyStartParams.BlockChainParams.BlockChainType == types.ChainType_NonChain {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
 			"message": "no blockchain",
 		})
@@ -54,7 +54,7 @@ func StartTxRateTestRequest(c *gin.Context) {
 	}
 
 	// 2. 判断是否是 NonChainType
-	if topology.Instance.TopologyParams.BlockChainType == types.ChainType_NonChain {
+	if topology.Instance.TopologyStartParams.BlockChainParams.BlockChainType == types.ChainType_NonChain {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
 			"message": "no blockchain",
 		})
@@ -62,12 +62,12 @@ func StartTxRateTestRequest(c *gin.Context) {
 	}
 
 	// 2. 获取携程数量
-	coroutineCount := topology.Instance.TopologyParams.ConsensusThreadCount
+	coroutineCount := topology.Instance.TopologyStartParams.BlockChainParams.ConsensusThreadCount
 
 	// 3. 进行启动
 	if rate_recorder.TxRateRecorderInstance == nil {
 		// 3.1 如果还没有启动 tps 测试
-		err := chain_api.StartTxRateTest(coroutineCount, topology.Instance.TopologyParams.BlockChainType)
+		err := chain_api.StartTxRateTest(coroutineCount, topology.Instance.TopologyStartParams.BlockChainParams.BlockChainType)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"message": fmt.Sprintf("start tx rate test error: %s", err.Error()),
@@ -99,7 +99,7 @@ func StopTxRateTestRequest(c *gin.Context) {
 	}
 
 	// 2. 如果不是区块链类型
-	if topology.Instance.TopologyParams.BlockChainType == types.ChainType_NonChain {
+	if topology.Instance.TopologyStartParams.BlockChainParams.BlockChainType == types.ChainType_NonChain {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
 			"message": "no blockchain",
 		})

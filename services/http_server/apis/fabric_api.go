@@ -21,7 +21,7 @@ func InstallChannelAndChaincode(c *gin.Context) {
 	}
 
 	// 2. 判断是否是 fabric
-	if topology.Instance.TopologyParams.BlockChainType != types.ChainType_HyperledgerFabric {
+	if topology.Instance.TopologyStartParams.BlockChainParams.BlockChainType != types.ChainType_HyperledgerFabric {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "blockchain type is not fabric",
 		})

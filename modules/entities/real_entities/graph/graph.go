@@ -2,7 +2,7 @@ package graph
 
 import (
 	"zhanghefan123/security_topology/modules/entities/real_entities/graph/entities"
-	"zhanghefan123/security_topology/services/http/params"
+	"zhanghefan123/security_topology/services/http_server/params"
 
 	"gonum.org/v1/gonum/graph/simple"
 )

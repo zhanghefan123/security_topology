@@ -12,7 +12,7 @@ import (
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/nodes"
 	"zhanghefan123/security_topology/modules/entities/types"
-	"zhanghefan123/security_topology/services/http/params"
+	"zhanghefan123/security_topology/services/http_server/params"
 	"zhanghefan123/security_topology/utils/network"
 )
 

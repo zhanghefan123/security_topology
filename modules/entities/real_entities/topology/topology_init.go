@@ -20,7 +20,7 @@ import (
 	"zhanghefan123/security_topology/modules/entities/real_entities/nodes"
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/entities/types"
-	"zhanghefan123/security_topology/services/http/params"
+	"zhanghefan123/security_topology/services/http_server/params"
 	"zhanghefan123/security_topology/utils/dir"
 	"zhanghefan123/security_topology/utils/extract"
 	"zhanghefan123/security_topology/utils/file"
@@ -149,7 +149,7 @@ func (t *Topology) GenerateNodes() error {
 	}
 
 	// 进行所有的节点的遍历
-	for _, nodeParam := range t.TopologyParams.Nodes {
+	for _, nodeParam := range t.TopologyStartParams.TopologyParams.Nodes {
 		var abstractNode *node.AbstractNode
 		nodeType, err := types.ResolveNodeType(nodeParam.Type)
 		if err != nil {
@@ -276,7 +276,7 @@ func (t *Topology) GenerateLinks() error {
 	}
 
 	// ----------------实际逻辑--------------------
-	for _, linkTmp := range t.TopologyParams.Links {
+	for _, linkTmp := range t.TopologyStartParams.TopologyParams.Links {
 		// 拿到从前端传递过来的 (源节点 目的节点的参数)
 		sourceNodeParam := linkTmp.SourceNode
 		targetNodeParam := linkTmp.TargetNode
@@ -302,9 +302,6 @@ func (t *Topology) GenerateLinks() error {
 		var linkType types.NetworkLinkType
 		var bandWidth int
 		if linkTmp.LinkType == "access" {
-			//linkType = types.NetworkLinkType_AccessLink
-			////bandWidth = tt.TopologyParams.AccessLinkBandwidth * 1e6
-			//bandWidth = 50 * 1e6
 			linkType = types.NetworkLinkType_AccessLink
 			bandWidth = 20 * 1e6 // 没有限制
 		} else {
@@ -471,7 +468,7 @@ func (t *Topology) GenerateChainMakerConfig() error {
 	}
 
 	ipv4Addresses := t.GetChainMakerNodeListenAddresses()
-	t.chainMakerPrepare = chainmaker_prepare.NewChainMakerPrepare(chainMakerNodeCount, ipv4Addresses, t.TopologyParams.ConsensusType)
+	t.chainMakerPrepare = chainmaker_prepare.NewChainMakerPrepare(chainMakerNodeCount, ipv4Addresses, t.TopologyStartParams.BlockChainParams.ConsensusType)
 	err := t.chainMakerPrepare.Generate()
 	if err != nil {
 		return fmt.Errorf("generate chain maker config files failed, %s", err)

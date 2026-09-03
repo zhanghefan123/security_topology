@@ -46,7 +46,7 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode, graphNodeId in
 	}
 
 	// 3. 创建端口映射
-	httpPortInteger := 9000 + lirNode.Id
+	httpPortInteger := configs.TopConfiguration.NetworkConfig.ValidationListenPort + lirNode.Id
 	httpPort := nat.Port(fmt.Sprintf("%d/tcp", httpPortInteger))
 
 	exposedPorts := nat.PortSet{
@@ -74,7 +74,7 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode, graphNodeId in
 	numberOfHashFunctions := configs.TopConfiguration.PathValidationConfig.NumberOfHashFunctions
 	// 4.3 获取路由表类型
 	routingTableType := configs.TopConfiguration.PathValidationConfig.RoutingTableType
-	// 4.4 判断自己是否是源节点并且开启了 sec_path_mab
+	// 4.4 判断自己是否是源节点并且开启了 sec_path_mab, 并且自己的是源节点的话, 那么拷贝 sec_path_mab_topology.json 过来
 	if lirNode.Id == 1 && configs.TopConfiguration.PathValidationConfig.TransmissionType == (int)(types.TransmissionType_MAB) {
 		topologyDir := fmt.Sprintf("%s/%s/topology", configs.TopConfiguration.PathConfig.ConfigGeneratePath, lirNode.ContainerName)
 		err := os.MkdirAll(topologyDir, os.ModePerm)
@@ -93,6 +93,7 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode, graphNodeId in
 	volumes := []string{
 		fmt.Sprintf("%s:%s", nodeDir, fmt.Sprintf("/configuration/%s", lirNode.ContainerName)),
 		fmt.Sprintf("%s:%s", "/home/zhf/Projects/emulator/backend/cmd/final_result", fmt.Sprintf("/result")),
+		fmt.Sprintf("%s:%s", "/dev", "/dev"), // 0.00025 / 0.00016 (相较于使用 netlink 比较快)
 	}
 
 	// 6. 配置环境变量
@@ -122,10 +123,14 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode, graphNodeId in
 
 		// 进行 router_type 的添加
 		fmt.Sprintf("%s=%d", "ROUTER_TYPE", lirNode.SpecialParams.InnerRouterType),
-		fmt.Sprintf("%s=%d", "SEC_PATH_MAB_TYPE", configs.TopConfiguration.PathValidationConfig.SecPathMabType),
-	}
+		fmt.Sprintf("%s=%d", "SEC_PATH_MAB_TYPE", configs.TopConfiguration.PathValidationConfig.SecPathMabConfig.SecPathMabType),
 
-	fmt.Printf("%s=%d\n", "SEC_PATH_MAB_TYPE", configs.TopConfiguration.PathValidationConfig.SecPathMabType)
+		// 设置 topology inforamtion 的环境变量
+		fmt.Sprintf("%s=%d", "NUMBER_OF_HOPS", configs.TopConfiguration.PathValidationConfig.SecPathMabConfig.NumberOfHops),
+		fmt.Sprintf("%s=%d", "NUMBER_OF_SEGMENTS_PER_HOP", configs.TopConfiguration.PathValidationConfig.SecPathMabConfig.NumberOfSegmentsPerHop),
+		fmt.Sprintf("%s=%d", "EXPERIMENT_TYPE", configs.TopConfiguration.PathValidationConfig.SecPathMabConfig.ExperimentType),
+		fmt.Sprintf("%s=%d", "TOPOLOGY_TYPE", configs.TopConfiguration.PathValidationConfig.SecPathMabConfig.TopologyType),
+	}
 
 	// 7. 容器配置
 	containerConfig := &container.Config{

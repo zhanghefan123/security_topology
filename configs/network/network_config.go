@@ -5,6 +5,8 @@ type NetworkConfig struct {
 	BaseV4NetworkAddress string  `mapstructure:"base_v4_network_address"`
 	BaseV6NetworkAddress string  `mapstructure:"base_v6_network_address"`
 	HttpListenPort       string  `mapstructure:"http_listen_port"`
+	ValidationListenPort int     `mapstructure:"validation_listen_port"`
+	BackendAddr          string  `mapstructure:"backend_addr"`
 	EnableFrr            bool    `mapstructure:"enable_frr"`
 	OspfVersion          string  `mapstructure:"ospf_version"`
 	EnableSRv6           bool    `mapstructure:"enable_srv6"`

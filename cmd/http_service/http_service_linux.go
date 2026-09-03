@@ -8,7 +8,7 @@ import (
 	"zhanghefan123/security_topology/cmd/tools"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/modules/logger"
-	"zhanghefan123/security_topology/services/http"
+	"zhanghefan123/security_topology/services/http_server"
 )
 
 var (
@@ -32,7 +32,7 @@ func CreateHttpServiceCmd() *cobra.Command {
 
 // core http_service 命令的核心
 func core() {
-	router := http.InitRouter()
+	router := http_server.InitRouter()
 	err := router.Run(fmt.Sprintf(":%s", configs.TopConfiguration.NetworkConfig.HttpListenPort))
 	if err != nil {
 		cmdHttpServiceLogger.Infof("start http service faild %v", err)

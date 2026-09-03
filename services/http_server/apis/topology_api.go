@@ -18,7 +18,7 @@ import (
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/performance_monitor"
 	"zhanghefan123/security_topology/modules/entities/real_entities/topology"
-	"zhanghefan123/security_topology/services/http/params"
+	"zhanghefan123/security_topology/services/http_server/params"
 	"zhanghefan123/security_topology/utils/dir"
 	"zhanghefan123/security_topology/utils/file"
 )
@@ -62,7 +62,7 @@ func ChangeStartDefence(c *gin.Context) {
 	}
 
 	// 进行参数的设置
-	topology.Instance.TopologyParams.StartDefence = startDefenceParams.StartDefence
+	topology.Instance.TopologyStartParams.BlockChainParams.StartDefence = startDefenceParams.StartDefence
 
 	// 设置到 etcd 之中
 	startDefenceKey := "start_defence"
@@ -189,8 +189,8 @@ func GetTopologyState(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"state":                          "up",
-		"topology_params":                topology.Instance.TopologyParams, // 如果已经创建完成了, 还需要进行创建的参数的返回
-		"links":                          topology.Instance.AllLinksMap,    // 直接返回一个 map
+		"topology_params":                topology.Instance.TopologyStartParams, // 如果已经创建完成了, 还需要进行创建的参数的返回
+		"links":                          topology.Instance.AllLinksMap,         // 直接返回一个 map
 		"all_topology_names":             AllTopologyNames,
 		"container_name_to_port_mapping": containerNameToPortMapping,
 	})
@@ -207,7 +207,7 @@ func StartTopology(c *gin.Context) {
 	}
 
 	// 2. 进行拓扑参数的绑定
-	topologyParams := &params.TopologyParams{}
+	topologyParams := &params.TopologyStartParams{}
 	err := c.BindJSON(topologyParams)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -216,8 +216,8 @@ func StartTopology(c *gin.Context) {
 		fmt.Println("error")
 		return
 	}
-	topologyParams.BlockChainType = params.ResolveBlockChainType(topologyParams.BlockChainTypeString) // 解析
-	fmt.Println(topologyParams)                                                                       // 打印拓扑
+	topologyParams.BlockChainParams.BlockChainType = params.ResolveBlockChainType(topologyParams.BlockChainParams.BlockChainTypeString) // 解析
+	fmt.Println("topology fuck:", topologyParams)                                                                                       // 打印拓扑
 
 	// 3. 核心处理逻辑
 	err = startTopologyInner(topologyParams)
@@ -235,8 +235,19 @@ func StartTopology(c *gin.Context) {
 	})
 }
 
+func SetLocalConfigWithTopologyStartParams(topologyStartParams *params.TopologyStartParams) {
+	// 1. 配置上拓扑参数
+	configs.TopConfiguration.TopologyConfig.PerLinkDelay = topologyStartParams.TopologyParams.PerLinkDelay
+	// 2. 将 enabled 以及 topologyParams 之中的设置进去
+	configs.TopConfiguration.PathValidationConfig.SecPathMabConfig.TopologyType = topologyStartParams.SecPathMabParams.TopologyType
+	configs.TopConfiguration.PathValidationConfig.SecPathMabConfig.SecPathMabType = topologyStartParams.SecPathMabParams.SecPathMabType
+	configs.TopConfiguration.PathValidationConfig.SecPathMabConfig.ExperimentType = topologyStartParams.SecPathMabParams.ExperimentType
+	configs.TopConfiguration.PathValidationConfig.SecPathMabConfig.NumberOfHops = topologyStartParams.SecPathMabParams.NumberOfHops
+	configs.TopConfiguration.PathValidationConfig.SecPathMabConfig.NumberOfSegmentsPerHop = topologyStartParams.SecPathMabParams.NumberOfSegmentsPerHop
+}
+
 // startTopologyInner 实际的拓扑启动逻辑
-func startTopologyInner(topologyParams *params.TopologyParams) error {
+func startTopologyInner(topologyParams *params.TopologyStartParams) error {
 	var err error
 	var dockerClient *docker.Client
 	// 1. 初始化本地配置
@@ -244,12 +255,8 @@ func startTopologyInner(topologyParams *params.TopologyParams) error {
 	if err != nil {
 		return fmt.Errorf("init local config err: %w", err)
 	}
-	// 2. 将 topologyParams 之中的设置进去
-	configs.TopConfiguration.PathValidationConfig.SecPathMabType = topologyParams.SecPathMabType
-	configs.TopConfiguration.PathValidationConfig.PerLinkDelay = topologyParams.PerLinkDelay
-	// 2. 进行资源限制的加载
-	configs.TopConfiguration.ResourcesConfig.CpuLimit = topologyParams.ConsensusNodeCpu
-	configs.TopConfiguration.ResourcesConfig.MemoryLimit = topologyParams.ConsensusNodeMemory
+	// 2. 根据 params 设置 local config
+	SetLocalConfigWithTopologyStartParams(topologyParams)
 	// 3. 初始化 dockerClient
 	dockerClient, err = client.NewDockerClient()
 	if err != nil {

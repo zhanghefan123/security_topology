@@ -3,7 +3,6 @@ package topology
 import (
 	"context"
 	"fmt"
-	"github.com/docker/docker/api/types"
 	dockerTypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
@@ -25,6 +24,7 @@ import (
 )
 
 const (
+	//RemoveUring               = "RemoveUring"
 	DeleteWebShells           = "DeleteWebShells"
 	StopNodeContainers        = "StopNodeContainers"
 	RemoveNodeContainers      = "RemoveNodeContainers"
@@ -54,8 +54,9 @@ type RemoveModule struct {
 func (t *Topology) Remove() error {
 
 	removeSteps := []map[string]RemoveModule{
+		//{RemoveUring: RemoveModule{true, t.RemoveUring}},
 		{DeleteWebShells: RemoveModule{true, t.DeleteWebShells}},
-		{RemoveChainCodeContainers: RemoveModule{true, t.RemoveChaincodeContainers}},
+		{RemoveChainCodeContainers: RemoveModule{false, t.RemoveChaincodeContainers}},
 		{StopNodeContainers: RemoveModule{true, t.StopNodeContainers}},
 		{RemoveNodeContainers: RemoveModule{true, t.RemoveNodeContainers}},
 		{RemoveLinks: RemoveModule{true, t.RemoveLinks}},
@@ -105,6 +106,30 @@ func (t *Topology) removeSteps(removeSteps []map[string]RemoveModule) (err error
 	}
 	return
 }
+
+//func (t *Topology) RemoveUring() error {
+//	if _, ok := t.topologyStopSteps[RemoveUring]; ok {
+//		topologyLogger.Infof("already remove uring")
+//		return nil
+//	}
+//
+//	for _, abstractNode := range t.AllAbstractNodes {
+//		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
+//		if err != nil {
+//			return fmt.Errorf("get normal node from abstract node failed: %w", err)
+//		}
+//		if normalNode.Type == types.NetworkNodeType_LirNode {
+//			err = apis.RemoveUring(normalNode.Id)
+//			if err != nil {
+//				return fmt.Errorf("remove uring failed: %w", err)
+//			}
+//		}
+//	}
+//
+//	t.topologyStopSteps[RemoveUring] = struct{}{}
+//	topologyLogger.Infof("remove uring")
+//	return nil
+//}
 
 // DeleteWebShells 进行所有的 web shell 的删除
 func (t *Topology) DeleteWebShells() error {
@@ -231,7 +256,7 @@ func (t *Topology) RemoveChaincodeContainers() error {
 		Value: "dev-peer",
 	})
 
-	containers, err := t.client.ContainerList(context.Background(), types.ContainerListOptions{
+	containers, err := t.client.ContainerList(context.Background(), dockerTypes.ContainerListOptions{
 		All:     true,
 		Filters: chainCodeContainerFilter,
 	})

@@ -1,8 +1,8 @@
-package http
+package http_server
 
 import (
 	"github.com/gin-gonic/gin"
-	"zhanghefan123/security_topology/services/http/apis"
+	"zhanghefan123/security_topology/services/http_server/apis"
 )
 
 var postRoutes = map[string]gin.HandlerFunc{

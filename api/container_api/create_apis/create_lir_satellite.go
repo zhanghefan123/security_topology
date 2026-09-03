@@ -40,7 +40,7 @@ func CreateLiRSatellite(client *docker.Client, lirSatellite *satellites.LiRSatel
 	}
 
 	// 3. 创建端口映射
-	httpPortInteger := 9000 + lirSatellite.Id
+	httpPortInteger := configs.TopConfiguration.NetworkConfig.ValidationListenPort + lirSatellite.Id
 	httpPort := nat.Port(fmt.Sprintf("%d/tcp", httpPortInteger))
 
 	exposedPorts := nat.PortSet{

@@ -6,3 +6,8 @@ enum SecPathMabStrategy {
   FIXED_BATCH = 0;
   DYNAMIC_BATCH = 1;
 }
+
+enum SecPathMabTopologyType {
+  NON_LINEAR_TEST_TOPOLOGY = 0;
+  LINEAR_TEST_TOPOLOGY = 1;
+}

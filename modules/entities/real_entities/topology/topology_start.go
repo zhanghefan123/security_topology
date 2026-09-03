@@ -227,6 +227,34 @@ func (t *Topology) StartNodeContainers() error {
 	return multithread.RunInMultiThread(description, taskFunc, t.AllAbstractNodes)
 }
 
+//func (t *Topology) SetPids() error {
+//	if _, ok := t.topologyStartSteps[SetPids]; ok {
+//		topologyLogger.Infof("SetPids is already running")
+//		return nil
+//	}
+//
+//	time.Sleep(time.Second * 5) // 等待容器完全启动，获取到 pid 之后再进行设置
+//	description := fmt.Sprintf("%20s", "set pids")
+//	var taskFunc multithread.TaskFunc[*node.AbstractNode] = func(node *node.AbstractNode) error {
+//		normalNode, err := node.GetNormalNodeFromAbstractNode()
+//		if err != nil {
+//			return err
+//		}
+//		if normalNode.Type == types.NetworkNodeType_LirNode {
+//			err = apis.SetPid(normalNode.Id, normalNode.Pid)
+//			if err != nil {
+//				return fmt.Errorf("set pid failed")
+//			}
+//		}
+//		return nil
+//	}
+//
+//	t.topologyStartSteps[SetPids] = struct{}{}
+//	topologyLogger.Infof("execute set pids")
+//
+//	return multithread.RunInMultiThread(description, taskFunc, t.AllAbstractNodes)
+//}
+
 // SetVethNamespaces 设置 veth 命名空间
 func (t *Topology) SetVethNamespaces() error {
 	if _, ok := t.topologyStartSteps[SetVethNameSpaces]; ok {
@@ -283,7 +311,7 @@ func (t *Topology) StoreToEtcd() error {
 	}
 
 	startDefenceKey := "start_defence"
-	if t.TopologyParams.StartDefence {
+	if t.TopologyStartParams.BlockChainParams.StartDefence {
 		_, err := t.EtcdClient.Put(context.Background(), startDefenceKey, "true")
 		if err != nil {
 			return fmt.Errorf("set start defence failed: %w", err)

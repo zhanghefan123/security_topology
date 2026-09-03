@@ -12,7 +12,7 @@ import (
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/services/etcd"
 	"zhanghefan123/security_topology/modules/logger"
-	"zhanghefan123/security_topology/services/http/params"
+	"zhanghefan123/security_topology/services/http_server/params"
 )
 
 var (
@@ -26,13 +26,13 @@ type Parameters struct {
 }
 
 type Topology struct {
-	chainMakerPrepare *chainmaker_prepare.ChainMakerPrepare
-	client            *docker.Client
-	EtcdClient        *clientv3.Client
-	TopologyParams    *params.TopologyParams
-	Ipv4SubNets       []iplib.Net4
-	Ipv6SubNets       []iplib.Net6
-	TopologyGraph     *simple.DirectedGraph
+	chainMakerPrepare   *chainmaker_prepare.ChainMakerPrepare
+	client              *docker.Client
+	EtcdClient          *clientv3.Client
+	TopologyStartParams *params.TopologyStartParams
+	Ipv4SubNets         []iplib.Net4
+	Ipv6SubNets         []iplib.Net6
+	TopologyGraph       *simple.DirectedGraph
 
 	Routers            []*nodes.Router
 	NormalNodes        []*normal_node.NormalNode
@@ -80,12 +80,12 @@ type Topology struct {
 }
 
 // NewTopology 创建新的拓扑
-func NewTopology(client *docker.Client, etcdClient *clientv3.Client, params *params.TopologyParams) *Topology {
+func NewTopology(client *docker.Client, etcdClient *clientv3.Client, params *params.TopologyStartParams) *Topology {
 	topology := &Topology{
-		client:         client,
-		EtcdClient:     etcdClient,
-		TopologyParams: params,
-		TopologyGraph:  simple.NewDirectedGraph(),
+		client:              client,
+		EtcdClient:          etcdClient,
+		TopologyStartParams: params,
+		TopologyGraph:       simple.NewDirectedGraph(),
 
 		Routers:         make([]*nodes.Router, 0),
 		NormalNodes:     make([]*normal_node.NormalNode, 0),

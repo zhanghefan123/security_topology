@@ -339,30 +339,35 @@ func (absLink *AbstractLink) SetLinkParams() error {
 		}
 		fmt.Println("set link params")
 	} else {
-		//fmt.Println("set bandwidth")
-		//if absLink.Type == types.NetworkLinkType_BackboneLink {
-		//	var bandwidth = int(8 * 1e9)
-		//	err = linux_tc_api.SetInterfaceBandwidth(absLink.SourceInterface, sourceNode.Pid, bandwidth)
-		//	if err != nil {
-		//		return fmt.Errorf("failed to set link params: %w", err)
-		//	}
-		//	err = linux_tc_api.SetInterfaceBandwidth(absLink.TargetInterface, targetNode.Pid, bandwidth)
-		//	if err != nil {
-		//		return fmt.Errorf("failed to set link params: %w", err)
-		//	}
-		//}
-		//fmt.Printf("set delay\n")
-		delayInMs := configs.TopConfiguration.PathValidationConfig.PerLinkDelay
-		fmt.Printf("delay in ms: %f\n", delayInMs)
-		err = linux_tc_api.SetInterfaceDelay(absLink.SourceInterface, sourceNode.Pid, delayInMs)
-		if err != nil {
-			return fmt.Errorf("failed to set backbone link params: %v", err)
-		}
-		err = linux_tc_api.SetInterfaceDelay(absLink.TargetInterface, targetNode.Pid, delayInMs)
-		if err != nil {
-			return fmt.Errorf("failed to set backbone link params: %v", err)
+		delayInMs := configs.TopConfiguration.TopologyConfig.PerLinkDelay
+		if delayInMs != 0.0 {
+			err = linux_tc_api.SetInterfaceDelay(absLink.SourceInterface, sourceNode.Pid, delayInMs)
+			if err != nil {
+				return fmt.Errorf("failed to set backbone link params: %v", err)
+			}
+			err = linux_tc_api.SetInterfaceDelay(absLink.TargetInterface, targetNode.Pid, delayInMs)
+			if err != nil {
+				return fmt.Errorf("failed to set backbone link params: %v", err)
+			}
+		} else {
+			fmt.Printf("not set delay since delay equals zero\n")
 		}
 	}
+
+	//fmt.Println("set bandwidth")
+	//if absLink.Type == types.NetworkLinkType_BackboneLink {
+	//	var bandwidth = int(8 * 1e9)
+	//	err = linux_tc_api.SetInterfaceBandwidth(absLink.SourceInterface, sourceNode.Pid, bandwidth)
+	//	if err != nil {
+	//		return fmt.Errorf("failed to set link params: %w", err)
+	//	}
+	//	err = linux_tc_api.SetInterfaceBandwidth(absLink.TargetInterface, targetNode.Pid, bandwidth)
+	//	if err != nil {
+	//		return fmt.Errorf("failed to set link params: %w", err)
+	//	}
+	//}
+	//fmt.Printf("set delay\n")
+
 	//else {
 	//	if absLink.Type == types.NetworkLinkType_BackboneLink {
 	//		fmt.Printf("set delay\n")
