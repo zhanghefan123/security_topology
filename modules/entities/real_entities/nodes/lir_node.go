@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"zhanghefan123/security_topology/modules/entities/real_entities/normal_node"
 	"zhanghefan123/security_topology/modules/entities/types"
-	"zhanghefan123/security_topology/services/http_server/params"
+	"zhanghefan123/security_topology/services/http_server/params/node_and_link"
 )
 
 type LiRNode struct {
 	*normal_node.NormalNode
-	SpecialParams params.SpecialParams
+	SpecialParams node_and_link.SpecialParams
 }
 
-func NewLiRNode(nodeId int, X, Y float64, specialParams params.SpecialParams) *LiRNode {
+func NewLiRNode(nodeId int, X, Y float64, specialParams node_and_link.SpecialParams) *LiRNode {
 	lirNodeType := types.NetworkNodeType_LirNode
 	normalNode := normal_node.NewNormalNode(
 		types.NetworkNodeType_LirNode,

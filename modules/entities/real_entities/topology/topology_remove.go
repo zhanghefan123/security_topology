@@ -294,7 +294,7 @@ func (t *Topology) RemoveChainMakerFiles() error {
 		return nil
 	}
 
-	chainMakerGoProjectPath := configs.TopConfiguration.ChainMakerConfig.ChainMakerGoProjectPath
+	chainMakerGoProjectPath := configs.TopConfiguration.PathConfig.ChainmakerGoProjectPath
 	multiNodePath := path.Join(chainMakerGoProjectPath, "scripts/docker/multi_node")
 	testDataPath := path.Join(chainMakerGoProjectPath, "tools/cmc/testdata")
 	configPath := path.Join(multiNodePath, "config")
@@ -323,7 +323,7 @@ func (t *Topology) RemoveFabricFiles() error {
 		return nil
 	}
 
-	testNetworkPath := configs.TopConfiguration.FabricConfig.FabricNetworkPath
+	testNetworkPath := configs.TopConfiguration.PathConfig.FabricNetworkPath
 	organizationsPath := path.Join(testNetworkPath, "organizations")
 	ordererOrganizationsPath := path.Join(organizationsPath, "ordererOrganizations")
 	peerOrganizationsPath := path.Join(organizationsPath, "peerOrganizations")
@@ -437,7 +437,7 @@ func (t *Topology) RemoveAllFiscoBcosFiles() error {
 		return nil
 	}
 
-	dirToDelete := filepath.Join(configs.TopConfiguration.FiscoBcosConfig.ExamplePath, "nodes/")
+	dirToDelete := filepath.Join(configs.TopConfiguration.PathConfig.FiscoBcosExamplePath, "nodes/")
 	err := os.RemoveAll(dirToDelete)
 	if err != nil {
 		return fmt.Errorf("failed to delete the fisco bcos generated files")

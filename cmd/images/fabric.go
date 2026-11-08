@@ -11,7 +11,7 @@ import (
 
 // buildImageForFabricPeer 为 fabric peer 进行镜像的构建
 func buildImageForFabricPeer() error {
-	fabricProjectPath := configs.TopConfiguration.FabricConfig.FabricProjectPath
+	fabricProjectPath := configs.TopConfiguration.PathConfig.FabricProjectPath
 	fmt.Println("fabricProjectPath:", fabricProjectPath)
 	err := dir.WithContextManager(fabricProjectPath, func() error {
 		currentDir, err := os.Getwd()
@@ -39,7 +39,7 @@ func buildImageForFabricPeer() error {
 
 // buildImageForFabricOrder 为 fabric orderer 进行镜像的构建
 func buildImageForFabricOrder() error {
-	fabricProjectPath := configs.TopConfiguration.FabricConfig.FabricProjectPath
+	fabricProjectPath := configs.TopConfiguration.PathConfig.FabricProjectPath
 	err := dir.WithContextManager(fabricProjectPath, func() error {
 		var commandArgs []string = []string{
 			"build", "--force-rm", "-f", "./images/orderer/Dockerfile",

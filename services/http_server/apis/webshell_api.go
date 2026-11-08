@@ -40,7 +40,7 @@ func StartWebShell(c *gin.Context) {
 	var webShellInfo *webshell.WebShellInfo
 
 	// 获取 ip 地址
-	hostAddr := configs.TopConfiguration.NetworkConfig.LocalNetworkAddress
+	hostAddr := configs.TopConfiguration.BackendServiceConfig.LocalNetworkAddress
 
 	// 获取可用端口
 	availablePort, err := network.GetAvailablePort()

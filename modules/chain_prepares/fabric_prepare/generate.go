@@ -56,9 +56,8 @@ func (p *FabricPrepare) InitializePathMap() error {
 	}
 
 	templatePath := path.Join(configs.TopConfiguration.PathConfig.ResourcesPath, "/fabric_template") // 资源文件路径
-	fabricConfig := configs.TopConfiguration.FabricConfig                                            // fabric 配置项
-	fabricSamplesPath := fabricConfig.FabricSamplesPath                                              // fabric-samples 的路径
-	fabricNetworkPath := fabricConfig.FabricNetworkPath                                              // fabric-samples/test-network 的路径
+	fabricSamplesPath := configs.TopConfiguration.PathConfig.FabricSamplesPath                       // fabric-samples 的路径
+	fabricNetworkPath := configs.TopConfiguration.PathConfig.FabricNetworkPath                       // fabric-samples/test-network 的路径
 
 	p.pathMapping[GenesisBlockBasic] = path.Join(templatePath, "configtx_basic.yaml")         // configtx 模板文件
 	p.pathMapping[GenesisBlockNew] = path.Join(fabricNetworkPath, "bft-config/configtx.yaml") // configtx 输出文件
@@ -104,7 +103,7 @@ func (p *FabricPrepare) GenerateGenesisBlockConfigYml() (err error) {
 	var file, newFile *os.File                    // 模版文件和输出文件句柄
 	ordererNum := p.fabricOrdererNodeCount
 	peerNum := p.fabricPeerNodeCount
-	orderStartPort := configs.TopConfiguration.FabricConfig.OrderStartPort
+	orderStartPort := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.OrderStartPort
 
 	// 打开输入文件
 	// -------------------------------------------------------

@@ -85,7 +85,7 @@ func (rpt *RaspberrypiTopology) SetInterfaceAddr() error {
 	}
 
 	// 监听端口
-	grpcPort := configs.TopConfiguration.RaspberryPiConfig.GrpcPort
+	grpcPort := configs.TopConfiguration.StartTopologyParams.RaspberryPiConfig.GrpcPort
 
 	// 创建 connection
 	for index, abstractNode := range rpt.AllAbstractNodes {
@@ -93,7 +93,7 @@ func (rpt *RaspberrypiTopology) SetInterfaceAddr() error {
 		if err != nil {
 			return fmt.Errorf("get normal node failed, %s", err)
 		}
-		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.RaspberryPiConfig.IpAddresses[index], grpcPort))
+		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.StartTopologyParams.RaspberryPiConfig.IpAddresses[index], grpcPort))
 		if err != nil {
 			return fmt.Errorf("create raspberrypi connection failed")
 		}
@@ -132,10 +132,10 @@ func (rpt *RaspberrypiTopology) CalculateStaticRoutes() error {
 	}
 
 	// 监听端口
-	grpcPort := configs.TopConfiguration.RaspberryPiConfig.GrpcPort
+	grpcPort := configs.TopConfiguration.StartTopologyParams.RaspberryPiConfig.GrpcPort
 
 	for index, abstractNode := range rpt.AllAbstractNodes {
-		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.RaspberryPiConfig.IpAddresses[index], grpcPort))
+		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.StartTopologyParams.RaspberryPiConfig.IpAddresses[index], grpcPort))
 		if err != nil {
 			return fmt.Errorf("create raspberrypi connection failed")
 		}
@@ -188,14 +188,14 @@ func (rpt *RaspberrypiTopology) CalculateAndWriteLiRRoutes() error {
 	allLirRoutesString := strings.Join(allLiRRoutes, "\n")
 
 	// 监听端口
-	grpcPort := configs.TopConfiguration.RaspberryPiConfig.GrpcPort
+	grpcPort := configs.TopConfiguration.StartTopologyParams.RaspberryPiConfig.GrpcPort
 
 	for index, abstractNode := range rpt.AllAbstractNodes {
 		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
 		if err != nil {
 			return fmt.Errorf("get normal node failed, %s", err)
 		}
-		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.RaspberryPiConfig.IpAddresses[index], grpcPort))
+		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.StartTopologyParams.RaspberryPiConfig.IpAddresses[index], grpcPort))
 		if err != nil {
 			return fmt.Errorf("create raspberrypi connection failed")
 		}
@@ -238,7 +238,7 @@ func (rpt *RaspberrypiTopology) GenerateAddressMapping() error {
 	}
 
 	// 监听端口
-	grpcPort := configs.TopConfiguration.RaspberryPiConfig.GrpcPort
+	grpcPort := configs.TopConfiguration.StartTopologyParams.RaspberryPiConfig.GrpcPort
 
 	for index, abstractNode := range rpt.AllAbstractNodes {
 		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
@@ -248,7 +248,7 @@ func (rpt *RaspberrypiTopology) GenerateAddressMapping() error {
 
 		finalString := ""
 
-		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.RaspberryPiConfig.IpAddresses[index], grpcPort))
+		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.StartTopologyParams.RaspberryPiConfig.IpAddresses[index], grpcPort))
 		if err != nil {
 			return fmt.Errorf("create raspberrypi connection failed")
 		}
@@ -298,7 +298,7 @@ func (rpt *RaspberrypiTopology) GenerateIfnameToLinkIdentifierMapping() error {
 	}
 
 	// 监听端口
-	grpcPort := configs.TopConfiguration.RaspberryPiConfig.GrpcPort
+	grpcPort := configs.TopConfiguration.StartTopologyParams.RaspberryPiConfig.GrpcPort
 
 	for index, abstractNode := range rpt.AllAbstractNodes {
 		finalString := ""
@@ -309,7 +309,7 @@ func (rpt *RaspberrypiTopology) GenerateIfnameToLinkIdentifierMapping() error {
 		for interfaceName, networkIntf := range normalNode.IfNameToInterfaceMap {
 			finalString += fmt.Sprintf("%s->%d->%s\n", interfaceName, networkIntf.LinkIdentifier, networkIntf.TargetIpv4Addr)
 		}
-		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.RaspberryPiConfig.IpAddresses[index], grpcPort))
+		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.StartTopologyParams.RaspberryPiConfig.IpAddresses[index], grpcPort))
 		if err != nil {
 			return fmt.Errorf("create raspberrypi connection failed")
 		}
@@ -343,7 +343,7 @@ func (rpt *RaspberrypiTopology) GenerateSRv6Routes() error {
 	}
 
 	// 监听端口
-	grpcPort := configs.TopConfiguration.RaspberryPiConfig.GrpcPort
+	grpcPort := configs.TopConfiguration.StartTopologyParams.RaspberryPiConfig.GrpcPort
 
 	for index, abstractNode := range rpt.AllAbstractNodes {
 		ipRouteStrings, destinationIpv6AddressMapping, destinationPathLengthMapping, err := route.GenerateSegmentRoutingStrings(abstractNode, &(rpt.AllLinksMap), rpt.TopologyGraph)
@@ -355,7 +355,7 @@ func (rpt *RaspberrypiTopology) GenerateSRv6Routes() error {
 			return fmt.Errorf("get normal node from abstract node failed: %w", err)
 		}
 
-		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.RaspberryPiConfig.IpAddresses[index], grpcPort))
+		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.StartTopologyParams.RaspberryPiConfig.IpAddresses[index], grpcPort))
 		if err != nil {
 			return fmt.Errorf("create raspberrypi connection failed")
 		}
@@ -419,7 +419,7 @@ func (rpt *RaspberrypiTopology) SetEnv() error {
 	}
 
 	// 监听端口
-	grpcPort := configs.TopConfiguration.RaspberryPiConfig.GrpcPort
+	grpcPort := configs.TopConfiguration.StartTopologyParams.RaspberryPiConfig.GrpcPort
 
 	for index, abstractNode := range rpt.AllAbstractNodes {
 		// 进行 normalNode 的获取
@@ -427,7 +427,7 @@ func (rpt *RaspberrypiTopology) SetEnv() error {
 		if err != nil {
 			return fmt.Errorf("get normal node failed, %s", err)
 		}
-		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.RaspberryPiConfig.IpAddresses[index], grpcPort))
+		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.StartTopologyParams.RaspberryPiConfig.IpAddresses[index], grpcPort))
 		if err != nil {
 			return fmt.Errorf("create raspberrypi connection failed")
 		}
@@ -451,15 +451,15 @@ func (rpt *RaspberrypiTopology) SetEnv() error {
 		}
 		envValues := []string{
 			normalNode.ContainerName,
-			strconv.Itoa(configs.TopConfiguration.PathValidationConfig.BfEffectiveBits),
-			strconv.Itoa(configs.TopConfiguration.PathValidationConfig.PVFEffectiveBits),
-			strconv.Itoa(configs.TopConfiguration.PathValidationConfig.HashSeed),
-			strconv.Itoa(configs.TopConfiguration.PathValidationConfig.NumberOfHashFunctions),
-			strconv.Itoa(configs.TopConfiguration.PathValidationConfig.RoutingTableType),
+			strconv.Itoa(configs.TopConfiguration.StartTopologyParams.PathValidationParams.BasicConfig.BfEffectiveBits),
+			strconv.Itoa(configs.TopConfiguration.StartTopologyParams.PathValidationParams.BasicConfig.PVFEffectiveBits),
+			strconv.Itoa(configs.TopConfiguration.StartTopologyParams.PathValidationParams.BasicConfig.HashSeed),
+			strconv.Itoa(configs.TopConfiguration.StartTopologyParams.PathValidationParams.BasicConfig.NumberOfHashFunctions),
+			strconv.Itoa(configs.TopConfiguration.StartTopologyParams.PathValidationParams.BasicConfig.RoutingTableType),
 			strconv.Itoa(normalNode.Id),
 			strconv.Itoa(int(abstractNode.Node.ID())),
-			strconv.Itoa(configs.TopConfiguration.PathValidationConfig.LiRSingleTimeEncodingCount),
-			fmt.Sprintf("%t", configs.TopConfiguration.NetworkConfig.EnableSRv6),
+			strconv.Itoa(configs.TopConfiguration.StartTopologyParams.PathValidationParams.BasicConfig.LiRSingleTimeEncodingCount),
+			fmt.Sprintf("%t", configs.TopConfiguration.StartTopologyParams.NetworkConfig.EnableSRv6),
 		}
 
 		var response *protobuf.NormalResponse
@@ -485,14 +485,14 @@ func (rpt *RaspberrypiTopology) SetSysctls() error {
 	}
 
 	// 监听端口
-	grpcPort := configs.TopConfiguration.RaspberryPiConfig.GrpcPort
+	grpcPort := configs.TopConfiguration.StartTopologyParams.RaspberryPiConfig.GrpcPort
 
 	for index, abstractNode := range rpt.AllAbstractNodes {
 		normalNode, err := abstractNode.GetNormalNodeFromAbstractNode()
 		if err != nil {
 			return fmt.Errorf("get normal node failed, %s", err)
 		}
-		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.RaspberryPiConfig.IpAddresses[index], grpcPort))
+		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.StartTopologyParams.RaspberryPiConfig.IpAddresses[index], grpcPort))
 		if err != nil {
 			return fmt.Errorf("create raspberrypi connection failed")
 		}
@@ -555,10 +555,10 @@ func (rpt *RaspberrypiTopology) LoadKernelInfo() error {
 	}
 
 	// 监听端口
-	grpcPort := configs.TopConfiguration.RaspberryPiConfig.GrpcPort
+	grpcPort := configs.TopConfiguration.StartTopologyParams.RaspberryPiConfig.GrpcPort
 
 	for index, _ := range rpt.AllAbstractNodes {
-		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.RaspberryPiConfig.IpAddresses[index], grpcPort))
+		raspberrypiConn, err := CreateRaspberrypiConnection(fmt.Sprintf("%s:%d", configs.TopConfiguration.StartTopologyParams.RaspberryPiConfig.IpAddresses[index], grpcPort))
 		if err != nil {
 			return fmt.Errorf("create raspberrypi connection failed")
 		}

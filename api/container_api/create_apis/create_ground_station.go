@@ -41,8 +41,8 @@ func CreateGroundStation(client *docker.Client, groundStation *ground_station.Gr
 	// 3. 获取配置
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	nodeDir := filepath.Join(simulationDir, groundStation.ContainerName)
-	enableFrr := configs.TopConfiguration.NetworkConfig.EnableFrr
-	ipv6ServerPort := configs.TopConfiguration.AppsConfig.IPv6Config.ServerPort
+	enableFrr := configs.TopConfiguration.StartTopologyParams.NetworkConfig.EnableFrr
+	ipv6ServerPort := configs.TopConfiguration.StartTopologyParams.AppsConfig.IPv6Config.ServerPort
 
 	// 4. 创建容器卷映射
 	volumes := []string{
@@ -61,7 +61,7 @@ func CreateGroundStation(client *docker.Client, groundStation *ground_station.Gr
 
 	// 6. containerConfig
 	containerConfig := &container.Config{
-		Image: configs.TopConfiguration.ImagesConfig.GroundStationImageName,
+		Image: configs.TopConfiguration.StartTopologyParams.ImagesConfig.GroundStationImageName,
 		Tty:   true,
 		Env:   envs,
 	}

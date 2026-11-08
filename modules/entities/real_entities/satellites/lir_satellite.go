@@ -45,7 +45,7 @@ func (lirSatellite *LiRSatellite) StoreToEtcd(etcdClient *clientv3.Client) error
 		IfIdx:          int32(nextGslIfIdx),
 	}
 	satelliteInBytes := protobuf.MustMarshal(normalPbSatellite)
-	etcdSatellitesPrefix := configs.TopConfiguration.ServicesConfig.EtcdConfig.EtcdPrefix.SatellitesPrefix
+	etcdSatellitesPrefix := configs.TopConfiguration.StartTopologyParams.ServicesConfig.EtcdConfig.EtcdPrefix.SatellitesPrefix
 	satelliteKey := fmt.Sprintf("%s/%d", etcdSatellitesPrefix, lirSatellite.Id)
 	_, err := etcdClient.Put(context.Background(), satelliteKey, string(satelliteInBytes))
 	if err != nil {

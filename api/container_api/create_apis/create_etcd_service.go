@@ -52,7 +52,7 @@ func CreateEtcdNode(client *docker.Client, etcdNode *etcd.EtcdNode) error {
 			clientPort: {},
 			peerPort:   {},
 		},
-		Image: configs.TopConfiguration.ImagesConfig.EtcdServiceImageName,
+		Image: configs.TopConfiguration.StartTopologyParams.ImagesConfig.EtcdServiceImageName,
 		Env:   envs,
 		Tty:   true,
 	}

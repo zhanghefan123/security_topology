@@ -78,11 +78,11 @@ func (p *ChainMakerPrepare) InitializePathMapping() error {
 	}
 
 	resources := configs.TopConfiguration.PathConfig.ResourcesPath
-	chainMakerConfig := configs.TopConfiguration.ChainMakerConfig
+	chainMakerConfig := configs.TopConfiguration.StartTopologyParams.BlockChainParams.ChainMakerParams
 	chainMakerBuildPath := chainMakerConfig.ChainMakerBuild
-	templatesFilePath := chainMakerConfig.TemplatesFilePath
-	chainMakerGoProjectPath := chainMakerConfig.ChainMakerGoProjectPath
-	chainMakerCryptoGenProjectPath := chainMakerConfig.CryptoGenProjectPath
+	templatesFilePath := configs.TopConfiguration.PathConfig.TemplatesFilePath
+	chainMakerGoProjectPath := configs.TopConfiguration.PathConfig.ChainmakerGoProjectPath
+	chainMakerCryptoGenProjectPath := configs.TopConfiguration.PathConfig.ChainmakerCryptoGenProjectPath
 	p.pathMapping[Resources] = configs.TopConfiguration.PathConfig.ResourcesPath
 	p.pathMapping[ChainMakerBuild] = chainMakerBuildPath
 	p.pathMapping[Templates] = templatesFilePath
@@ -254,7 +254,7 @@ func (p *ChainMakerPrepare) ResolvePeerId(nodeId int) (string, error) {
 // GenerateLogYml 生成 log 配置文件
 func (p *ChainMakerPrepare) GenerateLogYml() error {
 	logTemplateFilePath := filepath.Join(p.pathMapping[Templates], "log.tpl")
-	logLevel := configs.TopConfiguration.ChainMakerConfig.LogLevel
+	logLevel := configs.TopConfiguration.StartTopologyParams.BlockChainParams.ChainMakerParams.LogLevel
 	for i := 1; i <= p.nodeCount; i++ {
 		targetFilePath := fmt.Sprintf("%s/node%d/log.yml", p.pathMapping[BuildConfig], i)
 		err := file.CopyAndReplaceTemplate(logTemplateFilePath, targetFilePath, map[string]string{
@@ -389,8 +389,8 @@ func (p *ChainMakerPrepare) ModifyBcYml() error {
 		"{chain_id}":          "chain1",
 		"{version}":           "\"2030200\"",
 		"{consensus_type}":    fmt.Sprintf("%d", p.selectedConsensusType),
-		"{block_interval}":    fmt.Sprintf("%d", configs.TopConfiguration.ChainMakerConfig.BlockIntervalMs),
-		"{block_tx_capacity}": fmt.Sprintf("%d", configs.TopConfiguration.ChainMakerConfig.BlockTxCapacity),
+		"{block_interval}":    fmt.Sprintf("%d", configs.TopConfiguration.StartTopologyParams.BlockChainParams.ChainMakerParams.BlockIntervalMs),
+		"{block_tx_capacity}": fmt.Sprintf("%d", configs.TopConfiguration.StartTopologyParams.BlockChainParams.ChainMakerParams.BlockTxCapacity),
 	}
 
 	for i := 1; i <= p.nodeCount; i++ {
@@ -421,10 +421,10 @@ func (p *ChainMakerPrepare) GenerateChainMakerYml() error {
 		return nil
 	}
 
-	p2pStartPort := configs.TopConfiguration.ChainMakerConfig.P2pStartPort
-	rpcStartPort := configs.TopConfiguration.ChainMakerConfig.RpcStartPort
-	vmGoRuntimePort := configs.TopConfiguration.ChainMakerConfig.VmGoRuntimePort
-	vmGoEnginePort := configs.TopConfiguration.ChainMakerConfig.VmGoEnginePort
+	p2pStartPort := configs.TopConfiguration.StartTopologyParams.BlockChainParams.ChainMakerParams.P2pStartPort
+	rpcStartPort := configs.TopConfiguration.StartTopologyParams.BlockChainParams.ChainMakerParams.RpcStartPort
+	vmGoRuntimePort := configs.TopConfiguration.StartTopologyParams.BlockChainParams.ChainMakerParams.VmGoRuntimePort
+	vmGoEnginePort := configs.TopConfiguration.StartTopologyParams.BlockChainParams.ChainMakerParams.VmGoEnginePort
 	consensusType := p.selectedConsensusType
 
 	// 创建 peerIdList

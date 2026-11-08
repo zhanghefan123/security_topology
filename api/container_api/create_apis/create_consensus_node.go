@@ -40,7 +40,7 @@ func CreateConsensusNode(client *docker.Client, consensusNode *nodes.ConsensusNo
 	// 3. 获取配置
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	nodeDir := filepath.Join(simulationDir, consensusNode.ContainerName)
-	enableFrr := configs.TopConfiguration.NetworkConfig.EnableFrr
+	enableFrr := configs.TopConfiguration.StartTopologyParams.NetworkConfig.EnableFrr
 
 	// 4. 创建容器卷映射
 	volumes := []string{
@@ -57,7 +57,7 @@ func CreateConsensusNode(client *docker.Client, consensusNode *nodes.ConsensusNo
 
 	// 6. containerConfig
 	containerConfig := &container.Config{
-		Image: configs.TopConfiguration.ImagesConfig.ConsensusNodeImageName,
+		Image: configs.TopConfiguration.StartTopologyParams.ImagesConfig.ConsensusNodeImageName,
 		Tty:   true,
 		Env:   envs,
 	}

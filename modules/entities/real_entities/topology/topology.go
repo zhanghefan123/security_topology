@@ -26,13 +26,15 @@ type Parameters struct {
 }
 
 type Topology struct {
-	chainMakerPrepare   *chainmaker_prepare.ChainMakerPrepare
-	client              *docker.Client
-	EtcdClient          *clientv3.Client
-	TopologyStartParams *params.TopologyStartParams
-	Ipv4SubNets         []iplib.Net4
-	Ipv6SubNets         []iplib.Net6
-	TopologyGraph       *simple.DirectedGraph
+	// 用来启动这个拓扑的参数
+	TopologyStartParams *params.StartTopologyParams
+
+	chainMakerPrepare *chainmaker_prepare.ChainMakerPrepare
+	client            *docker.Client
+	EtcdClient        *clientv3.Client
+	Ipv4SubNets       []iplib.Net4
+	Ipv6SubNets       []iplib.Net6
+	TopologyGraph     *simple.DirectedGraph
 
 	Routers            []*nodes.Router
 	NormalNodes        []*normal_node.NormalNode
@@ -80,7 +82,7 @@ type Topology struct {
 }
 
 // NewTopology 创建新的拓扑
-func NewTopology(client *docker.Client, etcdClient *clientv3.Client, params *params.TopologyStartParams) *Topology {
+func NewTopology(client *docker.Client, etcdClient *clientv3.Client, params *params.StartTopologyParams) *Topology {
 	topology := &Topology{
 		client:              client,
 		EtcdClient:          etcdClient,

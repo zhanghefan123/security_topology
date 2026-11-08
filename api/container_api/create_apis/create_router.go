@@ -51,7 +51,7 @@ func CreateRouter(client *docker.Client, router *nodes.Router) error {
 	// 3. 获取配置
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	nodeDir := filepath.Join(simulationDir, router.ContainerName)
-	enableFrr := configs.TopConfiguration.NetworkConfig.EnableFrr
+	enableFrr := configs.TopConfiguration.StartTopologyParams.NetworkConfig.EnableFrr
 
 	// 4. 创建容器卷映射
 	volumes := []string{
@@ -68,7 +68,7 @@ func CreateRouter(client *docker.Client, router *nodes.Router) error {
 
 	// 6. containerConfig
 	containerConfig := &container.Config{
-		Image: configs.TopConfiguration.ImagesConfig.RouterImageName,
+		Image: configs.TopConfiguration.StartTopologyParams.ImagesConfig.RouterImageName,
 		Tty:   true,
 		Env:   envs,
 	}

@@ -305,7 +305,7 @@ func (absLink *AbstractLink) StoreToEtcd(etcdClient *clientv3.Client) error {
 		Delay:           0,
 	}
 	linkInBytes := protobuf.MustMarshal(linkPb)
-	linkPrefix := configs.TopConfiguration.ServicesConfig.EtcdConfig.EtcdPrefix.ISLsPrefix
+	linkPrefix := configs.TopConfiguration.StartTopologyParams.ServicesConfig.EtcdConfig.EtcdPrefix.ISLsPrefix
 	linkKey := fmt.Sprintf("%s/%d", linkPrefix, absLink.Id)
 	_, err := etcdClient.Put(context.Background(), linkKey, string(linkInBytes))
 	if err != nil {
@@ -339,7 +339,7 @@ func (absLink *AbstractLink) SetLinkParams() error {
 		}
 		fmt.Println("set link params")
 	} else {
-		delayInMs := configs.TopConfiguration.TopologyConfig.PerLinkDelay
+		delayInMs := configs.TopConfiguration.StartTopologyParams.TopologyParams.PerLinkDelay
 		if delayInMs != 0.0 {
 			err = linux_tc_api.SetInterfaceDelay(absLink.SourceInterface, sourceNode.Pid, delayInMs)
 			if err != nil {

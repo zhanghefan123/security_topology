@@ -15,6 +15,7 @@ import (
 	"zhanghefan123/security_topology/cmd/test"
 	"zhanghefan123/security_topology/configs"
 	"zhanghefan123/security_topology/utils/permission"
+	"zhanghefan123/security_topology/utils/printer"
 )
 
 func main() {
@@ -56,15 +57,35 @@ func PrepareWorks() error {
 		fmt.Println("windows don't need to allocate permission")
 	} else {
 		// 1. 然后为 gotty 文件分配可执行权限
-		gottyFilePath := configs.TopConfiguration.PathConfig.GottyPath
-		err = permission.AddExecutePermission(gottyFilePath)
+		err = AssignPermissionToGotty()
 		if err != nil {
-			return fmt.Errorf("add execute permission to %s failed, err:%w", gottyFilePath, err)
+			return fmt.Errorf("assign permission to gotty failed: %w", err)
 		}
 		// 2. 然后为 chainmakerCryptoGen 分配可执行权限
-		cryptoGenProjectPath := configs.TopConfiguration.ChainMakerConfig.CryptoGenProjectPath
+		err = AssignPermissionToCryptoGen()
+		if err != nil {
+			return fmt.Errorf("assign permission to crypto gen failed: %w", err)
+		}
+	}
+	// 进行配置的打印
+	printer.PrintConfiguration(configs.TopConfiguration.PathConfig)
+	return nil
+}
+
+func AssignPermissionToGotty() error {
+	gottyFilePath := configs.TopConfiguration.PathConfig.GottyPath
+	err := permission.AddExecutePermission(gottyFilePath)
+	if err != nil {
+		return fmt.Errorf("add execute permission to %s failed, err:%w", gottyFilePath, err)
+	}
+	return nil
+}
+
+func AssignPermissionToCryptoGen() error {
+	cryptoGenProjectPath := configs.TopConfiguration.PathConfig.ChainmakerCryptoGenProjectPath
+	if cryptoGenProjectPath != "" {
 		cryptoGenBinPath := filepath.Join(cryptoGenProjectPath, "bin/chainmaker-cryptogen")
-		err = permission.AddExecutePermission(cryptoGenBinPath)
+		err := permission.AddExecutePermission(cryptoGenBinPath)
 		if err != nil {
 			return fmt.Errorf("add execute permission to %s failed, err:%w", cryptoGenBinPath, err)
 		}

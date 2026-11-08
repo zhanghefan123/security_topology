@@ -3,11 +3,11 @@ package test
 import (
 	"fmt"
 	"testing"
-	"zhanghefan123/security_topology/modules/entities/real_entities/graph"
+	atlasinit "zhanghefan123/security_topology/modules/entities/real_entities/atlas/init"
 )
 
 func TestHierarchyDivision(t *testing.T) {
-	err := graph.GenerateDifferentNumberOfPaths()
+	err := atlasinit.GenerateDifferentNumberOfPaths()
 	if err != nil {
 		fmt.Printf("generate different number of paths error: %v", err)
 	}

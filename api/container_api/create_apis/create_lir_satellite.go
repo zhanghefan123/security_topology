@@ -40,7 +40,7 @@ func CreateLiRSatellite(client *docker.Client, lirSatellite *satellites.LiRSatel
 	}
 
 	// 3. 创建端口映射
-	httpPortInteger := configs.TopConfiguration.NetworkConfig.ValidationListenPort + lirSatellite.Id
+	httpPortInteger := configs.TopConfiguration.StartTopologyParams.NetworkConfig.ValidationListenPort + lirSatellite.Id
 	httpPort := nat.Port(fmt.Sprintf("%d/tcp", httpPortInteger))
 
 	exposedPorts := nat.PortSet{
@@ -60,16 +60,16 @@ func CreateLiRSatellite(client *docker.Client, lirSatellite *satellites.LiRSatel
 	// 4.1 获取一般配置
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	nodeDir := filepath.Join(simulationDir, lirSatellite.ContainerName)
-	enableFrr := configs.TopConfiguration.NetworkConfig.EnableFrr
+	enableFrr := configs.TopConfiguration.StartTopologyParams.NetworkConfig.EnableFrr
 	// 4.2 获取布隆过滤器相关配置
-	bfEffectiveBits := configs.TopConfiguration.PathValidationConfig.BfEffectiveBits
-	pvfEffectiveBits := configs.TopConfiguration.PathValidationConfig.PVFEffectiveBits
-	hashSeed := configs.TopConfiguration.PathValidationConfig.HashSeed
-	numberOfHashFunctions := configs.TopConfiguration.PathValidationConfig.NumberOfHashFunctions
+	bfEffectiveBits := configs.TopConfiguration.StartTopologyParams.PathValidationParams.BasicConfig.BfEffectiveBits
+	pvfEffectiveBits := configs.TopConfiguration.StartTopologyParams.PathValidationParams.BasicConfig.PVFEffectiveBits
+	hashSeed := configs.TopConfiguration.StartTopologyParams.PathValidationParams.BasicConfig.HashSeed
+	numberOfHashFunctions := configs.TopConfiguration.StartTopologyParams.PathValidationParams.BasicConfig.NumberOfHashFunctions
 	// 4.3 获取路由表类型
-	routingTableType := configs.TopConfiguration.PathValidationConfig.RoutingTableType
+	routingTableType := configs.TopConfiguration.StartTopologyParams.PathValidationParams.BasicConfig.RoutingTableType
 	// 4.4 获取 serverport
-	ipv6ServerPort := configs.TopConfiguration.AppsConfig.IPv6Config.ServerPort
+	ipv6ServerPort := configs.TopConfiguration.StartTopologyParams.AppsConfig.IPv6Config.ServerPort
 
 	// 5. 创建容器卷映射
 	volumes := []string{
@@ -90,15 +90,15 @@ func CreateLiRSatellite(client *docker.Client, lirSatellite *satellites.LiRSatel
 		fmt.Sprintf("%s=%d", "HASH_SEED", hashSeed),
 		fmt.Sprintf("%s=%d", "NUMBER_OF_HASH_FUNCTIONS", numberOfHashFunctions),
 		fmt.Sprintf("%s=%d", "ROUTING_TABLE_TYPE", routingTableType),
-		fmt.Sprintf("%s=%d", "LIR_SINGLE_TIME_ENCODING_COUNT", configs.TopConfiguration.PathValidationConfig.LiRSingleTimeEncodingCount),
-		fmt.Sprintf("%s=%t", "ENABLE_SRV6", configs.TopConfiguration.NetworkConfig.EnableSRv6),
+		fmt.Sprintf("%s=%d", "LIR_SINGLE_TIME_ENCODING_COUNT", configs.TopConfiguration.StartTopologyParams.PathValidationParams.BasicConfig.LiRSingleTimeEncodingCount),
+		fmt.Sprintf("%s=%t", "ENABLE_SRV6", configs.TopConfiguration.StartTopologyParams.NetworkConfig.EnableSRv6),
 	}
 
 	fmt.Println(fmt.Sprintf("%s=%d", "GRAPH_NODE_ID", graphNodeId))
 
 	// 7. 容器配置
 	containerConfig := &container.Config{
-		Image:        configs.TopConfiguration.ImagesConfig.LiRSatelliteImageName,
+		Image:        configs.TopConfiguration.StartTopologyParams.ImagesConfig.LiRSatelliteImageName,
 		Tty:          true,
 		Env:          envs,
 		ExposedPorts: exposedPorts,

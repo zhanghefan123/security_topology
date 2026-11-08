@@ -33,7 +33,7 @@ func CreateHttpServiceCmd() *cobra.Command {
 // core http_service 命令的核心
 func core() {
 	router := http_server.InitRouter()
-	err := router.Run(fmt.Sprintf(":%s", configs.TopConfiguration.NetworkConfig.HttpListenPort))
+	err := router.Run(fmt.Sprintf(":%s", configs.TopConfiguration.BackendServiceConfig.HttpListenPort))
 	if err != nil {
 		cmdHttpServiceLogger.Infof("start http service faild %v", err)
 	}

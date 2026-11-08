@@ -41,8 +41,8 @@ func CreateNormalSatellite(client *docker.Client, normalSatellite *satellites.No
 	// 3. 获取配置
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	nodeDir := filepath.Join(simulationDir, normalSatellite.ContainerName)
-	enableFrr := configs.TopConfiguration.NetworkConfig.EnableFrr
-	ipv6ServerPort := configs.TopConfiguration.AppsConfig.IPv6Config.ServerPort
+	enableFrr := configs.TopConfiguration.StartTopologyParams.NetworkConfig.EnableFrr
+	ipv6ServerPort := configs.TopConfiguration.StartTopologyParams.AppsConfig.IPv6Config.ServerPort
 
 	// 4. 创建容器卷映射
 	volumes := []string{
@@ -60,7 +60,7 @@ func CreateNormalSatellite(client *docker.Client, normalSatellite *satellites.No
 
 	// 6. containerConfig
 	containerConfig := &container.Config{
-		Image: configs.TopConfiguration.ImagesConfig.NormalSatelliteImageName,
+		Image: configs.TopConfiguration.StartTopologyParams.ImagesConfig.NormalSatelliteImageName,
 		Tty:   true,
 		Env:   envs,
 	}

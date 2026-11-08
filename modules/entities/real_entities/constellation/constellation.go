@@ -98,9 +98,9 @@ func NewConstellation(client *docker.Client, etcdClient *clientv3.Client, startT
 	constellation := &Constellation{
 		Parameters: constellationParameters,
 		SatelliteParameters: &SatelliteParameters{
-			SatelliteType:    types.NetworkNodeType(configs.TopConfiguration.ConstellationConfig.SatelliteConfig.Type),
-			SatelliteRPCPort: configs.TopConfiguration.ConstellationConfig.SatelliteConfig.RPCPort,
-			SatelliteP2PPort: configs.TopConfiguration.ConstellationConfig.SatelliteConfig.P2PPort,
+			SatelliteType:    types.NetworkNodeType(configs.TopConfiguration.StartTopologyParams.ConstellationConfig.SatelliteConfig.Type),
+			SatelliteRPCPort: configs.TopConfiguration.StartTopologyParams.ConstellationConfig.SatelliteConfig.RPCPort,
+			SatelliteP2PPort: configs.TopConfiguration.StartTopologyParams.ConstellationConfig.SatelliteConfig.P2PPort,
 		},
 		client:                  client,
 		EtcdClient:              etcdClient,

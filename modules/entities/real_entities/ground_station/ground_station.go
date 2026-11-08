@@ -49,7 +49,7 @@ func (groundStation *GroundStation) StoreToEtcd(etcdClient *clientv3.Client) err
 		Latitude:       groundStation.Latitude,
 	}
 	groundStationInBytes := protobuf.MustMarshal(normalPbGroundStation)
-	etcdGroundStationPrefix := configs.TopConfiguration.ServicesConfig.EtcdConfig.EtcdPrefix.GroundStationsPrefix
+	etcdGroundStationPrefix := configs.TopConfiguration.StartTopologyParams.ServicesConfig.EtcdConfig.EtcdPrefix.GroundStationsPrefix
 	groundStationKey := fmt.Sprintf("%s/%d", etcdGroundStationPrefix, groundStation.Id)
 	_, err := etcdClient.Put(context.Background(), groundStationKey, string(groundStationInBytes))
 	if err != nil {

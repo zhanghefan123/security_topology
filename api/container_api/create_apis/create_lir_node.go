@@ -46,7 +46,7 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode, graphNodeId in
 	}
 
 	// 3. 创建端口映射
-	httpPortInteger := configs.TopConfiguration.NetworkConfig.ValidationListenPort + lirNode.Id
+	httpPortInteger := configs.TopConfiguration.StartTopologyParams.NetworkConfig.ValidationListenPort + lirNode.Id
 	httpPort := nat.Port(fmt.Sprintf("%d/tcp", httpPortInteger))
 
 	exposedPorts := nat.PortSet{
@@ -66,16 +66,19 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode, graphNodeId in
 	// 4.1 获取一般配置
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	nodeDir := filepath.Join(simulationDir, lirNode.ContainerName)
-	enableFrr := configs.TopConfiguration.NetworkConfig.EnableFrr
+	enableFrr := configs.TopConfiguration.StartTopologyParams.NetworkConfig.EnableFrr
 	// 4.2 获取布隆过滤器相关配置
-	bfEffectiveBits := configs.TopConfiguration.PathValidationConfig.BfEffectiveBits
-	pvfEffectiveBits := configs.TopConfiguration.PathValidationConfig.PVFEffectiveBits
-	hashSeed := configs.TopConfiguration.PathValidationConfig.HashSeed
-	numberOfHashFunctions := configs.TopConfiguration.PathValidationConfig.NumberOfHashFunctions
+	bfEffectiveBits := configs.TopConfiguration.StartTopologyParams.PathValidationParams.BasicConfig.BfEffectiveBits
+	pvfEffectiveBits := configs.TopConfiguration.StartTopologyParams.PathValidationParams.BasicConfig.PVFEffectiveBits
+	hashSeed := configs.TopConfiguration.StartTopologyParams.PathValidationParams.BasicConfig.HashSeed
+	numberOfHashFunctions := configs.TopConfiguration.StartTopologyParams.PathValidationParams.BasicConfig.NumberOfHashFunctions
 	// 4.3 获取路由表类型
-	routingTableType := configs.TopConfiguration.PathValidationConfig.RoutingTableType
+	routingTableType := configs.TopConfiguration.StartTopologyParams.PathValidationParams.BasicConfig.RoutingTableType
+	selirType := configs.TopConfiguration.StartTopologyParams.PathValidationParams.BasicConfig.SelirType
+	epicType := configs.TopConfiguration.StartTopologyParams.PathValidationParams.BasicConfig.EpicType
+
 	// 4.4 判断自己是否是源节点并且开启了 sec_path_mab, 并且自己的是源节点的话, 那么拷贝 sec_path_mab_topology.json 过来
-	if lirNode.Id == 1 && configs.TopConfiguration.PathValidationConfig.TransmissionType == (int)(types.TransmissionType_MAB) {
+	if lirNode.Id == 1 && configs.TopConfiguration.StartTopologyParams.PathValidationParams.SecPathMabConfig.Enabled {
 		topologyDir := fmt.Sprintf("%s/%s/topology", configs.TopConfiguration.PathConfig.ConfigGeneratePath, lirNode.ContainerName)
 		err := os.MkdirAll(topologyDir, os.ModePerm)
 		if err != nil {
@@ -109,11 +112,13 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode, graphNodeId in
 		fmt.Sprintf("%s=%d", "HASH_SEED", hashSeed),
 		fmt.Sprintf("%s=%d", "NUMBER_OF_HASH_FUNCTIONS", numberOfHashFunctions),
 		fmt.Sprintf("%s=%d", "ROUTING_TABLE_TYPE", routingTableType),
-		fmt.Sprintf("%s=%d", "LIR_SINGLE_TIME_ENCODING_COUNT", configs.TopConfiguration.PathValidationConfig.LiRSingleTimeEncodingCount),
-		fmt.Sprintf("%s=%t", "ENABLE_SRV6", configs.TopConfiguration.NetworkConfig.EnableSRv6),
+		fmt.Sprintf("%s=%d", "SELIR_TYPE", selirType),
+		fmt.Sprintf("%s=%d", "EPIC_TYPE", epicType),
+		fmt.Sprintf("%s=%d", "LIR_SINGLE_TIME_ENCODING_COUNT", configs.TopConfiguration.StartTopologyParams.PathValidationParams.BasicConfig.LiRSingleTimeEncodingCount),
+		fmt.Sprintf("%s=%t", "ENABLE_SRV6", configs.TopConfiguration.StartTopologyParams.NetworkConfig.EnableSRv6),
+		fmt.Sprintf("%s=%t", "ENABLE_SEC_PATH_MAB", configs.TopConfiguration.StartTopologyParams.PathValidationParams.SecPathMabConfig.Enabled),
 		fmt.Sprintf("%s=%d", "NUMBER_OF_NODES", numberOfLirNodes),
-		fmt.Sprintf("%s=%d", "MULTIPATH_ROUTING_TYPE", configs.TopConfiguration.PathValidationConfig.MultipathConfig.MultipathRoutingType),
-		fmt.Sprintf("%s=%d", "TRANSMISSION_TYPE", configs.TopConfiguration.PathValidationConfig.TransmissionType),
+		//fmt.Sprintf("%s=%d", "MULTIPATH_ROUTING_TYPE", configs.TopConfiguration.StartTopologyParams.PathValidationParams.MultipathConfig.MultipathRoutingType),
 
 		// 进行 malicious params 的添加
 		fmt.Sprintf("%s=%d", "CORRUPT_RATIO_START", lirNode.SpecialParams.MaliciousParams.CorruptRatio.Start),
@@ -123,18 +128,20 @@ func CreateLirNode(client *docker.Client, lirNode *nodes.LiRNode, graphNodeId in
 
 		// 进行 router_type 的添加
 		fmt.Sprintf("%s=%d", "ROUTER_TYPE", lirNode.SpecialParams.InnerRouterType),
-		fmt.Sprintf("%s=%d", "SEC_PATH_MAB_TYPE", configs.TopConfiguration.PathValidationConfig.SecPathMabConfig.SecPathMabType),
+		fmt.Sprintf("%s=%d", "SEC_PATH_MAB_TYPE", configs.TopConfiguration.StartTopologyParams.PathValidationParams.SecPathMabConfig.SecPathMabType),
 
 		// 设置 topology inforamtion 的环境变量
-		fmt.Sprintf("%s=%d", "NUMBER_OF_HOPS", configs.TopConfiguration.PathValidationConfig.SecPathMabConfig.NumberOfHops),
-		fmt.Sprintf("%s=%d", "NUMBER_OF_SEGMENTS_PER_HOP", configs.TopConfiguration.PathValidationConfig.SecPathMabConfig.NumberOfSegmentsPerHop),
-		fmt.Sprintf("%s=%d", "EXPERIMENT_TYPE", configs.TopConfiguration.PathValidationConfig.SecPathMabConfig.ExperimentType),
-		fmt.Sprintf("%s=%d", "TOPOLOGY_TYPE", configs.TopConfiguration.PathValidationConfig.SecPathMabConfig.TopologyType),
+		// fmt.Sprintf("%s=%t", "SEC_PATH_MAB_ENABLED", configs.TopConfiguration.StartTopologyParams.PathValidationParams.SecPathMabConfig.Enabled),
+		fmt.Sprintf("%s=%d", "NUMBER_OF_HOPS", configs.TopConfiguration.StartTopologyParams.PathValidationParams.SecPathMabConfig.NumberOfHops),
+		fmt.Sprintf("%s=%d", "NUMBER_OF_SEGMENTS_PER_HOP", configs.TopConfiguration.StartTopologyParams.PathValidationParams.SecPathMabConfig.NumberOfSegmentsPerHop),
+		fmt.Sprintf("%s=%d", "EXPERIMENT_TYPE", configs.TopConfiguration.StartTopologyParams.PathValidationParams.SecPathMabConfig.ExperimentType),
 	}
+
+	fmt.Printf("node: %d | router_type: %d\n", lirNode.Id, lirNode.SpecialParams.InnerRouterType)
 
 	// 7. 容器配置
 	containerConfig := &container.Config{
-		Image:        configs.TopConfiguration.ImagesConfig.LirNodeImageName,
+		Image:        configs.TopConfiguration.StartTopologyParams.ImagesConfig.LirNodeImageName,
 		Tty:          true,
 		Env:          envs,
 		ExposedPorts: exposedPorts,

@@ -61,8 +61,8 @@ func GenerateLiRRoutingStrings(abstractNode *node.AbstractNode, linksMap *map[st
 			sourceNode = hopList[0].ID() + 1                   // 这里使用 + 1 的原因是 graph Node 的 ID 从 0 开始
 			destinationNode = hopList[len(hopList)-1].ID() + 1 // 这里使用 + 1 的原因是 graph Node 的 ID 从 0 开始
 
-			// 两个 path validation router 之间插入了中间节点的情况
-			if configs.TopConfiguration.PathValidationConfig.SecPathMabConfig.TopologyType == (int)(types.SecPathMabTopologyType_NON_LINEAR_TEST_TOPOLOGY) {
+			// 两个 path validation router 之间插入了中间节点的情况 - 如果 enabled sec path mab 那么就采用 NON-LINEAR-TOPO
+			if configs.TopConfiguration.StartTopologyParams.PathValidationParams.SecPathMabConfig.Enabled {
 				for index := 0; index < len(hopList)-1; index++ {
 					// for sec path mab 中间插入了一个普通节点的情况
 					if index%2 == 1 {
@@ -77,7 +77,7 @@ func GenerateLiRRoutingStrings(abstractNode *node.AbstractNode, linksMap *map[st
 					linkIdentifiers = append(linkIdentifiers, linkIdentifier)
 					nodeIds = append(nodeIds, int(hopList[targetIndex].ID()+2)) // 这里使用 + 2 的原因是 graph Node 的 ID 从 0 开始, 并且中间插入了一个普通节点
 				}
-			} else {
+			} else { // 如果 not enabled sec path mab 那么就采用 LINEAR-TOPO
 				// 没有插入的情况 (重要, 不要删掉)
 				// ----------------------------------------------------------------------------------------
 				for index := 0; index < len(hopList)-1; index++ {

@@ -47,19 +47,20 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 	// nodeDir := filepath.Join(simulationDir, fabricPeerNode.ContainerName)
 	//var cpuLimit float64
 	//var memoryLimit float64
-	enableFrr := configs.TopConfiguration.NetworkConfig.EnableFrr
-	fabricNetwork := configs.TopConfiguration.FabricConfig.FabricNetworkPath
-	orderGeneralListenPort := configs.TopConfiguration.FabricConfig.OrderGeneralListenStartPort + fabricOrderNode.Id
-	orderAdminListenPort := configs.TopConfiguration.FabricConfig.OrderAdminListenStartPort + fabricOrderNode.Id
-	orderOperationListenPort := configs.TopConfiguration.FabricConfig.OrderOperationListenStartPort + fabricOrderNode.Id
-	orderPprofListenPort := configs.TopConfiguration.FabricConfig.PprofOrdererStartListenPort + fabricOrderNode.Id
-	enablePprof := configs.TopConfiguration.FabricConfig.EnablePprof
-	enableRoutine := configs.TopConfiguration.FabricConfig.EnableRoutine
-	enableAdvancedMessageHandler := configs.TopConfiguration.FabricConfig.EnableAdvancedMessageHandler
-	enableLeaderStepDown := configs.TopConfiguration.FabricConfig.EnableLeaderStepDown
-	forwardTimeout := configs.TopConfiguration.FabricConfig.ForwardTimeout
-	complainTimeout := configs.TopConfiguration.FabricConfig.ComplainTimeout
-	webPort := configs.TopConfiguration.ServicesConfig.WebConfig.StartPort + graphNodeId
+	blockchainConfig := configs.TopConfiguration.StartTopologyParams.BlockChainParams
+	enableFrr := configs.TopConfiguration.StartTopologyParams.NetworkConfig.EnableFrr
+	fabricNetwork := configs.TopConfiguration.PathConfig.FabricNetworkPath
+	orderGeneralListenPort := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.OrderGeneralListenStartPort + fabricOrderNode.Id
+	orderAdminListenPort := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.OrderAdminListenStartPort + fabricOrderNode.Id
+	orderOperationListenPort := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.OrderOperationListenStartPort + fabricOrderNode.Id
+	orderPprofListenPort := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.PprofOrdererStartListenPort + fabricOrderNode.Id
+	enablePprof := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.EnablePprof
+	enableRoutine := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.EnableRoutine
+	enableAdvancedMessageHandler := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.EnableAdvancedMessageHandler
+	enableLeaderStepDown := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.EnableLeaderStepDown
+	forwardTimeout := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.ForwardTimeout
+	complainTimeout := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.ComplainTimeout
+	webPort := configs.TopConfiguration.StartTopologyParams.ServicesConfig.WebConfig.StartPort + graphNodeId
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	nodeDir := filepath.Join(simulationDir, fabricOrderNode.ContainerName)
 	// ipv4 := strings.Split(fabricOrdererNode.Interfaces[0].Ipv4Addr, "/")[0]
@@ -84,7 +85,7 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 		fmt.Sprintf("%s=%s", "CONTAINER_NAME", fabricOrderNode.ContainerName),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
 		fmt.Sprintf("%s=%s", "INTERFACE_NAME", fmt.Sprintf("%s%d_idx%d", types.GetPrefix(fabricOrderNode.Type), fabricOrderNode.Id, 1)),
-		fmt.Sprintf("%s=%s", "FABRIC_LOGGING_SPEC", configs.TopConfiguration.FabricConfig.LogLevel),
+		fmt.Sprintf("%s=%s", "FABRIC_LOGGING_SPEC", configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.LogLevel),
 		fmt.Sprintf("%s=%s", "ORDERER_GENERAL_LISTENADDRESS", "0.0.0.0"),
 		fmt.Sprintf("%s=%d", "ORDERER_GENERAL_LISTENPORT", orderGeneralListenPort),
 		fmt.Sprintf("%s=%s", "ORDERER_GENERAL_LOCALMSPID", "OrdererMSP"),
@@ -114,16 +115,16 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 		fmt.Sprintf("%s=%t", "ENABLE_PPROF", enablePprof),
 		fmt.Sprintf("%s=%d", "WEB_SERVER_LISTEN_PORT", webPort),
 		fmt.Sprintf("%s=%d", "PPROF_ORDERER_LISTEN_PORT", orderPprofListenPort),
-		fmt.Sprintf("%s=%f", "DDOS_WARNING_RATE", configs.TopConfiguration.NetworkConfig.DdosWarningRate),
+		fmt.Sprintf("%s=%d", "DDOS_WARNING_RATE", blockchainConfig.BasicBlockChainParmas.DdosWarningRate),
 		fmt.Sprintf("%s=%d", "FORWARD_TIMEOUT", forwardTimeout),
 		fmt.Sprintf("%s=%d", "COMPLAIN_TIMEOUT", complainTimeout),
-		fmt.Sprintf("%s=%s", "ETCD_LISTEN_ADDR", configs.TopConfiguration.NetworkConfig.LocalNetworkAddress),
-		fmt.Sprintf("%s=%d", "ETCD_LISTEN_PORT", configs.TopConfiguration.ServicesConfig.EtcdConfig.ClientPort),
-		fmt.Sprintf("%s=%d", "BLOCK_INTERVAL_MS", configs.TopConfiguration.FabricConfig.BlockIntervalMs),
-		fmt.Sprintf("%s=%d", "SEAL_WAIT_MS", configs.TopConfiguration.FabricConfig.SealWaitMs),
-		fmt.Sprintf("%s=%t", "WITH_DELAY", configs.TopConfiguration.FabricConfig.WithDelay),
-		fmt.Sprintf("%s=%d", "REQUEST_BATCH_MAX_COUNT", configs.TopConfiguration.FabricConfig.RequestBatchMaxCount),
-		fmt.Sprintf("%s=%d", "REQUEST_BATCH_MAX_BYTES", configs.TopConfiguration.FabricConfig.RequestBatchMaxBytes),
+		fmt.Sprintf("%s=%s", "ETCD_LISTEN_ADDR", configs.TopConfiguration.BackendServiceConfig.LocalNetworkAddress),
+		fmt.Sprintf("%s=%d", "ETCD_LISTEN_PORT", configs.TopConfiguration.StartTopologyParams.ServicesConfig.EtcdConfig.ClientPort),
+		fmt.Sprintf("%s=%d", "BLOCK_INTERVAL_MS", configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.BlockIntervalMs),
+		fmt.Sprintf("%s=%d", "SEAL_WAIT_MS", configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.SealWaitMs),
+		fmt.Sprintf("%s=%t", "WITH_DELAY", configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.WithDelay),
+		fmt.Sprintf("%s=%d", "REQUEST_BATCH_MAX_COUNT", configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.RequestBatchMaxCount),
+		fmt.Sprintf("%s=%d", "REQUEST_BATCH_MAX_BYTES", configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.RequestBatchMaxBytes),
 	}
 
 	// 6. 资源限制
@@ -182,7 +183,7 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 
 	// 8. 创建容器配置
 	containerConfig := &container.Config{
-		Image:        configs.TopConfiguration.ImagesConfig.FabricOrderImageName,
+		Image:        configs.TopConfiguration.StartTopologyParams.ImagesConfig.FabricOrderImageName,
 		Tty:          true,
 		Env:          envs,
 		ExposedPorts: exposedPorts,
@@ -199,7 +200,7 @@ func CreateFabricOrderNode(client *docker.Client, fabricOrderNode *nodes.FabricO
 		PortBindings: portBindings,
 		//Resources:    resourcesLimit,
 		//指定宿主机作为DNS服务器
-		DNS: []string{configs.TopConfiguration.NetworkConfig.LocalNetworkAddress},
+		DNS: []string{configs.TopConfiguration.BackendServiceConfig.LocalNetworkAddress},
 	}
 	// 10. 进行容器的创建
 	response, err := client.ContainerCreate(

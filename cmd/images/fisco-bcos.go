@@ -9,7 +9,7 @@ import (
 
 // buildImageForFiscoBcos 为 FiscoBcos 进行镜像构建, 需要注意的是, 这个镜像一定要在可执行文件进行重新编译之后才能调用
 func buildImageForFiscoBcos() error {
-	fiscoBcosProjectPath := configs.TopConfiguration.FiscoBcosConfig.ProjectPath
+	fiscoBcosProjectPath := configs.TopConfiguration.PathConfig.FiscoBcosProjectPath
 	err := dir.WithContextManager(fiscoBcosProjectPath, func() error {
 		var commandArgs = []string{
 			"build", "-t", "fiscoorg/fiscobcos:v3.12.1",

@@ -45,8 +45,8 @@ type StartModule struct {
 
 // Start 启动
 func (c *Constellation) Start() error {
-	enablePositionService := configs.TopConfiguration.ServicesConfig.PositionUpdateConfig.Enabled
-	enableUpdatedDelayService := configs.TopConfiguration.ServicesConfig.DelayUpdateConfig.Enabled
+	enablePositionService := configs.TopConfiguration.StartTopologyParams.ServicesConfig.PositionUpdateConfig.Enabled
+	enableUpdatedDelayService := configs.TopConfiguration.StartTopologyParams.ServicesConfig.DelayUpdateConfig.Enabled
 
 	startSteps := []map[string]StartModule{
 		{GenerateSatelliteLinks: StartModule{true, c.GenerateSatelliteVethPairs}},                    // step1 先创建 veth pair 然后改变链路的命名空间
@@ -207,7 +207,7 @@ func (c *Constellation) StartEtcdService() error {
 	}
 
 	// 1. 解析配置
-	etcdConfig := configs.TopConfiguration.ServicesConfig.EtcdConfig
+	etcdConfig := configs.TopConfiguration.StartTopologyParams.ServicesConfig.EtcdConfig
 	clientPort := etcdConfig.ClientPort
 	peerPort := etcdConfig.PeerPort
 	dataDir := etcdConfig.DataDir
@@ -306,14 +306,14 @@ func (c *Constellation) StoreToEtcd() error {
 	}
 
 	// 4. 存储 timeStepKey
-	timeStepKey := configs.TopConfiguration.ConstellationConfig.TimeStepKey
+	timeStepKey := configs.TopConfiguration.StartTopologyParams.ConstellationConfig.TimeStepKey
 	_, err = c.EtcdClient.Put(context.Background(), timeStepKey, strconv.Itoa(c.TimeStep))
 	if err != nil {
 		return fmt.Errorf("store time step to etcd error %w", err)
 	}
 
 	// 5. 存储 minimumElevationAngleKey
-	minimumElevationAngleKey := configs.TopConfiguration.ConstellationConfig.MinimumElevationAngleKey
+	minimumElevationAngleKey := configs.TopConfiguration.StartTopologyParams.ConstellationConfig.MinimumElevationAngleKey
 	_, err = c.EtcdClient.Put(context.Background(), minimumElevationAngleKey, strconv.Itoa(c.MinimumElevationAngle))
 	if err != nil {
 		return fmt.Errorf("store minimum elevation angle to etcd error %w", err)
@@ -346,15 +346,15 @@ func (c *Constellation) StartPositionService() error {
 	}
 
 	// 1. 解析配置
-	etcdConfig := configs.TopConfiguration.ServicesConfig.EtcdConfig                        // etcd 配置
-	etcdListenAddr := configs.TopConfiguration.NetworkConfig.LocalNetworkAddress            // etcd 监听地址
-	etcdClientPort := etcdConfig.ClientPort                                                 // etcd 客户端口
-	etcdISLsPrefix := etcdConfig.EtcdPrefix.ISLsPrefix                                      // etcd isl 的前缀
-	etcdGSLsPrefix := etcdConfig.EtcdPrefix.GSLsPrefix                                      // etcd gsl 的前缀
-	etcdSatellitesPrefix := etcdConfig.EtcdPrefix.SatellitesPrefix                          // etcd satellite 的前缀
-	etcdGroundStationsPrefix := etcdConfig.EtcdPrefix.GroundStationsPrefix                  // etcd GroundStations 的前缀
-	constellationStartTime := configs.TopConfiguration.ConstellationConfig.StartTime        // 星座启动时间
-	updateInterval := configs.TopConfiguration.ServicesConfig.PositionUpdateConfig.Interval // 更新时间间隔
+	etcdConfig := configs.TopConfiguration.StartTopologyParams.ServicesConfig.EtcdConfig                        // etcd 配置
+	etcdListenAddr := configs.TopConfiguration.BackendServiceConfig.LocalNetworkAddress                         // etcd 监听地址
+	etcdClientPort := etcdConfig.ClientPort                                                                     // etcd 客户端口
+	etcdISLsPrefix := etcdConfig.EtcdPrefix.ISLsPrefix                                                          // etcd isl 的前缀
+	etcdGSLsPrefix := etcdConfig.EtcdPrefix.GSLsPrefix                                                          // etcd gsl 的前缀
+	etcdSatellitesPrefix := etcdConfig.EtcdPrefix.SatellitesPrefix                                              // etcd satellite 的前缀
+	etcdGroundStationsPrefix := etcdConfig.EtcdPrefix.GroundStationsPrefix                                      // etcd GroundStations 的前缀
+	constellationStartTime := configs.TopConfiguration.StartTopologyParams.ConstellationConfig.StartTime        // 星座启动时间
+	updateInterval := configs.TopConfiguration.StartTopologyParams.ServicesConfig.PositionUpdateConfig.Interval // 更新时间间隔
 
 	// 2. 根据配置创建节点
 	positionService := position.NewPositionService(types.NetworkNodeStatus_Logic,
@@ -506,7 +506,7 @@ func handleGSLUpdate(c *Constellation) {
 	// 创建一个监听键值对更新事件的 channel
 	watchChan := c.EtcdClient.Watch(
 		c.ServiceContext,
-		configs.TopConfiguration.ServicesConfig.EtcdConfig.EtcdPrefix.GSLsPrefix,
+		configs.TopConfiguration.StartTopologyParams.ServicesConfig.EtcdConfig.EtcdPrefix.GSLsPrefix,
 		clientv3.WithPrefix(),
 	)
 	for response := range watchChan {
@@ -563,7 +563,7 @@ func handleSatellitesUpdate(c *Constellation) {
 	// 创建一个监听键值对更新事件的 channel
 	watchChan := c.EtcdClient.Watch(
 		c.ServiceContext,
-		configs.TopConfiguration.ServicesConfig.EtcdConfig.EtcdPrefix.SatellitesPrefix,
+		configs.TopConfiguration.StartTopologyParams.ServicesConfig.EtcdConfig.EtcdPrefix.SatellitesPrefix,
 		clientv3.WithPrefix(),
 	)
 	for response := range watchChan {

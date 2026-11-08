@@ -1,0 +1,4 @@
+./copy.go
+./read.go
+./replace.go
+./write.go

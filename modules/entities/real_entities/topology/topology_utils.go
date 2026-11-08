@@ -87,8 +87,8 @@ func (t *Topology) GetContainerNameToGraphIdMapping() (map[string]int, error) {
 // GetContainerNameToChainMakerPortMapping 获取所有共识节点从容器名到
 func (t *Topology) GetContainerNameToChainMakerPortMapping() (map[string]*ChainmakerPorts, error) {
 	portMapping := make(map[string]*ChainmakerPorts)
-	p2pStartPort := configs.TopConfiguration.ChainMakerConfig.P2pStartPort
-	rpcStartPort := configs.TopConfiguration.ChainMakerConfig.RpcStartPort
+	p2pStartPort := configs.TopConfiguration.StartTopologyParams.BlockChainParams.ChainMakerParams.P2pStartPort
+	rpcStartPort := configs.TopConfiguration.StartTopologyParams.BlockChainParams.ChainMakerParams.RpcStartPort
 	// 进行 chainMaker 的 port Mapping 的添加
 	for _, chainMakerNode := range t.ChainmakerNodes {
 		p2pPort := chainMakerNode.Id + p2pStartPort - 1
@@ -102,8 +102,8 @@ func (t *Topology) GetContainerNameToFabricPortMapping() (map[string]*FabricPort
 	portMapping := make(map[string]*FabricPorts)
 	// 进行 Fabric 的 portMapping 的添加
 	for _, fabricOrder := range t.FabricOrdererNodes {
-		fabricAdminListenPort := configs.TopConfiguration.FabricConfig.OrderAdminListenStartPort + fabricOrder.Id
-		fabricGeneralListenPort := configs.TopConfiguration.FabricConfig.OrderGeneralListenStartPort + fabricOrder.Id
+		fabricAdminListenPort := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.OrderAdminListenStartPort + fabricOrder.Id
+		fabricGeneralListenPort := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.OrderGeneralListenStartPort + fabricOrder.Id
 		portMapping[fabricOrder.ContainerName] = &FabricPorts{fabricAdminListenPort,
 			fabricGeneralListenPort}
 	}
@@ -114,8 +114,8 @@ func (t *Topology) GetContainerNameToFiscoBcosPortMapping() (map[string]*FiscoBc
 	portMapping := make(map[string]*FiscoBcosPorts)
 	// 进行 fisco-bcos 的 portMapping 的添加
 	for _, fiscoBcosNode := range t.FiscoBcosNodes {
-		p2pPort := configs.TopConfiguration.FiscoBcosConfig.P2pStartPort + fiscoBcosNode.Id - 1
-		rpcPort := configs.TopConfiguration.FiscoBcosConfig.RpcStartPort + fiscoBcosNode.Id - 1
+		p2pPort := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.P2pStartPort + fiscoBcosNode.Id - 1
+		rpcPort := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.RpcStartPort + fiscoBcosNode.Id - 1
 		portMapping[fiscoBcosNode.ContainerName] = &FiscoBcosPorts{p2pPort,
 			rpcPort}
 	}

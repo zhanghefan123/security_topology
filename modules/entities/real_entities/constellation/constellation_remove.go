@@ -35,8 +35,8 @@ type RemoveModule struct {
 // Remove 删除整个星座
 func (c *Constellation) Remove() error {
 
-	removePositionService := configs.TopConfiguration.ServicesConfig.PositionUpdateConfig.Enabled
-	removeUpdatedDelayService := configs.TopConfiguration.ServicesConfig.DelayUpdateConfig.Enabled
+	removePositionService := configs.TopConfiguration.StartTopologyParams.ServicesConfig.PositionUpdateConfig.Enabled
+	removeUpdatedDelayService := configs.TopConfiguration.StartTopologyParams.ServicesConfig.DelayUpdateConfig.Enabled
 
 	removeSteps := []map[string]RemoveModule{
 		{StopSatelliteContainers: RemoveModule{true, c.StopSatelliteContainers}},

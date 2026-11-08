@@ -3,15 +3,11 @@ syntax = "proto3";
 option go_package = "../types";
 
 enum TransmissionType {
-  UNICAST = 0;
-  MULTIPATH = 1;
-  MULTICAST = 2;
-  MAB = 3;
-}
-
-
-enum RoutingType {
   NOT_SPECIFIED = 0;
-  Atlas = 1;
-  MultipathSelir = 2;
+  UNICAST = 1;
+  MULTIPATH = 2;
+  MULTICAST = 3;
+  MAB = 4;
 }
+
+

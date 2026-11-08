@@ -61,7 +61,7 @@ func (p *FiscoBcosPrepare) CopyBuildChainShTemplate() error {
 	}
 
 	sourceFile := filepath.Join(configs.TopConfiguration.PathConfig.ResourcesPath, "FISCO_BCOS_EXAMPLE/build_chain.sh")
-	targetFile := filepath.Join(configs.TopConfiguration.FiscoBcosConfig.ExamplePath, "build_chain.sh")
+	targetFile := filepath.Join(configs.TopConfiguration.PathConfig.FiscoBcosExamplePath, "build_chain.sh")
 	_, err := fileutils.CopyFile(sourceFile, targetFile)
 	if err != nil {
 		return fmt.Errorf("error copy build chain sh template file: %v", err)
@@ -78,13 +78,13 @@ func (p *FiscoBcosPrepare) ModifyBuildChainSh() error {
 	}
 
 	replaceMap := map[string]string{
-		"{log_level}":            configs.TopConfiguration.FiscoBcosConfig.LogLevel,
-		"{block_tx_count_limit}": fmt.Sprintf("%d", configs.TopConfiguration.FiscoBcosConfig.BlockTxCountLimit),
+		"{log_level}":            configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.LogLevel,
+		"{block_tx_count_limit}": fmt.Sprintf("%d", configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.BlockTxCountLimit),
 	}
 
-	fmt.Printf("block_tx_count_limit == %d\n", configs.TopConfiguration.FiscoBcosConfig.BlockTxCountLimit)
+	fmt.Printf("block_tx_count_limit == %d\n", configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.BlockTxCountLimit)
 
-	sourceFile := filepath.Join(configs.TopConfiguration.FiscoBcosConfig.ExamplePath, "build_chain.sh")
+	sourceFile := filepath.Join(configs.TopConfiguration.PathConfig.FiscoBcosExamplePath, "build_chain.sh")
 	targetFile := sourceFile
 	err := file.CopyAndReplaceTemplate(sourceFile, targetFile, replaceMap)
 	if err != nil {
@@ -105,7 +105,7 @@ func (p *FiscoBcosPrepare) ChangeLogLevel() error {
 	}
 
 	// buildSh 文件
-	buildShFile := filepath.Join(configs.TopConfiguration.FiscoBcosConfig.ExamplePath, "build_chain.sh")
+	buildShFile := filepath.Join(configs.TopConfiguration.PathConfig.FiscoBcosExamplePath, "build_chain.sh")
 
 	var finalString = ""
 	// 获取文件句柄
@@ -120,7 +120,7 @@ func (p *FiscoBcosPrepare) ChangeLogLevel() error {
 		for scanner.Scan() {
 			line := scanner.Text()
 			if !findFirstLogLevel && strings.Contains(line, "log_level=") {
-				line = fmt.Sprintf(`log_level="%s"`, configs.TopConfiguration.FiscoBcosConfig.LogLevel)
+				line = fmt.Sprintf(`log_level="%s"`, configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.LogLevel)
 				findFirstLogLevel = true
 			}
 			finalString += fmt.Sprintf("%s\n", line)
@@ -148,9 +148,9 @@ func (p *FiscoBcosPrepare) ExecuteBuildChainSh() error {
 		return nil
 	}
 
-	fiscoExamplePath := configs.TopConfiguration.FiscoBcosConfig.ExamplePath
-	p2pStartPort := configs.TopConfiguration.FiscoBcosConfig.P2pStartPort
-	rpcStartPort := configs.TopConfiguration.FiscoBcosConfig.RpcStartPort
+	fiscoExamplePath := configs.TopConfiguration.PathConfig.FiscoBcosExamplePath
+	p2pStartPort := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.P2pStartPort
+	rpcStartPort := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.RpcStartPort
 
 	err := dir.WithContextManager(fiscoExamplePath, func() error {
 		commandArgs := []string{
@@ -202,7 +202,7 @@ func (p *FiscoBcosPrepare) ModifyNodesJson() error {
 	finalString += "]}"
 	// --------------------------------------------------------------------------------------
 
-	fiscoExamplePath := configs.TopConfiguration.FiscoBcosConfig.ExamplePath
+	fiscoExamplePath := configs.TopConfiguration.PathConfig.FiscoBcosExamplePath
 
 	for index := range p.fiscoBcosNodeCount {
 		nodesJsonFilePath := filepath.Join(fiscoExamplePath, fmt.Sprintf("nodes/127.0.0.1/node%d/nodes.json", index))
@@ -222,8 +222,8 @@ func (p *FiscoBcosPrepare) ConsolePrepareWork() error {
 		return nil
 	}
 
-	examplePath := configs.TopConfiguration.FiscoBcosConfig.ExamplePath
-	consolePath := configs.TopConfiguration.FiscoBcosConfig.ConsolePath
+	examplePath := configs.TopConfiguration.PathConfig.FiscoBcosExamplePath
+	consolePath := configs.TopConfiguration.PathConfig.FiscoBcosConsolePath
 	configExampleFile := filepath.Join(consolePath, "conf/config-example.toml")
 	configDestinationFile := filepath.Join(consolePath, "conf/config.toml")
 	err := copy.Copy(configExampleFile, configDestinationFile)

@@ -28,7 +28,7 @@ docker tag chainmaker chainmaker:${VERSION}
 # ---------------------------- zeusnet 添加的代码 ----------------------------
 */
 func buildImageForChainMakerEnv() error {
-	chainMakerGoProjectPath := configs.TopConfiguration.ChainMakerConfig.ChainMakerGoProjectPath
+	chainMakerGoProjectPath := configs.TopConfiguration.PathConfig.ChainmakerGoProjectPath
 	err := dir.WithContextManager(chainMakerGoProjectPath, func() error {
 		// 1. remove dirs
 		removedDirectories := []string{
@@ -61,7 +61,7 @@ func buildImageForChainMakerEnv() error {
 
 // buildImageForChainMaker 进行 chainmaker 镜像的构建
 func buildImageForChainMaker() error {
-	chainMakerGoProjectPath := configs.TopConfiguration.ChainMakerConfig.ChainMakerGoProjectPath
+	chainMakerGoProjectPath := configs.TopConfiguration.PathConfig.ChainmakerGoProjectPath
 	err := dir.WithContextManager(chainMakerGoProjectPath, func() error {
 		// 1. execute command to build chainmaker (param1 -> image name) (param2 -> docker file name)
 		commandStr := fmt.Sprintf("build -t %s -f ./DOCKER/%s .", variables.ImageNameChainMaker, "Dockerfile_chainmaker")

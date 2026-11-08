@@ -1,0 +1,6 @@
+./directed_edge.go
+./node.go
+./path.go
+./relationship.go
+./segment.go
+./source_and_dest.go

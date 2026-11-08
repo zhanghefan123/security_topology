@@ -12,7 +12,7 @@ import (
 	"zhanghefan123/security_topology/modules/entities/abstract_entities/node"
 	"zhanghefan123/security_topology/modules/entities/real_entities/nodes"
 	"zhanghefan123/security_topology/modules/entities/types"
-	"zhanghefan123/security_topology/services/http_server/params"
+	"zhanghefan123/security_topology/services/http_server/params/node_and_link"
 	"zhanghefan123/security_topology/utils/network"
 )
 
@@ -82,8 +82,8 @@ func (rpt *RaspberrypiTopology) GenerateNodes() error {
 		return nil
 	}
 
-	for index, nodeTypeString := range configs.TopConfiguration.RaspberryPiConfig.NodeTypes {
-		nodeId := configs.TopConfiguration.RaspberryPiConfig.NodeIDs[index]
+	for index, nodeTypeString := range configs.TopConfiguration.StartTopologyParams.RaspberryPiConfig.NodeTypes {
+		nodeId := configs.TopConfiguration.StartTopologyParams.RaspberryPiConfig.NodeIDs[index]
 		nodeType, err := types.ResolveNodeType(nodeTypeString)
 		if err != nil {
 			return fmt.Errorf("cannot resolve node type")
@@ -98,7 +98,7 @@ func (rpt *RaspberrypiTopology) GenerateNodes() error {
 			rpt.AllAbstractNodes = append(rpt.AllAbstractNodes, abstractRouter)
 			rpt.AbstractNodesMap[routerTmp.ContainerName] = abstractRouter
 		case types.NetworkNodeType_LirNode:
-			lirNodeTmp := nodes.NewLiRNode(nodeId, 0, 0, params.SpecialParams{})
+			lirNodeTmp := nodes.NewLiRNode(nodeId, 0, 0, node_and_link.SpecialParams{})
 			rpt.LirNodes = append(rpt.LirNodes, lirNodeTmp)
 			// 注意只能唯一创建一次
 			abstractLirNode := node.NewAbstractNode(types.NetworkNodeType_LirNode, lirNodeTmp, rpt.TopologyGraph)
@@ -123,14 +123,14 @@ func (rpt *RaspberrypiTopology) GenerateSubnets() error {
 	var ipv6Subnets []iplib.Net6
 
 	// 进行 ipv4 的子网的生成
-	ipv4Subnets, err = network.GenerateIPv4Subnets(configs.TopConfiguration.NetworkConfig.BaseV4NetworkAddress)
+	ipv4Subnets, err = network.GenerateIPv4Subnets(configs.TopConfiguration.StartTopologyParams.NetworkConfig.BaseV4NetworkAddress)
 	if err != nil {
 		return fmt.Errorf("generate subnets: %w", err)
 	}
 	rpt.Ipv4SubNets = ipv4Subnets
 
 	// 进行 ipv6 的子网的生成
-	ipv6Subnets, err = network.GenerateIpv6Subnets(configs.TopConfiguration.NetworkConfig.BaseV6NetworkAddress)
+	ipv6Subnets, err = network.GenerateIpv6Subnets(configs.TopConfiguration.StartTopologyParams.NetworkConfig.BaseV6NetworkAddress)
 	if err != nil {
 		return fmt.Errorf("generate subnets: %w", err)
 	}
@@ -141,7 +141,7 @@ func (rpt *RaspberrypiTopology) GenerateSubnets() error {
 	return nil
 }
 
-func (rpt *RaspberrypiTopology) ResolveLinkInformation(connection string) (*params.LinkParam, error) {
+func (rpt *RaspberrypiTopology) ResolveLinkInformation(connection string) (*node_and_link.LinkParam, error) {
 	endPoints := strings.Split(connection, "-")
 	sourceIndexAndIntf := strings.Split(endPoints[0], ":")
 	targetIndexAndIntf := strings.Split(endPoints[1], ":")
@@ -155,17 +155,17 @@ func (rpt *RaspberrypiTopology) ResolveLinkInformation(connection string) (*para
 		return nil, fmt.Errorf("cannot parse index: %v", err)
 	}
 	targetInterfaceName := targetIndexAndIntf[1]
-	linkParam := &params.LinkParam{
+	linkParam := &node_and_link.LinkParam{
 		LinkType: "access",
-		SourceNode: params.NodeParam{
+		SourceNode: node_and_link.NodeParam{
 			Index: int(sourceIndex),
-			Type:  configs.TopConfiguration.RaspberryPiConfig.NodeTypes[sourceIndex-1],
+			Type:  configs.TopConfiguration.StartTopologyParams.RaspberryPiConfig.NodeTypes[sourceIndex-1],
 			X:     0,
 			Y:     0,
 		},
-		TargetNode: params.NodeParam{
+		TargetNode: node_and_link.NodeParam{
 			Index: int(targetIndex),
-			Type:  configs.TopConfiguration.RaspberryPiConfig.NodeTypes[targetIndex-1],
+			Type:  configs.TopConfiguration.StartTopologyParams.RaspberryPiConfig.NodeTypes[targetIndex-1],
 			X:     0,
 			Y:     0,
 		},
@@ -176,7 +176,7 @@ func (rpt *RaspberrypiTopology) ResolveLinkInformation(connection string) (*para
 }
 
 // getSourceNodeAndTargetNode 获取源和目的抽象节点
-func (rpt *RaspberrypiTopology) getSourceNodeAndTargetNode(sourceNodeParam, targetNodeParam params.NodeParam) (*node.AbstractNode, *node.AbstractNode, error) {
+func (rpt *RaspberrypiTopology) getSourceNodeAndTargetNode(sourceNodeParam, targetNodeParam node_and_link.NodeParam) (*node.AbstractNode, *node.AbstractNode, error) {
 	var sourceNode, targetNode *node.AbstractNode
 	sourceNodeType, err := types.ResolveNodeType(sourceNodeParam.Type)
 	if err != nil {
@@ -216,8 +216,8 @@ func (rpt *RaspberrypiTopology) GenerateLinks() error {
 	}
 
 	// ----------------实际逻辑--------------------
-	allLinkParams := make([]*params.LinkParam, 0)
-	for _, linkInStr := range configs.TopConfiguration.RaspberryPiConfig.Connections {
+	allLinkParams := make([]*node_and_link.LinkParam, 0)
+	for _, linkInStr := range configs.TopConfiguration.StartTopologyParams.RaspberryPiConfig.Connections {
 		linkParam, err := rpt.ResolveLinkInformation(linkInStr)
 		if err != nil {
 			return fmt.Errorf("resolve link information failed: %v", err)

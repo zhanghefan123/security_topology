@@ -41,17 +41,13 @@ func CreateChainMakerNode(client *docker.Client, chainMakerNode *nodes.Chainmake
 	}
 
 	// 3. 获取配置
-	//var cpuLimit float64
-	//var memoryLimit float64
-	chainMakerConfig := configs.TopConfiguration.ChainMakerConfig
-	networkConfig := configs.TopConfiguration.NetworkConfig
+	chainMakerConfig := configs.TopConfiguration.StartTopologyParams.BlockChainParams.ChainMakerParams
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	nodeDir := filepath.Join(simulationDir, chainMakerNode.ContainerName)
-	enableFrr := configs.TopConfiguration.NetworkConfig.EnableFrr
-	absOfMultiNode := path.Join(chainMakerConfig.ChainMakerGoProjectPath, "scripts/docker/multi_node")
-	//cpuLimit = configs.TopConfiguration.ResourcesConfig.CpuLimit
-	//memoryLimit = configs.TopConfiguration.ResourcesConfig.MemoryLimit
-	webPort := configs.TopConfiguration.ServicesConfig.WebConfig.StartPort + graphNodeId
+	enableFrr := configs.TopConfiguration.StartTopologyParams.NetworkConfig.EnableFrr
+	absOfMultiNode := path.Join(configs.TopConfiguration.PathConfig.ChainmakerGoProjectPath, "scripts/docker/multi_node")
+	webPort := configs.TopConfiguration.StartTopologyParams.ServicesConfig.WebConfig.StartPort + graphNodeId
+	blockchainConfig := configs.TopConfiguration.StartTopologyParams.BlockChainParams
 
 	// 4. 创建容器卷映射
 	volumes := []string{
@@ -77,30 +73,34 @@ func CreateChainMakerNode(client *docker.Client, chainMakerNode *nodes.Chainmake
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
 		fmt.Sprintf("%s=%s", "INTERFACE_NAME", fmt.Sprintf("%s%d_idx%d", types.GetPrefix(chainMakerNode.Type), chainMakerNode.Id, 1)),
 		fmt.Sprintf("%s=%s", "LISTEN_ADDR", chainMakerNode.Interfaces[0].SourceIpv4Addr),
-		fmt.Sprintf("%s=%f", "DDOS_WARNING_RATE", networkConfig.DdosWarningRate),
+		fmt.Sprintf("%s=%d", "DDOS_WARNING_RATE", blockchainConfig.BasicBlockChainParmas.DdosWarningRate),
 		fmt.Sprintf("%s=%t", "ENABLE_DEFENCE", chainMakerConfig.EnableDefence),
 		fmt.Sprintf("%s=%d", "CHECK_DDOS_PERIOD", chainMakerConfig.CheckDdosPeriod),
 		fmt.Sprintf("%s=%d", "BLOCKS_PER_PROPOSER", chainMakerConfig.BlocksPerProposer),
 		fmt.Sprintf("%s=%d", "TIMEOUT_PROPOSE", chainMakerConfig.TimeoutPropose),
 		fmt.Sprintf("%s=%d", "TIMEOUT_PROPOSE_OPTIMAL", chainMakerConfig.TimeoutProposeOptimal),
 		fmt.Sprintf("%s=%t", "PROPOSE_OPTIMAL", chainMakerConfig.ProposeOptimal),
-		fmt.Sprintf("%s=%s", "ETCD_LISTEN_ADDR", configs.TopConfiguration.NetworkConfig.LocalNetworkAddress),
-		fmt.Sprintf("%s=%d", "ETCD_LISTEN_PORT", configs.TopConfiguration.ServicesConfig.EtcdConfig.ClientPort),
+		fmt.Sprintf("%s=%s", "ETCD_LISTEN_ADDR", configs.TopConfiguration.BackendServiceConfig.LocalNetworkAddress),
+		fmt.Sprintf("%s=%d", "ETCD_LISTEN_PORT", configs.TopConfiguration.StartTopologyParams.ServicesConfig.EtcdConfig.ClientPort),
 		fmt.Sprintf("%s=%d", "WEB_SERVER_LISTEN_PORT", webPort),
-		fmt.Sprintf("%s=%t", "RESEND_SYNC", configs.TopConfiguration.ChainMakerConfig.ResendSync),
-		fmt.Sprintf("%s=%d", "TICK_INTERVAL_MS", configs.TopConfiguration.ChainMakerConfig.TickIntervalMs),
-		fmt.Sprintf("%s=%d", "BATCH_SIZE_FROM_ONE_NODE", configs.TopConfiguration.ChainMakerConfig.BatchSizeFromOneNode),
-		fmt.Sprintf("%s=%d", "BLOCK_REQ_TIMEOUT", configs.TopConfiguration.ChainMakerConfig.BlockReqTimeout),
-		fmt.Sprintf("%s=%t", "ENABLE_BLACKLIST", configs.TopConfiguration.ChainMakerConfig.EnableBlackList),
+		fmt.Sprintf("%s=%t", "RESEND_SYNC", configs.TopConfiguration.StartTopologyParams.BlockChainParams.ChainMakerParams.ResendSync),
+		fmt.Sprintf("%s=%d", "TICK_INTERVAL_MS", configs.TopConfiguration.StartTopologyParams.BlockChainParams.ChainMakerParams.TickIntervalMs),
+		fmt.Sprintf("%s=%d", "BATCH_SIZE_FROM_ONE_NODE", configs.TopConfiguration.StartTopologyParams.BlockChainParams.ChainMakerParams.BatchSizeFromOneNode),
+		fmt.Sprintf("%s=%d", "BLOCK_REQ_TIMEOUT", configs.TopConfiguration.StartTopologyParams.BlockChainParams.ChainMakerParams.BlockReqTimeout),
+		fmt.Sprintf("%s=%t", "ENABLE_BLACKLIST", configs.TopConfiguration.StartTopologyParams.BlockChainParams.ChainMakerParams.EnableBlackList),
 		//fmt.Sprintf("%s=%d", "CHAINMAKER_NODE_COUNT", len(topology.TopologyInstance.ChainmakerNodes)),
 	}
 	fmt.Printf("propose optimal == %v\n", chainMakerConfig.ProposeOptimal)
 
 	// 6. 资源限制
-	//resourcesLimit := container.Resources{
-	//	NanoCPUs: int64(cpuLimit * 1e9),
-	//	Memory:   int64(memoryLimit * 1024 * 1024), // memoryLimit 的单位是 MB
-	//}
+	/*
+		cpuLimit := configs.TopConfiguration.StartTopologyParams.ResourcesConfig.CpuLimit
+		memoryLimit := configs.TopConfiguration.StartTopologyParams.ResourcesConfig.MemoryLimit
+		resourcesLimit := container.Resources{
+			NanoCPUs: int64(cpuLimit * 1e9),
+			Memory:   int64(memoryLimit * 1024 * 1024), // memoryLimit 的单位是 MB
+		}
+	*/
 
 	// 7. 创建端口映射
 	rpcPort := nat.Port(fmt.Sprintf("%d/tcp", chainMakerConfig.RpcStartPort+chainMakerNode.Id-1))
@@ -128,7 +128,7 @@ func CreateChainMakerNode(client *docker.Client, chainMakerNode *nodes.Chainmake
 
 	// 8. 创建容器配置
 	containerConfig := &container.Config{
-		Image:        configs.TopConfiguration.ImagesConfig.ChainMakerNodeImageName,
+		Image:        configs.TopConfiguration.StartTopologyParams.ImagesConfig.ChainMakerNodeImageName,
 		Tty:          true,
 		Env:          envs,
 		ExposedPorts: exposedPorts,

@@ -107,7 +107,7 @@ func CreateFiscoBcosNode(client *docker.Client, fiscoBcosNode *nodes.FiscoBcosNo
 	}
 
 	// 3. 创建容器卷映射
-	examplePath := configs.TopConfiguration.FiscoBcosConfig.ExamplePath
+	examplePath := configs.TopConfiguration.PathConfig.FiscoBcosExamplePath
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	selfDefinedNodeDir := filepath.Join(simulationDir, fiscoBcosNode.ContainerName)
 	originalNodePath := filepath.Join(examplePath, fmt.Sprintf("nodes/127.0.0.1/node%d/", fiscoBcosNode.Id-1))
@@ -118,19 +118,19 @@ func CreateFiscoBcosNode(client *docker.Client, fiscoBcosNode *nodes.FiscoBcosNo
 	}
 
 	// 4. 配置环境变量
-	enableFrr := configs.TopConfiguration.NetworkConfig.EnableFrr
-	webPort := configs.TopConfiguration.ServicesConfig.WebConfig.StartPort + graphNodeId
-	leaderPeriod := configs.TopConfiguration.FiscoBcosConfig.LeaderPeriod
-	consensusTimeoutMs := configs.TopConfiguration.FiscoBcosConfig.ConsensusTimeout
-	sealerWaitMs := configs.TopConfiguration.FiscoBcosConfig.SealWatiMs
-	allowedLaggingBehindBlocks := configs.TopConfiguration.FiscoBcosConfig.AllowedLaggingBehindBlocks
-	waterMarkLimit := configs.TopConfiguration.FiscoBcosConfig.WaterMarkLimit
-	minSealTime := configs.TopConfiguration.FiscoBcosConfig.MinSealTime
-	recursiveTrigger := configs.TopConfiguration.FiscoBcosConfig.RecursiveTrigger
-	fastTrigger := configs.TopConfiguration.FiscoBcosConfig.FastTrigger
-	largeInterval := configs.TopConfiguration.FiscoBcosConfig.LargeInterval
-	useModifiedRequestBlocks := configs.TopConfiguration.FiscoBcosConfig.UseModifiedRequestBlocks
-	enablePending := configs.TopConfiguration.FiscoBcosConfig.EnablePending
+	enableFrr := configs.TopConfiguration.StartTopologyParams.NetworkConfig.EnableFrr
+	webPort := configs.TopConfiguration.StartTopologyParams.ServicesConfig.WebConfig.StartPort + graphNodeId
+	leaderPeriod := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.LeaderPeriod
+	consensusTimeoutMs := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.ConsensusTimeout
+	sealerWaitMs := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.SealWatiMs
+	allowedLaggingBehindBlocks := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.AllowedLaggingBehindBlocks
+	waterMarkLimit := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.WaterMarkLimit
+	minSealTime := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.MinSealTime
+	recursiveTrigger := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.RecursiveTrigger
+	fastTrigger := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.FastTrigger
+	largeInterval := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.LargeInterval
+	useModifiedRequestBlocks := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.UseModifiedRequestBlocks
+	enablePending := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.EnablePending
 	envs := []string{
 		// zhf 添加的环境变量
 		fmt.Sprintf("%s=%s", "FIRST_INTERFACE_NAME", firstInterfaceName),
@@ -150,19 +150,19 @@ func CreateFiscoBcosNode(client *docker.Client, fiscoBcosNode *nodes.FiscoBcosNo
 		fmt.Sprintf("%s=%t", "LARGE_INTERVAL", largeInterval),
 		fmt.Sprintf("%s=%t", "USE_MODIFIED_REQUEST_BLOCKS", useModifiedRequestBlocks),
 		fmt.Sprintf("%s=%t", "ENABLE_PENDING", enablePending),
-		fmt.Sprintf("%s=%s", "ETCD_LISTEN_ADDR", configs.TopConfiguration.NetworkConfig.LocalNetworkAddress),
-		fmt.Sprintf("%s=%d", "ETCD_LISTEN_PORT", configs.TopConfiguration.ServicesConfig.EtcdConfig.ClientPort),
-		fmt.Sprintf("%s=%d", "SYNC_IDLE_WAIT", configs.TopConfiguration.FiscoBcosConfig.SyncIdleWait),
-		fmt.Sprintf("%s=%d", "DOWNLOAD_BLOCK_PROCESSOR_THREAD_COUNT", configs.TopConfiguration.FiscoBcosConfig.DownloadBlockProcessorThreadCount),
-		fmt.Sprintf("%s=%d", "SEND_BLOCK_PROCESSOR_THREAD_COUNT", configs.TopConfiguration.FiscoBcosConfig.SendBlockProcessorThreadCount),
-		fmt.Sprintf("%s=%d", "MAX_SHARD_PER_PEER", configs.TopConfiguration.FiscoBcosConfig.MaxShardPerPeer),
-		fmt.Sprintf("%s=%d", "MAX_BLOCKS_PER_REQUEST", configs.TopConfiguration.FiscoBcosConfig.MaxBlocksPerRequest),
-		fmt.Sprintf("%s=%d", "REQUEST_PEER_LIMIT", configs.TopConfiguration.FiscoBcosConfig.RequestPeerLimit),
-		fmt.Sprintf("%s=%d", "EXPECTED_TTL", configs.TopConfiguration.FiscoBcosConfig.ExpectedTTL),
-		fmt.Sprintf("%s=%d", "SYNC_SLEEP_MS", configs.TopConfiguration.FiscoBcosConfig.SyncSleepMs),
-		fmt.Sprintf("%s=%t", "ENABLE_BLACK_LIST", configs.TopConfiguration.FiscoBcosConfig.EnableBlackList),
-		fmt.Sprintf("%s=%d", "BLOCK_INTERVAL_MS", configs.TopConfiguration.FiscoBcosConfig.BlockIntervalMs),
-		fmt.Sprintf("%s=%d", "NEW_VIEW_WAIT_MS", configs.TopConfiguration.FiscoBcosConfig.NewViewWaitMs),
+		fmt.Sprintf("%s=%s", "ETCD_LISTEN_ADDR", configs.TopConfiguration.BackendServiceConfig.LocalNetworkAddress),
+		fmt.Sprintf("%s=%d", "ETCD_LISTEN_PORT", configs.TopConfiguration.StartTopologyParams.ServicesConfig.EtcdConfig.ClientPort),
+		fmt.Sprintf("%s=%d", "SYNC_IDLE_WAIT", configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.SyncIdleWait),
+		fmt.Sprintf("%s=%d", "DOWNLOAD_BLOCK_PROCESSOR_THREAD_COUNT", configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.DownloadBlockProcessorThreadCount),
+		fmt.Sprintf("%s=%d", "SEND_BLOCK_PROCESSOR_THREAD_COUNT", configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.SendBlockProcessorThreadCount),
+		fmt.Sprintf("%s=%d", "MAX_SHARD_PER_PEER", configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.MaxShardPerPeer),
+		fmt.Sprintf("%s=%d", "MAX_BLOCKS_PER_REQUEST", configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.MaxBlocksPerRequest),
+		fmt.Sprintf("%s=%d", "REQUEST_PEER_LIMIT", configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.RequestPeerLimit),
+		fmt.Sprintf("%s=%d", "EXPECTED_TTL", configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.ExpectedTTL),
+		fmt.Sprintf("%s=%d", "SYNC_SLEEP_MS", configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.SyncSleepMs),
+		fmt.Sprintf("%s=%t", "ENABLE_BLACK_LIST", configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.EnableBlackList),
+		fmt.Sprintf("%s=%d", "BLOCK_INTERVAL_MS", configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.BlockIntervalMs),
+		fmt.Sprintf("%s=%d", "NEW_VIEW_WAIT_MS", configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.NewViewWaitMs),
 	}
 
 	// 5. 资源限制
@@ -174,7 +174,7 @@ func CreateFiscoBcosNode(client *docker.Client, fiscoBcosNode *nodes.FiscoBcosNo
 	//}
 
 	// 6. 端口映射 (现在暂时没有端口映射)
-	rpcStartPort := configs.TopConfiguration.FiscoBcosConfig.RpcStartPort
+	rpcStartPort := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FiscoBcosParams.RpcStartPort
 	fmt.Printf(fmt.Sprintf("%d/tcp\n", rpcStartPort+fiscoBcosNode.Id-1))
 	rpcPort := nat.Port(fmt.Sprintf("%d/tcp", rpcStartPort+fiscoBcosNode.Id-1))
 
@@ -198,7 +198,7 @@ func CreateFiscoBcosNode(client *docker.Client, fiscoBcosNode *nodes.FiscoBcosNo
 			pathToGenesis := filepath.Join(examplePath, fmt.Sprintf("nodes/127.0.0.1/node%d/config.genesis", fiscoBcosNode.Id-1))
 	*/
 	containerConfig := &container.Config{
-		Image:        configs.TopConfiguration.ImagesConfig.FiscoBcosImageName,
+		Image:        configs.TopConfiguration.StartTopologyParams.ImagesConfig.FiscoBcosImageName,
 		Tty:          true,
 		Env:          envs,
 		ExposedPorts: exposedPorts,

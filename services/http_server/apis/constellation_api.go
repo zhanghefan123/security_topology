@@ -152,13 +152,6 @@ func startConstellationInner(constellationParams *constellation.Parameters) erro
 	var err error
 	// 创建 docker 客户端
 	var dockerClient *docker.Client
-	// 初始化本地配置
-	err = configs.InitLocalConfig()
-	// 看是否存在错误
-	if err != nil {
-		// 如果错误存在, 就进行返回
-		return fmt.Errorf("init local config err: %v", err)
-	}
 	// 初始化 dockerClient
 	dockerClient, err = client.NewDockerClient() // 创建新的 docker client
 	if err != nil {
@@ -166,11 +159,11 @@ func startConstellationInner(constellationParams *constellation.Parameters) erro
 		return fmt.Errorf("create docker client err: %v", err)
 	}
 	// 初始化 etcdClient
-	listenAddr := configs.TopConfiguration.NetworkConfig.LocalNetworkAddress
-	listenPort := configs.TopConfiguration.ServicesConfig.EtcdConfig.ClientPort
+	listenAddr := configs.TopConfiguration.BackendServiceConfig.LocalNetworkAddress
+	listenPort := configs.TopConfiguration.StartTopologyParams.ServicesConfig.EtcdConfig.ClientPort
 	etcdClient, err := etcd_api.NewEtcdClient(listenAddr, listenPort)
 	// 获取星座启动时间
-	startTime := configs.TopConfiguration.ConstellationConfig.GoStartTime
+	startTime := configs.TopConfiguration.StartTopologyParams.ConstellationConfig.GoStartTime
 	// 创建星座实例
 	constellation.ConstellationInstance = constellation.NewConstellation(dockerClient, etcdClient, startTime, constellationParams)
 	// 进行星座的初始化
@@ -237,7 +230,7 @@ func ChangeTimeStamp(c *gin.Context) {
 	}
 
 	// 将结果存储到 etcd 之中
-	timeStepKey := configs.TopConfiguration.ConstellationConfig.TimeStepKey
+	timeStepKey := configs.TopConfiguration.StartTopologyParams.ConstellationConfig.TimeStepKey
 	_, err = constellation.ConstellationInstance.EtcdClient.Put(context.Background(),
 		timeStepKey, strconv.Itoa(timeStampParams.TimeStep))
 	if err != nil {

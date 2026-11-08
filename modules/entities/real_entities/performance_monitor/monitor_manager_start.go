@@ -81,7 +81,7 @@ func (mm *MonitorManager) StartAllPerformanceMonitor() error {
 	for _, abstractNode := range topology.Instance.AllChainAbstractNodes {
 		// 获取所有的 chainMakerContainer 的 name
 		performanceMonitor, err := NewInstancePerformanceMonitor(abstractNode,
-			topology.Instance.TopologyStartParams.BlockChainParams.BlockChainType,
+			topology.Instance.TopologyStartParams.BlockChainParams.BasicBlockChainParmas.BlockchainType,
 			topology.Instance.GetChainMakerNodeContainerNames(),
 			topology.Instance.GetFabricNodeContainerNames(),
 			topology.Instance.GetFiscoBcosContainerNames())
@@ -92,7 +92,7 @@ func (mm *MonitorManager) StartAllPerformanceMonitor() error {
 	}
 
 	// 启动 global tx rate
-	chain_api.StartGlobalTxRateRecorder(topology.Instance.TopologyStartParams.BlockChainParams.BlockChainType)
+	chain_api.StartGlobalTxRateRecorder(topology.Instance.TopologyStartParams.BlockChainParams.BasicBlockChainParmas.BlockchainType)
 
 	// 进行全局的 ticker 启动
 	StartTicker()

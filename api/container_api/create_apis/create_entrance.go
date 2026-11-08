@@ -23,7 +23,7 @@ func CreateEntrance(client *docker.Client, entrance *nodes.Entrance) error {
 	// 3. 获取配置
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	nodeDir := filepath.Join(simulationDir, entrance.ContainerName)
-	enableFrr := configs.TopConfiguration.NetworkConfig.EnableFrr
+	enableFrr := configs.TopConfiguration.StartTopologyParams.NetworkConfig.EnableFrr
 
 	// 4. 创建容器卷映射
 	volumes := []string{
@@ -40,7 +40,7 @@ func CreateEntrance(client *docker.Client, entrance *nodes.Entrance) error {
 
 	// 6. containerConfig
 	containerConfig := &container.Config{
-		Image: configs.TopConfiguration.ImagesConfig.EntranceImageName,
+		Image: configs.TopConfiguration.StartTopologyParams.ImagesConfig.EntranceImageName,
 		Tty:   true,
 		Env:   envs,
 	}

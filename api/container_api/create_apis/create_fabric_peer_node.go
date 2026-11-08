@@ -43,21 +43,21 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 	}
 
 	// 3. 获取配置
-	//var cpuLimit float64
-	//var memoryLimit float64
-	enableFrr := configs.TopConfiguration.NetworkConfig.EnableFrr
-	fabricNetwork := configs.TopConfiguration.FabricConfig.FabricNetworkPath
-	peerListenPort := configs.TopConfiguration.FabricConfig.PeerListenStartPort + fabricPeerNode.Id
-	peerChainCodePort := configs.TopConfiguration.FabricConfig.PeerChaincodeStartPort + fabricPeerNode.Id
-	peerOperationPort := configs.TopConfiguration.FabricConfig.PeerOperationStartPort + fabricPeerNode.Id
-	peerPprofListenPort := configs.TopConfiguration.FabricConfig.PeerListenStartPort + fabricPeerNode.Id
-	enablePprof := configs.TopConfiguration.FabricConfig.EnablePprof
-	enableRoutine := configs.TopConfiguration.FabricConfig.EnableRoutine
-	enableAdvancedMessageHandler := configs.TopConfiguration.FabricConfig.EnableAdvancedMessageHandler
-	enableLeaderStepDown := configs.TopConfiguration.FabricConfig.EnableLeaderStepDown
-	forwardTimeout := configs.TopConfiguration.FabricConfig.ForwardTimeout
-	complainTimeout := configs.TopConfiguration.FabricConfig.ComplainTimeout
-	webPort := configs.TopConfiguration.ServicesConfig.WebConfig.StartPort + graphNodeId
+	blockchainConfig := configs.TopConfiguration.StartTopologyParams.BlockChainParams
+
+	enableFrr := configs.TopConfiguration.StartTopologyParams.NetworkConfig.EnableFrr
+	fabricNetwork := configs.TopConfiguration.PathConfig.FabricNetworkPath
+	peerListenPort := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.PeerListenStartPort + fabricPeerNode.Id
+	peerChainCodePort := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.PeerChaincodeStartPort + fabricPeerNode.Id
+	peerOperationPort := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.PeerOperationStartPort + fabricPeerNode.Id
+	peerPprofListenPort := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.PeerListenStartPort + fabricPeerNode.Id
+	enablePprof := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.EnablePprof
+	enableRoutine := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.EnableRoutine
+	enableAdvancedMessageHandler := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.EnableAdvancedMessageHandler
+	enableLeaderStepDown := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.EnableLeaderStepDown
+	forwardTimeout := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.ForwardTimeout
+	complainTimeout := configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.ComplainTimeout
+	webPort := configs.TopConfiguration.StartTopologyParams.ServicesConfig.WebConfig.StartPort + graphNodeId
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	nodeDir := filepath.Join(simulationDir, fabricPeerNode.ContainerName)
 
@@ -85,7 +85,7 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 		fmt.Sprintf("%s=%s", "INTERFACE_NAME", fmt.Sprintf("%s%d_idx%d", types.GetPrefix(fabricPeerNode.Type), fabricPeerNode.Id, 1)),
 		fmt.Sprintf("%s=%t", "ENABLE_FRR", enableFrr),
 		fmt.Sprintf("%s=%s", "FABRIC_CFG_PATH", "/etc/hyperledger/peercfg"),
-		fmt.Sprintf("%s=%s", "FABRIC_LOGGING_SPEC", configs.TopConfiguration.FabricConfig.LogLevel),
+		fmt.Sprintf("%s=%s", "FABRIC_LOGGING_SPEC", configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.LogLevel),
 		fmt.Sprintf("%s=%s", "CORE_PEER_TLS_ENABLED", "true"),
 		fmt.Sprintf("%s=%s", "CORE_PEER_PROFILE_ENABLED", "false"),
 		fmt.Sprintf("%s=%s", "CORE_PEER_TLS_CERT_FILE", "/etc/hyperledger/fabric/tls/server.crt"),
@@ -112,24 +112,30 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 		fmt.Sprintf("%s=%t", "EMABLE_LEADER_STEP_DOWN", enableLeaderStepDown),
 		fmt.Sprintf("%s=%d", "PPROF_PEER_LISTEN_PORT", peerPprofListenPort),
 		fmt.Sprintf("%s=%t", "ENABLE_PPROF", enablePprof),
-		fmt.Sprintf("%s=%f", "DDOS_WARNING_RATE", configs.TopConfiguration.NetworkConfig.DdosWarningRate),
+		fmt.Sprintf("%s=%d", "DDOS_WARNING_RATE", blockchainConfig.BasicBlockChainParmas.DdosWarningRate),
 
 		fmt.Sprintf("%s=%d", "FORWARD_TIMEOUT", forwardTimeout),
 		fmt.Sprintf("%s=%d", "COMPLAIN_TIMEOUT", complainTimeout),
-		fmt.Sprintf("%s=%s", "ETCD_LISTEN_ADDR", configs.TopConfiguration.NetworkConfig.LocalNetworkAddress),
-		fmt.Sprintf("%s=%d", "ETCD_LISTEN_PORT", configs.TopConfiguration.ServicesConfig.EtcdConfig.ClientPort),
-		fmt.Sprintf("%s=%d", "BLOCK_INTERVAL_MS", configs.TopConfiguration.FabricConfig.BlockIntervalMs),
-		fmt.Sprintf("%s=%d", "SEAL_WAIT_MS", configs.TopConfiguration.FabricConfig.SealWaitMs),
-		fmt.Sprintf("%s=%t", "WITH_DELAY", configs.TopConfiguration.FabricConfig.WithDelay),
-		fmt.Sprintf("%s=%d", "REQUEST_BATCH_MAX_COUNT", configs.TopConfiguration.FabricConfig.RequestBatchMaxCount),
-		fmt.Sprintf("%s=%d", "REQUEST_BATCH_MAX_BYTES", configs.TopConfiguration.FabricConfig.RequestBatchMaxBytes),
+		fmt.Sprintf("%s=%s", "ETCD_LISTEN_ADDR", configs.TopConfiguration.BackendServiceConfig.LocalNetworkAddress),
+		fmt.Sprintf("%s=%d", "ETCD_LISTEN_PORT", configs.TopConfiguration.StartTopologyParams.ServicesConfig.EtcdConfig.ClientPort),
+		fmt.Sprintf("%s=%d", "BLOCK_INTERVAL_MS", configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.BlockIntervalMs),
+		fmt.Sprintf("%s=%d", "SEAL_WAIT_MS", configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.SealWaitMs),
+		fmt.Sprintf("%s=%t", "WITH_DELAY", configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.WithDelay),
+		fmt.Sprintf("%s=%d", "REQUEST_BATCH_MAX_COUNT", configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.RequestBatchMaxCount),
+		fmt.Sprintf("%s=%d", "REQUEST_BATCH_MAX_BYTES", configs.TopConfiguration.StartTopologyParams.BlockChainParams.FabricParams.RequestBatchMaxBytes),
 	}
 
 	// 6. 资源限制
-	//resourcesLimit := container.Resources{
-	//	NanoCPUs: int64(cpuLimit * 1e9),
-	//	Memory:   int64(memoryLimit * 1024 * 1024), // memoryLimit 的单位是 MB
-	//}
+	/*
+		cpuLimit := configs.TopConfiguration.StartTopologyParams.ResourcesConfig.CpuLimit
+		memoryLimit := configs.TopConfiguration.StartTopologyParams.ResourcesConfig.MemoryLimit
+		if configs.TopConfiguration.StartTopologyParams.ResourcesConfig.Enabled {
+			resourcesLimit := container.Resources{
+				NanoCPUs: int64(cpuLimit * 1e9),
+				Memory:   int64(memoryLimit * 1024 * 1024), // memoryLimit 的单位是 MB
+			}
+		}
+	*/
 
 	// 7. 创建端口映射
 	listenPort := nat.Port(fmt.Sprintf("%d/tcp", peerListenPort))
@@ -173,7 +179,7 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 
 	// 8. 创建容器配置
 	containerConfig := &container.Config{
-		Image:        configs.TopConfiguration.ImagesConfig.FabricPeerImageName,
+		Image:        configs.TopConfiguration.StartTopologyParams.ImagesConfig.FabricPeerImageName,
 		Hostname:     fmt.Sprintf("peer0"),
 		Domainname:   fmt.Sprintf("org%d.example.com", fabricPeerNode.Id),
 		Tty:          true,
@@ -193,7 +199,7 @@ func CreateFabricPeerNode(client *docker.Client, fabricPeerNode *nodes.FabricPee
 		PortBindings: portBindings,
 		//Resources:    resourcesLimit,
 		//指定宿主机作为DNS服务器
-		DNS: []string{configs.TopConfiguration.NetworkConfig.LocalNetworkAddress},
+		DNS: []string{configs.TopConfiguration.BackendServiceConfig.LocalNetworkAddress},
 	}
 	// 10. 进行容器的创建
 	response, err := client.ContainerCreate(

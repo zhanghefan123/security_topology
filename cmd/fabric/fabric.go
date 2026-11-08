@@ -31,7 +31,7 @@ func CreateFabricCmd() *cobra.Command {
 }
 
 func core() error {
-	testNetworkPath := configs.TopConfiguration.FabricConfig.FabricNetworkPath
+	testNetworkPath := configs.TopConfiguration.PathConfig.FabricNetworkPath
 	_ = dir.WithContextManager(testNetworkPath, func() error {
 		err := execute.Command("bash", []string{"-l", "-c", "echo $PATH"})
 		if err != nil {

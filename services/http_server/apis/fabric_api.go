@@ -21,7 +21,7 @@ func InstallChannelAndChaincode(c *gin.Context) {
 	}
 
 	// 2. 判断是否是 fabric
-	if topology.Instance.TopologyStartParams.BlockChainParams.BlockChainType != types.ChainType_HyperledgerFabric {
+	if topology.Instance.TopologyStartParams.BlockChainParams.BasicBlockChainParmas.BlockchainType != types.ChainType_HyperledgerFabric {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "blockchain type is not fabric",
 		})
@@ -37,7 +37,7 @@ func InstallChannelAndChaincode(c *gin.Context) {
 	}
 
 	// 4. 进行链码的安装
-	testNetworkPath := configs.TopConfiguration.FabricConfig.FabricNetworkPath
+	testNetworkPath := configs.TopConfiguration.PathConfig.FabricNetworkPath
 	err := dir.WithContextManager(testNetworkPath, func() error {
 		installChannelSh := fmt.Sprintf("./startInstallChannel.sh %d %d", len(topology.Instance.FabricOrdererNodes), len(topology.Instance.FabricPeerNodes))
 		err := execute.Command("bash", []string{"-l", "-c", installChannelSh})

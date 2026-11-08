@@ -14,6 +14,7 @@ const (
 	ModuleMainCmdSecPathTopology   = "MAIN_CMD_SEC_PATH_TOPOLOGY"
 	ModuleCmdOnlineSecurestPath    = "MODULE_CMD_ONLINE_SECUREST_PATH"
 	ModuleConfig                   = "CONFIG"
+	ModuleParams                   = "PARAMS"
 	ModuleConstellation            = "CONSTELLATION"
 	ModuleTopology                 = "TOPOLOGY"
 	ModuleMonitorManager           = "MONITOR_MANAGER"

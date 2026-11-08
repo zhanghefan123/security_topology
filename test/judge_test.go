@@ -2,7 +2,7 @@ package test
 
 import (
 	"testing"
-	"zhanghefan123/security_topology/modules/entities/real_entities/graph/entities"
+	"zhanghefan123/security_topology/modules/entities/real_entities/atlas/entities"
 )
 
 func TestJudge(t *testing.T) {

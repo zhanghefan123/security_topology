@@ -50,7 +50,7 @@ type InitModule struct {
 // Init 进行初始化
 func (c *Constellation) Init() error {
 
-	// enableSRv6 := configs.TopConfiguration.NetworkConfig.EnableSRv6
+	// enableSRv6 := configs.TopConfiguration.StartTopologyParams.NetworkConfig.EnableSRv6
 
 	initSteps := []map[string]InitModule{
 		{SetHostReceiveMemory: InitModule{false, c.SetHostReceiveMemory}},
@@ -229,14 +229,14 @@ func (c *Constellation) GenerateSubnets() error {
 	var ipv6Subnets []iplib.Net6
 
 	// 进行 ipv4 的子网的生成
-	ipv4Subnets, err = network.GenerateIPv4Subnets(configs.TopConfiguration.NetworkConfig.BaseV4NetworkAddress)
+	ipv4Subnets, err = network.GenerateIPv4Subnets(configs.TopConfiguration.StartTopologyParams.NetworkConfig.BaseV4NetworkAddress)
 	if err != nil {
 		return fmt.Errorf("generate subnets: %w", err)
 	}
 	c.Ipv4SubNets = ipv4Subnets
 
 	// 进行 ipv6 的子网的生成
-	ipv6Subnets, err = network.GenerateIpv6Subnets(configs.TopConfiguration.NetworkConfig.BaseV6NetworkAddress)
+	ipv6Subnets, err = network.GenerateIpv6Subnets(configs.TopConfiguration.StartTopologyParams.NetworkConfig.BaseV6NetworkAddress)
 	if err != nil {
 		return fmt.Errorf("generate subnets: %w", err)
 	}
@@ -350,7 +350,7 @@ func (c *Constellation) GenerateGSLs() error {
 			groundStation.ContainerName, "",
 			groundIntf, &intf.NetworkInterface{},
 			groundAbstractNode, nil,
-			configs.TopConfiguration.ConstellationConfig.GSLBandwidth,
+			configs.TopConfiguration.StartTopologyParams.ConstellationConfig.GSLBandwidth,
 			ConstellationInstance.ConstellationGraph,
 			ipv4SubNet,
 			ipv6SubNet,
@@ -432,7 +432,7 @@ func (c *Constellation) generateISLsForLiRSatellite() {
 				sourceSat.Id, targetSat.Id,
 				sourceSat.ContainerName, targetSat.ContainerName,
 				sourceIntf, targetIntf,
-				sourceAbstract, targetAbstract, configs.TopConfiguration.ConstellationConfig.ISLBandwidth,
+				sourceAbstract, targetAbstract, configs.TopConfiguration.StartTopologyParams.ConstellationConfig.ISLBandwidth,
 				ConstellationInstance.ConstellationGraph,
 				ipv4SubNet,
 				ipv6SubNet)
@@ -480,7 +480,7 @@ func (c *Constellation) generateISLsForLiRSatellite() {
 				sourceSat.Id, targetSat.Id,
 				sourceSat.ContainerName, targetSat.ContainerName,
 				sourceIntf, targetIntf,
-				sourceAbstract, targetAbstract, configs.TopConfiguration.ConstellationConfig.ISLBandwidth,
+				sourceAbstract, targetAbstract, configs.TopConfiguration.StartTopologyParams.ConstellationConfig.ISLBandwidth,
 				ConstellationInstance.ConstellationGraph,
 				ipv4SubNet,
 				ipv6SubNet)
@@ -544,7 +544,7 @@ func (c *Constellation) generateISLsForNormalSatellites() {
 				sourceSat.Id, targetSat.Id,
 				sourceSat.ContainerName, targetSat.ContainerName,
 				sourceIntf, targetIntf,
-				sourceAbstract, targetAbstract, configs.TopConfiguration.ConstellationConfig.ISLBandwidth,
+				sourceAbstract, targetAbstract, configs.TopConfiguration.StartTopologyParams.ConstellationConfig.ISLBandwidth,
 				ConstellationInstance.ConstellationGraph,
 				ipv4SubNet,
 				ipv6SubNet)
@@ -592,7 +592,7 @@ func (c *Constellation) generateISLsForNormalSatellites() {
 				sourceSat.Id, targetSat.Id,
 				sourceSat.ContainerName, targetSat.ContainerName,
 				sourceIntf, targetIntf,
-				sourceAbstract, targetAbstract, configs.TopConfiguration.ConstellationConfig.ISLBandwidth,
+				sourceAbstract, targetAbstract, configs.TopConfiguration.StartTopologyParams.ConstellationConfig.ISLBandwidth,
 				ConstellationInstance.ConstellationGraph,
 				ipv4SubNet,
 				ipv6SubNet)
@@ -626,7 +626,7 @@ func (c *Constellation) GenerateFrrConfigurationFiles() error {
 		if err != nil {
 			return fmt.Errorf("cannot convert abstract node to normal node")
 		}
-		ospfVersion := configs.TopConfiguration.NetworkConfig.OspfVersion
+		ospfVersion := configs.TopConfiguration.StartTopologyParams.NetworkConfig.OspfVersion
 		if ospfVersion == "ospfv2" {
 			// 生成 ospfv2 配置
 			err = normalNode.GenerateOspfV2FrrConfig(routerId)

@@ -14,7 +14,7 @@ import (
 // CreateSessionAndDeploySmartContract 创建 session 并部署智能合约
 func CreateSessionAndDeploySmartContract() (*hello.HelloWorldSession, error) {
 	privateKey, _ := hex.DecodeString("145e247e170ba3afd6ae97e88f00dbc976c2345d511b0f6713355d19d8b80b58")
-	examplePath := configs.TopConfiguration.FiscoBcosConfig.ExamplePath
+	examplePath := configs.TopConfiguration.PathConfig.FiscoBcosExamplePath
 	config := &client.Config{IsSMCrypto: false, GroupID: "group0",
 		PrivateKey: privateKey, Host: "127.0.0.1", Port: 20201, // 这个端口决定了应该向哪里进行转发, 20201 对应的是 FiscoBcos-2, 如果它被攻击了, 那么 TPS 将一直为0
 		TLSCaFile:   filepath.Join(examplePath, "nodes/127.0.0.1/sdk/ca.crt"),

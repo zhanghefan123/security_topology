@@ -41,7 +41,7 @@ func CreateNormalNode(client *docker.Client, normalNode *normal_node.NormalNode)
 	// 3. 获取配置
 	simulationDir := configs.TopConfiguration.PathConfig.ConfigGeneratePath
 	nodeDir := filepath.Join(simulationDir, normalNode.ContainerName)
-	enableFrr := configs.TopConfiguration.NetworkConfig.EnableFrr
+	enableFrr := configs.TopConfiguration.StartTopologyParams.NetworkConfig.EnableFrr
 
 	// 4. 创建容器卷映射
 	volumes := []string{
@@ -58,7 +58,7 @@ func CreateNormalNode(client *docker.Client, normalNode *normal_node.NormalNode)
 
 	// 6. containerConfig
 	containerConfig := &container.Config{
-		Image: configs.TopConfiguration.ImagesConfig.NormalNodeImageName,
+		Image: configs.TopConfiguration.StartTopologyParams.ImagesConfig.NormalNodeImageName,
 		Tty:   true,
 		Env:   envs,
 	}

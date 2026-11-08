@@ -29,15 +29,15 @@ func CreateRealTimePositionService(client *docker.Client, positionService *posit
 		fmt.Sprintf("%s=%s", "ETCD_GROUND_STATIONS_PREFIX", positionService.EtcdGroundStationsPrefix),
 		fmt.Sprintf("%s=%s", "CONSTELLATION_START_TIME", positionService.ConstellationStartTime),
 		fmt.Sprintf("%s=%d", "UPDATE_INTERVAL", positionService.UpdateInterval),
-		fmt.Sprintf("%s=%d", "SATELLITE_AVAILABLE_GSLS", configs.TopConfiguration.ConstellationConfig.SatelliteAvailableGSLs),
-		fmt.Sprintf("%s=%s", "TIME_STEP_KEY", configs.TopConfiguration.ConstellationConfig.TimeStepKey),
-		fmt.Sprintf("%s=%s", "MINIMUM_ELEVATION_ANGLE_KEY", configs.TopConfiguration.ConstellationConfig.MinimumElevationAngleKey),
-		fmt.Sprintf("%s=%t", "UPDATE_POSITION", configs.TopConfiguration.ConstellationConfig.UpdatePosition),
+		fmt.Sprintf("%s=%d", "SATELLITE_AVAILABLE_GSLS", configs.TopConfiguration.StartTopologyParams.ConstellationConfig.SatelliteAvailableGSLs),
+		fmt.Sprintf("%s=%s", "TIME_STEP_KEY", configs.TopConfiguration.StartTopologyParams.ConstellationConfig.TimeStepKey),
+		fmt.Sprintf("%s=%s", "MINIMUM_ELEVATION_ANGLE_KEY", configs.TopConfiguration.StartTopologyParams.ConstellationConfig.MinimumElevationAngleKey),
+		fmt.Sprintf("%s=%t", "UPDATE_POSITION", configs.TopConfiguration.StartTopologyParams.ConstellationConfig.UpdatePosition),
 	}
 
 	// 3. 创建 containerConfig
 	containerConfig := &container.Config{
-		Image: configs.TopConfiguration.ImagesConfig.PositionServiceImageName,
+		Image: configs.TopConfiguration.StartTopologyParams.ImagesConfig.PositionServiceImageName,
 		Env:   envs,
 		Tty:   true,
 	}
